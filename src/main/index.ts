@@ -68,9 +68,17 @@ function queryOne(sql: string, params: unknown[] = []): Record<string, unknown> 
 }
 
 function createTrayIcon(): Electron.NativeImage {
-  const svg =
-    '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="6" fill="#0f1014" stroke="#2a2a2c" stroke-width="1"/><rect x="10" y="4" width="12" height="3" rx="1.5" fill="#4ade80" opacity="0.9"/><rect x="8" y="10" width="14" height="2" rx="1" fill="#e5e5e5" opacity="0.6"/><rect x="8" y="14" width="18" height="2" rx="1" fill="#e5e5e5" opacity="0.3"/><rect x="8" y="18" width="16" height="2" rx="1" fill="#e5e5e5" opacity="0.3"/><rect x="8" y="24" width="18" height="1.5" rx="0.75" fill="#4ade80" opacity="0.15"/></svg>'
-  return nativeImage.createFromBuffer(Buffer.from(svg), { width: 32, height: 32 })
+  // Electron 28+ supports SVG via createFromPath
+  const svgPath = join(__dirname, '../../resources/logo.svg')
+  if (fs.existsSync(svgPath)) {
+    return nativeImage.createFromPath(svgPath).resize({ width: 32, height: 32 })
+  }
+  // Fallback to PNG
+  const pngPath = join(__dirname, '../../resources/icon.png')
+  if (fs.existsSync(pngPath)) {
+    return nativeImage.createFromPath(pngPath).resize({ width: 32, height: 32 })
+  }
+  return nativeImage.createEmpty()
 }
 
 function createWindow(): void {
