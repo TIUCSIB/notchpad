@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, shell, globalShortcut } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import fs from 'fs'
@@ -21,6 +21,7 @@ let lastNotchChange = 0
 let wakeMode = 'hover'
 let pillHovering = false
 const NOTCH_COOLDOWN = 350
+let shortcutPauseUntil = 0
 
 async function initDatabase(): Promise<Database> {
   const SQL = await initSqlJs()
@@ -199,6 +200,8 @@ function startNotchPolling(): void {
         }
       }
     } else {
+      // Skip auto-collapse right after shortcut expand
+      if (Date.now() < shortcutPauseUntil) return
       const margin = 40
       if (
         cursor.x < bounds.x - margin ||
@@ -309,6 +312,19 @@ app.whenReady().then(async () => {
 
   await initDatabase()
 
+  // Register global shortcut Ctrl+Shift+Z to expand from notch
+  const shortcutRegistered = globalShortcut.register('CommandOrControl+Alt+Z', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (!mainWindow.isVisible()) mainWindow.show()
+      if (!mainWindow.isFocused()) mainWindow.focus()
+      if (isNotched) exitNotchMode()
+      shortcutPauseUntil = Date.now() + 1500
+    }
+  })
+  if (!shortcutRegistered) {
+    console.error('[Notchpad] Failed to register global shortcut Ctrl+Shift+Z')
+  }
+
   // Load wake mode from settings
   const savedWakeMode = queryOne("SELECT value FROM settings WHERE key = 'wakeMode'")
   if (savedWakeMode) wakeMode = savedWakeMode.value as string
@@ -355,6 +371,7 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
+  globalShortcut.unregisterAll()
   if (notchPollTimer) {
     clearInterval(notchPollTimer)
     notchPollTimer = null
