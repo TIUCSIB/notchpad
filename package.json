@@ -1,10 +1,10 @@
 {
-  "name": "floating-memo-vue",
+  "name": "notchpad",
   "version": "1.0.0",
-  "description": "An Electron application with Vue and TypeScript",
+  "description": "A smart notch-powered floating notes app built with Electron and Vue 3",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "TIUCSIB",
+  "homepage": "https://github.com/TIUCSIB/notchpad",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
@@ -54,6 +54,7 @@
     "eslint": "^9.39.1",
     "eslint-plugin-vue": "^10.6.2",
     "prettier": "^3.7.4",
+    "sharp": "^0.34.5",
     "typescript": "^5.9.3",
     "vite": "^7.2.6",
     "vue": "^3.5.25",

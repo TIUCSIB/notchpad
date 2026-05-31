@@ -69,7 +69,7 @@ function queryOne(sql: string, params: unknown[] = []): Record<string, unknown> 
 
 function createTrayIcon(): Electron.NativeImage {
   const svg =
-    '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="6" fill="#1a1a1a" stroke="#4ade80" stroke-width="2"/><line x1="8" y1="10" x2="24" y2="10" stroke="#4ade80" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="16" x2="24" y2="16" stroke="#666" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="22" x2="18" y2="22" stroke="#666" stroke-width="2" stroke-linecap="round"/></svg>'
+    '<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><rect x="2" y="2" width="28" height="28" rx="6" fill="#0f1014" stroke="#2a2a2c" stroke-width="1"/><rect x="10" y="4" width="12" height="3" rx="1.5" fill="#4ade80" opacity="0.9"/><rect x="8" y="10" width="14" height="2" rx="1" fill="#e5e5e5" opacity="0.6"/><rect x="8" y="14" width="18" height="2" rx="1" fill="#e5e5e5" opacity="0.3"/><rect x="8" y="18" width="16" height="2" rx="1" fill="#e5e5e5" opacity="0.3"/><rect x="8" y="24" width="18" height="1.5" rx="0.75" fill="#4ade80" opacity="0.15"/></svg>'
   return nativeImage.createFromBuffer(Buffer.from(svg), { width: 32, height: 32 })
 }
 
@@ -282,7 +282,7 @@ ipcMain.on('open-external', (_: Electron.IpcMainEvent, url: string) => {
 })
 
 app.whenReady().then(async () => {
-  electronApp.setAppUserModelId('com.floating-memo')
+  electronApp.setAppUserModelId('com.notchpad.app')
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
@@ -305,7 +305,7 @@ app.whenReady().then(async () => {
   createWindow()
 
   tray = new Tray(createTrayIcon())
-  tray.setToolTip('\u60ac\u6d6e\u4fbf\u7b7e')
+  tray.setToolTip('Notchpad')
   tray.setContextMenu(
     Menu.buildFromTemplate([
       {

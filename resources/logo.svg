@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1a1a"/>
+      <stop offset="100%" stop-color="#0a0a0a"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Rounded square background -->
+  <rect x="8" y="8" width="240" height="240" rx="48" fill="url(#bg)" stroke="#2a2a2c" stroke-width="2"/>
+  <!-- Notch/pill at top center -->
+  <rect x="88" y="24" width="80" height="12" rx="6" fill="url(#accent)" filter="url(#glow)" opacity="0.95"/>
+  <!-- Editor lines -->
+  <rect x="48" y="64" width="120" height="8" rx="4" fill="#e5e5e5" opacity="0.8"/>
+  <rect x="48" y="88" width="160" height="6" rx="3" fill="#e5e5e5" opacity="0.4"/>
+  <rect x="48" y="104" width="140" height="6" rx="3" fill="#e5e5e5" opacity="0.3"/>
+  <rect x="48" y="128" width="100" height="8" rx="4" fill="#e5e5e5" opacity="0.6"/>
+  <rect x="48" y="152" width="170" height="6" rx="3" fill="#e5e5e5" opacity="0.3"/>
+  <rect x="48" y="168" width="130" height="6" rx="3" fill="#e5e5e5" opacity="0.25"/>
+  <!-- Bottom bar hint -->
+  <rect x="48" y="200" width="160" height="2" rx="1" fill="#4ade80" opacity="0.2"/>
+  <circle cx="60" cy="216" r="4" fill="#e5e5e5" opacity="0.3"/>
+  <circle cx="76" cy="216" r="4" fill="#e5e5e5" opacity="0.3"/>
+  <circle cx="92" cy="216" r="4" fill="#e5e5e5" opacity="0.3"/>
+</svg>

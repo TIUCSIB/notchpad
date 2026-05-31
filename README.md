@@ -1,8 +1,10 @@
+![Notchpad Banner](.github/banner.svg)
+
 <div align="center">
 
 # Notchpad
 
-**一款刘海风格的悬浮便签应用**
+**一款刘海风格的桌面笔记应用**
 
 Electron + Vue 3 + TipTap · 紧贴屏幕顶部 · 弹性动画 · 深色/浅色主题
 
