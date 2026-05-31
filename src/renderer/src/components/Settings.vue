@@ -164,7 +164,8 @@ function handleExportJson() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'notchpad-export-' + new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19) + '.json'
+    a.download =
+      'notchpad-export-' + new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19) + '.json'
     a.click()
     URL.revokeObjectURL(url)
   })
@@ -185,7 +186,8 @@ function handleExportMarkdown() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'notchpad-export-' + new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19) + '.md'
+    a.download =
+      'notchpad-export-' + new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19) + '.md'
     a.click()
     URL.revokeObjectURL(url)
   })
@@ -247,23 +249,11 @@ onMounted(() => {
 <template>
   <Teleport to="body">
     <AnimatePresence>
-      <Motion
-        v-if="visible"
-        class="settings-overlay"
-        :initial="{ opacity: 0 }"
-        :animate="{ opacity: 1 }"
-        :exit="{ opacity: 0 }"
-        :transition="{ duration: 0.25, ease: 'easeInOut' }"
-        @click.self="emit('close')"
-      >
-        <Motion
-          class="settings-panel"
-          :initial="{ opacity: 0, y: -12, scale: 0.96 }"
-          :animate="{ opacity: 1, y: 0, scale: 1 }"
-          :exit="{ opacity: 0, y: -12, scale: 0.96 }"
-          :transition="{ duration: 0.25, ease: [0.34, 1.56, 0.64, 1] }"
-          @click.stop
-        >
+      <Motion v-if="visible" class="settings-overlay" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }"
+        :exit="{ opacity: 0 }" :transition="{ duration: 0.25, ease: 'easeInOut' }" @click.self="emit('close')">
+        <Motion class="settings-panel" :initial="{ opacity: 0, y: -12, scale: 0.96 }"
+          :animate="{ opacity: 1, y: 0, scale: 1 }" :exit="{ opacity: 0, y: -12, scale: 0.96 }"
+          :transition="{ duration: 0.25, ease: [0.34, 1.56, 0.64, 1] }" @click.stop>
           <div class="settings-panel-inner">
             <div class="settings-header">
               <span class="settings-title">设置</span>
@@ -279,17 +269,12 @@ onMounted(() => {
                   <span>主题</span>
                 </div>
                 <div class="setting-control">
-                  <button
-                    v-for="t in [
-                      { key: 'dark', label: '深色' },
-                      { key: 'light', label: '浅色' },
-                      { key: 'system', label: '系统' }
-                    ]"
-                    :key="t.key"
-                    class="theme-btn"
-                    :class="{ active: settings.theme === t.key }"
-                    @click="save('theme', t.key)"
-                  >
+                  <button v-for="t in [
+                    { key: 'dark', label: '深色' },
+                    { key: 'light', label: '浅色' },
+                    { key: 'system', label: '系统' }
+                  ]" :key="t.key" class="theme-btn" :class="{ active: settings.theme === t.key }"
+                    @click="save('theme', t.key)">
                     {{ t.label }}
                   </button>
                 </div>
@@ -301,14 +286,9 @@ onMounted(() => {
                   <span>强调色</span>
                 </div>
                 <div class="setting-control color-grid">
-                  <button
-                    v-for="a in accentOptions"
-                    :key="a.color"
-                    class="color-dot"
-                    :class="{ active: settings.accentColor === a.color }"
-                    :style="{ background: a.color }"
-                    @click="save('accentColor', a.color)"
-                  />
+                  <button v-for="a in accentOptions" :key="a.color" class="color-dot"
+                    :class="{ active: settings.accentColor === a.color }" :style="{ background: a.color }"
+                    @click="save('accentColor', a.color)" />
                 </div>
               </div>
 
@@ -318,11 +298,8 @@ onMounted(() => {
                   <span>默认字号</span>
                 </div>
                 <div class="setting-control">
-                  <select
-                    class="native-select"
-                    :value="settings.defaultFontSize"
-                    @change="save('defaultFontSize', ($event.target as HTMLSelectElement).value)"
-                  >
+                  <select class="native-select" :value="settings.defaultFontSize"
+                    @change="save('defaultFontSize', ($event.target as HTMLSelectElement).value)">
                     <option v-for="s in fontSizeOptions" :key="s" :value="s">{{ s }}</option>
                   </select>
                 </div>
@@ -334,11 +311,8 @@ onMounted(() => {
                   <span>开机自启</span>
                 </div>
                 <div class="setting-control">
-                  <button
-                    class="toggle-btn"
-                    :class="{ active: settings.autoStart === 'true' }"
-                    @click="save('autoStart', settings.autoStart === 'true' ? 'false' : 'true')"
-                  >
+                  <button class="toggle-btn" :class="{ active: settings.autoStart === 'true' }"
+                    @click="save('autoStart', settings.autoStart === 'true' ? 'false' : 'true')">
                     <span class="toggle-knob" />
                   </button>
                 </div>
@@ -350,16 +324,11 @@ onMounted(() => {
                   <span>唤醒方式</span>
                 </div>
                 <div class="setting-control">
-                  <button
-                    v-for="m in [
-                      { key: 'hover', label: '悬浮' },
-                      { key: 'click', label: '点击' }
-                    ]"
-                    :key="m.key"
-                    class="theme-btn"
-                    :class="{ active: settings.wakeMode === m.key }"
-                    @click="save('wakeMode', m.key)"
-                  >
+                  <button v-for="m in [
+                    { key: 'hover', label: '悬浮' },
+                    { key: 'click', label: '点击' }
+                  ]" :key="m.key" class="theme-btn" :class="{ active: settings.wakeMode === m.key }"
+                    @click="save('wakeMode', m.key)">
                     {{ m.label }}
                   </button>
                 </div>
@@ -408,6 +377,7 @@ onMounted(() => {
                   <div class="shortcut-row"><kbd>Ctrl+Z</kbd> <span>撤销</span></div>
                   <div class="shortcut-row"><kbd>Ctrl+Y</kbd> <span>重做</span></div>
                   <div class="shortcut-row"><kbd>Ctrl+W</kbd> <span>最小化</span></div>
+                  <div class="shortcut-row"><kbd>Ctrl+Alt+Z</kbd> <span>打开窗口</span></div>
                 </div>
               </div>
             </div>
@@ -570,9 +540,11 @@ onMounted(() => {
     border-color 0.15s,
     transform 0.15s;
 }
+
 .color-dot:hover {
   transform: scale(1.15);
 }
+
 .color-dot.active {
   border-color: var(--text-primary, #fff);
   transform: scale(1.15);
@@ -596,9 +568,11 @@ onMounted(() => {
   background-position: right 8px center;
   transition: border-color 0.15s;
 }
+
 .native-select:hover {
   border-color: var(--border-strong, #3a3a3c);
 }
+
 .native-select option {
   background: var(--bg-toolbar, #151516);
   color: var(--text-primary, #e5e5e5);
@@ -615,9 +589,11 @@ onMounted(() => {
   transition: background 0.2s;
   padding: 0;
 }
+
 .toggle-btn.active {
   background: var(--accent, #4ade80);
 }
+
 .toggle-knob {
   position: absolute;
   top: 2px;
@@ -628,6 +604,7 @@ onMounted(() => {
   background: #fff;
   transition: transform 0.2s;
 }
+
 .toggle-btn.active .toggle-knob {
   transform: translateX(16px);
 }
@@ -642,13 +619,16 @@ onMounted(() => {
   cursor: pointer;
   transition: background 0.15s;
 }
+
 .action-btn:hover {
   background: var(--hover-bg, #3a3a3c);
 }
+
 .action-btn.danger {
   color: var(--danger-text, #f87171);
   border-color: var(--danger-hover, #5a2a2a);
 }
+
 .action-btn.danger:hover {
   background: var(--danger-hover, #3a1a1a);
 }
@@ -707,27 +687,33 @@ onMounted(() => {
   z-index: 200;
   white-space: nowrap;
 }
+
 .toast-enter-active {
   animation: toastIn 0.2s ease;
 }
+
 .toast-leave-active {
   animation: toastOut 0.15s ease;
 }
+
 @keyframes toastIn {
   from {
     opacity: 0;
     transform: translateX(-50%) translateY(4px);
   }
+
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
 }
+
 @keyframes toastOut {
   from {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
+
   to {
     opacity: 0;
     transform: translateX(-50%) translateY(4px);
