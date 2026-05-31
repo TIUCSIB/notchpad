@@ -790,7 +790,7 @@ onBeforeUnmount(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 6px 22px 14px 22px;
+  padding: 6px 22px 4px 22px;
   overflow: hidden;
 }
 
@@ -822,7 +822,7 @@ onBeforeUnmount(() => {
 }
 
 .save-status {
-  height: 18px;
+  height: 12px;
   display: flex;
   justify-content: flex-end;
   align-items: center;

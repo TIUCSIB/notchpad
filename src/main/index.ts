@@ -115,12 +115,7 @@ function createWindow(): void {
     startNotchPolling()
   })
 
-  mainWindow.on('close', (e) => {
-    if (!isQuitting) {
-      e.preventDefault()
-      mainWindow?.hide()
-    }
-  })
+  // close handler removed - window closes normally
 
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
 
@@ -248,8 +243,8 @@ ipcMain.handle('reorder-pages', (_: Electron.IpcMainInvokeEvent, ids: number[]) 
 })
 
 ipcMain.on('close-window', () => {
-  mainWindow?.hide()
-})
+    mainWindow?.close()
+  })
 
 ipcMain.handle('enter-notch', () => {
   enterNotchMode()
@@ -343,10 +338,11 @@ app.whenReady().then(async () => {
   })
 })
 
-app.on('window-all-closed', () => {})
+app.on('window-all-closed', () => {
+  app.quit()
+})
 
 app.on('before-quit', () => {
-  isQuitting = true
   if (notchPollTimer) {
     clearInterval(notchPollTimer)
     notchPollTimer = null
