@@ -68,15 +68,19 @@ function queryOne(sql: string, params: unknown[] = []): Record<string, unknown> 
 }
 
 function createTrayIcon(): Electron.NativeImage {
-  // Electron 28+ supports SVG via createFromPath
-  const svgPath = join(__dirname, '../../resources/logo.svg')
-  if (fs.existsSync(svgPath)) {
-    return nativeImage.createFromPath(svgPath).resize({ width: 32, height: 32 })
-  }
-  // Fallback to PNG
-  const pngPath = join(__dirname, '../../resources/icon.png')
-  if (fs.existsSync(pngPath)) {
-    return nativeImage.createFromPath(pngPath).resize({ width: 32, height: 32 })
+  // Try tray-icon.png first, then icon.png
+  const paths = [
+    join(__dirname, '../../resources/tray-icon.png'),
+    join(__dirname, '../../resources/icon.png'),
+    join(app.isPackaged ? process.resourcesPath : join(__dirname, '../..'), 'resources/tray-icon.png'),
+    join(app.isPackaged ? process.resourcesPath : join(__dirname, '../..'), 'resources/icon.png')
+  ]
+  for (const p of paths) {
+    if (fs.existsSync(p)) {
+      const img = nativeImage.createFromPath(p)
+      if (img.isEmpty()) continue
+      return img
+    }
   }
   return nativeImage.createEmpty()
 }

@@ -164,7 +164,7 @@ function handleExportJson() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'notchpad-export-' + new Date().toISOString().slice(0, 10) + '.json'
+    a.download = 'notchpad-export-' + new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19) + '.json'
     a.click()
     URL.revokeObjectURL(url)
   })
@@ -185,7 +185,7 @@ function handleExportMarkdown() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'notchpad-export-' + new Date().toISOString().slice(0, 10) + '.md'
+    a.download = 'notchpad-export-' + new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19) + '.md'
     a.click()
     URL.revokeObjectURL(url)
   })
