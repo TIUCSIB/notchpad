@@ -72,7 +72,7 @@ const highlightColors = [
   '#ffffff'
 ]
 
-const isNotched = ref(false)
+const isNotched = ref(true)
 const isAnimating = ref(false)
 let animTimer: ReturnType<typeof setTimeout> | null = null
 let collapseColorTimer: ReturnType<typeof setTimeout> | null = null
@@ -211,12 +211,12 @@ const FontSize = Mark.create({
     return {
       setFontSize:
         (fontSize: string) =>
-        ({ chain }: CommandProps) =>
-          chain().setMark(this.name, { fontSize }).run(),
+          ({ chain }: CommandProps) =>
+            chain().setMark(this.name, { fontSize }).run(),
       unsetFontSize:
         () =>
-        ({ chain }: CommandProps) =>
-          chain().setMark(this.name, { fontSize: null }).removeEmptyTextStyle().run()
+          ({ chain }: CommandProps) =>
+            chain().setMark(this.name, { fontSize: null }).removeEmptyTextStyle().run()
     }
   }
 })
@@ -590,82 +590,44 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="app-root" :style="appStyle">
-    <Motion
-      :class="[
-        'panel-motion',
-        {
-          notched: isNotched,
-          animating: isAnimating,
-          'pill-hovered': pillHovered,
-          'click-mode': appSettings.wakeMode === 'click'
-        }
-      ]"
-      :animate="panelAnimate"
-      :transition="panelTransition"
+    <Motion :class="[
+      'panel-motion',
+      {
+        notched: isNotched,
+        animating: isAnimating,
+        'pill-hovered': pillHovered,
+        'click-mode': appSettings.wakeMode === 'click'
+      }
+    ]" :animate="panelAnimate" :transition="panelTransition"
       :style="{ pointerEvents: isNotched && appSettings.wakeMode !== 'click' ? 'none' : 'auto' }"
-      @mouseenter="pillHovered = true"
-      @mouseleave="pillHovered = false"
-      @click="handlePillClick"
-    >
+      @mouseenter="pillHovered = true" @mouseleave="pillHovered = false" @click="handlePillClick">
       <div v-show="!isNotched" class="panel">
-        <TopToolbar
-          :pages="pages"
-          :current-index="currentIndex"
-          :max-pages="MAX_PAGES"
-          @select="selectPage"
-          @add="addPage"
-          @delete="deletePage"
-          @clear="clearCurrentPage"
-          @settings="settingsVisible = true"
-          @reorder="reorderPages"
-        />
+        <TopToolbar :pages="pages" :current-index="currentIndex" :max-pages="MAX_PAGES" @select="selectPage"
+          @add="addPage" @delete="deletePage" @clear="clearCurrentPage" @settings="settingsVisible = true"
+          @reorder="reorderPages" />
 
         <div v-if="currentIndex >= 0" class="editor-area">
           <div class="content-card">
             <div class="content-body">
               <EditorContent :editor="editor" />
             </div>
-            <BottomBar
-              :format-btns="formatBtns"
-              :font-size-options="fontSizeOptions"
-              :font-options="fontOptions"
-              :color-options="colorOptions"
-              :highlight-colors="highlightColors"
-              :current-font-size="currentFontSize"
-              :current-font-family="currentFontFamily"
-              :current-text-color="currentTextColor"
-              :current-highlight-color="currentHighlightColor"
-              @set-font-size="setFontSize"
-              @clear-font-size="clearFontSize"
-              @set-font-family="setFontFamily"
-              @set-text-color="setTextColor"
-              @clear-text-color="clearTextColor"
-              @clear-highlight-color="clearHighlightColor"
-              @set-highlight="setHighlight"
-              @open-link="fmtLink"
-            />
+            <BottomBar :format-btns="formatBtns" :font-size-options="fontSizeOptions" :font-options="fontOptions"
+              :color-options="colorOptions" :highlight-colors="highlightColors" :current-font-size="currentFontSize"
+              :current-font-family="currentFontFamily" :current-text-color="currentTextColor"
+              :current-highlight-color="currentHighlightColor" @set-font-size="setFontSize"
+              @clear-font-size="clearFontSize" @set-font-family="setFontFamily" @set-text-color="setTextColor"
+              @clear-text-color="clearTextColor" @clear-highlight-color="clearHighlightColor"
+              @set-highlight="setHighlight" @open-link="fmtLink" />
           </div>
           <!-- Save status indicator -->
           <div class="save-status">
             <AnimatePresence>
-              <Motion
-                v-if="saveStatus === 'saving'"
-                :initial="{ opacity: 0, y: 4 }"
-                :animate="{ opacity: 1, y: 0 }"
-                :exit="{ opacity: 0, y: 4 }"
-                :transition="{ duration: 0.15 }"
-                class="save-indicator saving"
-              >
+              <Motion v-if="saveStatus === 'saving'" :initial="{ opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }"
+                :exit="{ opacity: 0, y: 4 }" :transition="{ duration: 0.15 }" class="save-indicator saving">
                 <span class="save-dot saving" /> 保存中
               </Motion>
-              <Motion
-                v-else-if="saveStatus === 'saved'"
-                :initial="{ opacity: 0, y: 4 }"
-                :animate="{ opacity: 1, y: 0 }"
-                :exit="{ opacity: 0, y: 4 }"
-                :transition="{ duration: 0.15 }"
-                class="save-indicator saved"
-              >
+              <Motion v-else-if="saveStatus === 'saved'" :initial="{ opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }"
+                :exit="{ opacity: 0, y: 4 }" :transition="{ duration: 0.15 }" class="save-indicator saved">
                 <span class="save-dot saved" /> 已保存
               </Motion>
             </AnimatePresence>
@@ -678,17 +640,9 @@ onBeforeUnmount(() => {
     </Motion>
   </div>
 
-  <Settings
-    :visible="settingsVisible"
-    @close="settingsVisible = false"
-    @update-settings="handleSettingsUpdate"
-  />
-  <LinkDialog
-    :visible="linkPromptVisible"
-    :initial-url="linkUrlInput"
-    @confirm="confirmLink"
-    @cancel="linkPromptVisible = false"
-  />
+  <Settings :visible="settingsVisible" @close="settingsVisible = false" @update-settings="handleSettingsUpdate" />
+  <LinkDialog :visible="linkPromptVisible" :initial-url="linkUrlInput" @confirm="confirmLink"
+    @cancel="linkPromptVisible = false" />
 </template>
 
 <style scoped>
@@ -752,28 +706,34 @@ onBeforeUnmount(() => {
   0% {
     transform: translateX(-50%) scale(1, 1);
   }
+
   15% {
     transform: translateX(-50%) scale(1.15, 0.85);
   }
+
   30% {
     transform: translateX(-50%) scale(0.9, 1.1);
   }
+
   45% {
     transform: translateX(-50%) scale(1.05, 0.95);
   }
+
   60% {
     transform: translateX(-50%) scale(0.97, 1.03);
   }
+
   75% {
     transform: translateX(-50%) scale(1.02, 0.98);
   }
+
   100% {
     transform: translateX(-50%) scale(1, 1);
   }
 }
 
 .panel-motion.animating {
-  filter: blur(3px);
+  filter: blur(0.8px);
 }
 
 .panel {
@@ -863,10 +823,12 @@ onBeforeUnmount(() => {
 }
 
 @keyframes pulse {
+
   0%,
   100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.3;
   }

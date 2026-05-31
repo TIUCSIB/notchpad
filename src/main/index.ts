@@ -85,6 +85,29 @@ function createTrayIcon(): Electron.NativeImage {
   return nativeImage.createEmpty()
 }
 
+// Force notch state in renderer before showing window
+async function forceNotchAndShow(): Promise<void> {
+  if (!mainWindow) return
+  isNotched = true
+  mainWindow.setIgnoreMouseEvents(true)
+  mainWindow.webContents.send('notch-changed', true)
+  await new Promise<void>((resolve) => {
+    const timer = setTimeout(() => {
+      mainWindow?.webContents.removeListener('ipc-message', onMsg)
+      resolve()
+    }, 500)
+    function onMsg(_: any, channel: string) {
+      if (channel === 'notch-ready') {
+        clearTimeout(timer)
+        mainWindow?.webContents.removeListener('ipc-message', onMsg)
+        resolve()
+      }
+    }
+    mainWindow?.webContents.on('ipc-message', onMsg)
+  })
+  mainWindow.show()
+  mainWindow.focus()
+}
 function createWindow(): void {
   const workArea = screen.getPrimaryDisplay().workArea
   const x = Math.round(workArea.x + (workArea.width - WIN_WIDTH) / 2)
@@ -101,6 +124,7 @@ function createWindow(): void {
     alwaysOnTop: true,
     skipTaskbar: true,
     hasShadow: false,
+    show: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false
@@ -108,14 +132,16 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
-    isNotched = true
-    mainWindow?.setIgnoreMouseEvents(true)
-    mainWindow?.show()
-    mainWindow?.webContents.send('notch-changed', true)
+    forceNotchAndShow()
     startNotchPolling()
   })
 
-  // close handler removed - window closes normally
+  mainWindow.on('close', (e) => {
+    if (!isQuitting) {
+      e.preventDefault()
+      mainWindow?.hide()
+    }
+  })
 
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
 
