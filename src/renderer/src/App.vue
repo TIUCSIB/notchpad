@@ -669,9 +669,9 @@ onBeforeUnmount(() => {
   content: '';
   position: absolute;
   inset: -4px;
-  background: rgba(90, 90, 90, 0.15);
+  background: rgba(255, 255, 255, 0.15);
   border-radius: 10px;
-  z-index: -1;
+  z-index: 0;
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
@@ -737,6 +737,8 @@ onBeforeUnmount(() => {
 }
 
 .panel {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   display: flex;

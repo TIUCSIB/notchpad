@@ -86,25 +86,11 @@ function createTrayIcon(): Electron.NativeImage {
 }
 
 // Force notch state in renderer before showing window
-async function forceNotchAndShow(): Promise<void> {
+// Show window directly — renderer already defaults to notch state
+function showInNotch(): void {
   if (!mainWindow) return
   isNotched = true
   mainWindow.setIgnoreMouseEvents(true)
-  mainWindow.webContents.send('notch-changed', true)
-  await new Promise<void>((resolve) => {
-    const timer = setTimeout(() => {
-      mainWindow?.webContents.removeListener('ipc-message', onMsg)
-      resolve()
-    }, 500)
-    function onMsg(_: any, channel: string) {
-      if (channel === 'notch-ready') {
-        clearTimeout(timer)
-        mainWindow?.webContents.removeListener('ipc-message', onMsg)
-        resolve()
-      }
-    }
-    mainWindow?.webContents.on('ipc-message', onMsg)
-  })
   mainWindow.show()
   mainWindow.focus()
 }
@@ -132,7 +118,7 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
-    forceNotchAndShow()
+    showInNotch()
     startNotchPolling()
   })
 
