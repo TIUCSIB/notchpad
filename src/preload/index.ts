@@ -1,0 +1,48 @@
+import { contextBridge, ipcRenderer } from 'electron'
+import { electronAPI } from '@electron-toolkit/preload'
+
+const api = {
+  getPages: (): Promise<Page[]> => ipcRenderer.invoke('get-pages'),
+  addPage: (): Promise<Page> => ipcRenderer.invoke('add-page'),
+  deletePage: (id: number): Promise<void> => ipcRenderer.invoke('delete-page', id),
+  updatePage: (id: number, title: string, content: string): Promise<Page> =>
+    ipcRenderer.invoke('update-page', id, title, content),
+  reorderPages: (ids: number[]): Promise<void> => ipcRenderer.invoke('reorder-pages', ids),
+  enterNotch: (): Promise<void> => ipcRenderer.invoke('enter-notch'),
+  exitNotch: (): Promise<void> => ipcRenderer.invoke('exit-notch'),
+  onNotchChange: (cb: (notched: boolean) => void): void => {
+    ipcRenderer.on('notch-changed', (_event: Electron.IpcRendererEvent, v: boolean) => cb(v))
+  },
+  getSettings: (): Promise<Record<string, string>> => ipcRenderer.invoke('get-settings'),
+  setSetting: (key: string, value: string): Promise<void> =>
+    ipcRenderer.invoke('set-setting', key, value),
+  closeWindow: (): void => {
+    ipcRenderer.send('close-window')
+  },
+  openExternal: (url: string): void => {
+    ipcRenderer.send('open-external', url)
+  }
+}
+
+export interface Page {
+  id: number
+  title: string
+  content: string
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+if (process.contextIsolated) {
+  try {
+    contextBridge.exposeInMainWorld('electron', electronAPI)
+    contextBridge.exposeInMainWorld('api', api)
+  } catch (error) {
+    console.error(error)
+  }
+} else {
+  // @ts-ignore -- window.electron set by preload
+  window.electron = electronAPI
+  // @ts-ignore -- window.api set by preload
+  window.api = api
+}

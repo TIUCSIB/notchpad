@@ -1,0 +1,154 @@
+html,
+body,
+#app {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+  background: transparent !important;
+}
+::-webkit-scrollbar {
+  width: 0 !important;
+  display: none !important;
+}
+
+.editor-content {
+  outline: none;
+  font-size: var(--editor-font-size, 14px);
+  line-height: 1.8;
+  color: var(--text-primary, #e5e5e5);
+}
+
+.editor-content p {
+  margin: 0 0 8px;
+}
+.editor-content h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+.editor-content h2 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 16px 0 6px;
+}
+.editor-content h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 12px 0 4px;
+}
+.editor-content ul,
+.editor-content ol {
+  margin: 4px 0 8px;
+  padding-left: 20px;
+}
+.editor-content li {
+  margin: 2px 0;
+}
+
+.editor-content ul[data-type='taskList'] {
+  list-style: none;
+  padding-left: 0;
+}
+.editor-content ul[data-type='taskList'] li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.editor-content ul[data-type='taskList'] li label {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.editor-content ul[data-type='taskList'] li label input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent, #4ade80);
+  cursor: pointer;
+}
+.editor-content ul[data-type='taskList'] li > div {
+  flex: 1;
+}
+
+.editor-content code {
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 12px;
+  background: var(--bg-toolbar, #2a2a2a);
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: #f59e0b;
+}
+
+.editor-content pre {
+  background: var(--bg-main, #1a1a1a);
+  color: var(--text-primary, #ccc);
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+.editor-content pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+.editor-content blockquote {
+  margin: 8px 0;
+  padding: 6px 12px;
+  border-left: 3px solid var(--accent, #4ade80);
+  background: var(--accent-dim, rgba(74, 222, 128, 0.06));
+  color: var(--text-secondary, #aaa);
+  border-radius: 0 6px 6px 0;
+}
+
+.editor-content hr {
+  border: none;
+  height: 1px;
+  background: #333;
+  margin: 12px 0;
+}
+
+.editor-content a {
+  color: var(--accent, #4ade80);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+}
+.editor-content a:hover {
+  border-bottom-color: var(--accent, #4ade80);
+}
+
+.editor-content p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--text-secondary, #555);
+  font-style: italic;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.editor-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 8px 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.ProseMirror-selectednode {
+  outline: none !important;
+  box-shadow: none !important;
+  background: none !important;
+}
+.ProseMirror-selectednode img {
+  box-shadow: 0 0 0 2px #4ade80;
+  border-radius: 8px;
+}
+
+.editor-content ::selection {
+  background: var(--accent-dim, rgba(74, 222, 128, 0.15));
+}
+.editor-content mark {
+  border-radius: 2px;
+  padding: 0 1px;
+}
