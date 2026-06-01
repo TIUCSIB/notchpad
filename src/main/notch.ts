@@ -1,8 +1,8 @@
-﻿import { BrowserWindow, screen } from 'electron'
+import { BrowserWindow, screen } from 'electron'
 
-const NOTCH_PILL_WIDTH = 64
-const NOTCH_PILL_HEIGHT = 8
-const NOTCH_PILL_TOP = 4
+const NOTCH_PILL_WIDTH = 72
+const NOTCH_PILL_HEIGHT = 14
+const NOTCH_PILL_TOP = 0
 const NOTCH_COOLDOWN = 350
 
 let isNotched = false

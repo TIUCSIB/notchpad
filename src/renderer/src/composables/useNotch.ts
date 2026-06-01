@@ -1,4 +1,4 @@
-﻿import { ref, computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const expandSpring = { type: 'spring' as const, stiffness: 150, damping: 22, mass: 0.8 }
 const collapseSpring = { type: 'spring' as const, stiffness: 200, damping: 30, mass: 0.6 }
@@ -22,11 +22,8 @@ export function useNotch(
     return 'rgba(251,139,5,1)'
   })
 
-  // panelBgColor needs isLightTheme, passed from useSettings
   const panelBgColor = ref('#000')
   const isLightTheme = ref(false)
-  // Initialize panelBgColor to notch color on first render
-  // (updatePanelBg won't fire from watchers since isNotched starts as true)
 
   function updatePanelBg() {
     const light = isLightTheme.value
@@ -35,12 +32,18 @@ export function useNotch(
     else panelBgColor.value = notchColor.value
   }
 
+  // Notch pill: flat top, rounded bottom — phone notch style
+  const pillWidth = computed(() => isNotched.value ? (pillHovered.value ? '84px' : '72px') : 'calc(100% - 4px)')
+  const pillHeight = computed(() => isNotched.value ? (pillHovered.value ? '18px' : '14px') : '100vh')
+  const pillTop = computed(() => '0px')
+  const pillRadius = computed(() => isNotched.value ? '0 0 12px 12px' : '0 0 20px 20px')
+
   const panelAnimate = computed(() => ({
     x: '-50%',
-    width: isNotched.value ? (pillHovered.value ? '80px' : '64px') : 'calc(100% - 4px)',
-    height: isNotched.value ? (pillHovered.value ? '10px' : '8px') : '100vh',
-    top: isNotched.value ? (pillHovered.value ? '3px' : '4px') : '0px',
-    borderRadius: isNotched.value ? '4px' : '0 0 20px 20px',
+    width: pillWidth.value,
+    height: pillHeight.value,
+    top: pillTop.value,
+    borderRadius: pillRadius.value,
     backgroundColor: panelBgColor.value,
     opacity: 1,
     scale: 1
@@ -70,7 +73,6 @@ export function useNotch(
 
   watch([isAnimating, isLightTheme], () => updatePanelBg())
 
-  // Initialize pill color on setup (watcher won't fire since isNotched starts true)
   updatePanelBg()
 
   function cleanup() {
