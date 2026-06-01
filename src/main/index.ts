@@ -95,8 +95,16 @@ function showInNotch(): void {
   isNotched = true
   mainWindow.setIgnoreMouseEvents(true)
   mainWindow.webContents.send('notch-changed', true)
+  // Hide first to prevent flash, then show after renderer updates
+  mainWindow.hide()
+  mainWindow.setOpacity(0)
   mainWindow.show()
-  mainWindow.focus()
+  setTimeout(() => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.setOpacity(1)
+      mainWindow.focus()
+    }
+  }, 50)
 }
 
 function createWindow(): void {
