@@ -14,6 +14,7 @@ const api = {
   onNotchChange: (cb: (notched: boolean) => void): void => {
     ipcRenderer.on('notch-changed', (_event: Electron.IpcRendererEvent, v: boolean) => cb(v))
   },
+  offNotchChange: (): void => { ipcRenderer.removeAllListeners('notch-changed') },
   getSettings: (): Promise<Record<string, string>> => ipcRenderer.invoke('get-settings'),
   setSetting: (key: string, value: string): Promise<void> =>
     ipcRenderer.invoke('set-setting', key, value),

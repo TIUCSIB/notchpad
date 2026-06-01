@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import {
   X,
   Monitor,
@@ -74,6 +74,8 @@ async function handleReset() {
 function onClose() { emit('close') }
 
 onMounted(() => { loadSettings() })
+
+onBeforeUnmount(() => { if (savedTimer) clearTimeout(savedTimer) })
 </script>
 
 <template>

@@ -1,4 +1,4 @@
-import { ElectronAPI } from '@electron-toolkit/preload'
+﻿import { ElectronAPI } from '@electron-toolkit/preload'
 import { Page } from './index'
 
 interface API {
@@ -10,8 +10,10 @@ interface API {
   enterNotch: () => Promise<void>
   exitNotch: () => Promise<void>
   onNotchChange: (cb: (notched: boolean) => void) => void
+  offNotchChange: () => void
   getSettings: () => Promise<Record<string, string>>
   setSetting: (key: string, value: string) => Promise<void>
+  resetSettings: () => Promise<void>
   closeWindow: () => void
   openExternal: (url: string) => void
   togglePinPage: (id: number) => Promise<Page[]>

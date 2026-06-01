@@ -1,4 +1,4 @@
-import { BrowserWindow, screen } from 'electron'
+﻿import { BrowserWindow, screen } from 'electron'
 
 const NOTCH_PILL_WIDTH = 64
 const NOTCH_PILL_HEIGHT = 8
@@ -44,7 +44,7 @@ export function showInNotch(mainWindow: BrowserWindow | null): void {
       mainWindow.setOpacity(1)
       mainWindow.focus()
     }
-  }, 50)
+  }, 100)
 }
 
 export function startNotchPolling(mainWindow: BrowserWindow | null): void {
@@ -86,7 +86,7 @@ export function startNotchPolling(mainWindow: BrowserWindow | null): void {
         enterNotchMode(mainWindow)
       }
     }
-  }, 50)
+  }, 100)
 }
 
 export function stopNotchPolling(): void {

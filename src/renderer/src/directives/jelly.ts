@@ -25,15 +25,24 @@ function ensureKeyframes() {
 export const vJelly: Directive<HTMLElement> = {
   mounted(el) {
     ensureKeyframes()
-    el.addEventListener('mouseenter', () => {
-      // Remove class first to allow re-trigger
+    const onMouseEnter = () => {
       el.classList.remove('jelly-animating')
-      // Force reflow so the animation restarts
       void el.offsetWidth
       el.classList.add('jelly-animating')
-    })
-    el.addEventListener('animationend', () => {
+    }
+    const onAnimationEnd = () => {
       el.classList.remove('jelly-animating')
-    })
+    }
+    el.addEventListener('mouseenter', onMouseEnter)
+    el.addEventListener('animationend', onAnimationEnd)
+    ;(el as any).__jellyListeners = { onMouseEnter, onAnimationEnd }
+  },
+  unmounted(el) {
+    const listeners = (el as any).__jellyListeners
+    if (listeners) {
+      el.removeEventListener('mouseenter', listeners.onMouseEnter)
+      el.removeEventListener('animationend', listeners.onAnimationEnd)
+      delete (el as any).__jellyListeners
+    }
   }
 }

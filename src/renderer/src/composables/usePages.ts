@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+﻿import { ref, type Ref } from 'vue'
 import type { Page } from '../../types'
 
 export const MAX_PAGES = 10
@@ -11,6 +11,7 @@ export function usePages(
   const pages = ref<Page[]>([]) as Ref<Page[]>
   const currentIndex = ref(-1)
   let isSwitching = false
+  let rafId = 0
 
   function currentPage(): Page | null {
     if (currentIndex.value < 0 || currentIndex.value >= pages.value.length) return null
@@ -35,7 +36,8 @@ export function usePages(
       editor.value.commands.focus()
     }
     // Use requestAnimationFrame to reset switching flag after DOM update
-    requestAnimationFrame(() => { isSwitching = false })
+    if (rafId) cancelAnimationFrame(rafId)
+    rafId = requestAnimationFrame(() => { isSwitching = false })
   }
 
   function getIsSwitching() { return isSwitching }

@@ -54,13 +54,9 @@ const {
   getIsSwitching
 } = usePages(tempEditor, scheduleSave, flushSave)
 
-watch(
-  pages,
-  (v) => {
-    pagesRef.value = v
-  },
-  { deep: true }
-)
+watch(pages, (v) => {
+  pagesRef.value = v
+})
 watch(currentIndex, (v) => {
   currentIndexRef.value = v
 })
@@ -141,7 +137,6 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 onMounted(async () => {
-  
   await loadSettings()
   initSettingsListeners()
   await loadPages()
@@ -152,6 +147,7 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
+  window.api.offNotchChange()
   editor.value?.destroy()
   cleanupSave()
   cleanupNotch()
