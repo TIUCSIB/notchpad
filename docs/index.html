@@ -4,9 +4,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Notchpad，一款贴在屏幕顶部的极简浮动便签应用。快速展开，立即记录，然后安静退场。">
+  <meta name="description" content="Notchpad，一款贴在屏幕顶部的极简浮动便签应用。快速展开，立即记录，然后安静退场�?>
   <title>Notchpad</title>
-  <link rel="icon" type="image/png" href="https://github.com/TIUCSIB/notchpad/blob/main/build/icon.png">
+  <link rel=" icon" type="image/png"
+    href="https://raw.githubusercontent.com/TIUCSIB/notchpad/refs/heads/main/build/icon.png">
   <style>
     :root {
       color-scheme: dark;
@@ -409,7 +410,7 @@
       width: min(var(--demo-win-width), calc(100% - 250px));
       height: var(--demo-win-height);
       border-radius: 0 0 20px 20px;
-      background: #000;
+      background: #faf6f0;
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: 0 28px 70px rgba(0, 0, 0, 0.48);
       backdrop-filter: blur(22px) saturate(1.15);
@@ -464,7 +465,7 @@
       border-radius: 6px;
       background: transparent;
       border: none;
-      color: #888888;
+      color: #666666;
       font-size: 11px;
       font-weight: 560;
     }
@@ -476,7 +477,7 @@
     }
 
     .toolbar-btn:hover {
-      background: #2a2a2a;
+      background: #d9d3c6;
       color: #e5e5e5;
     }
 
@@ -484,14 +485,14 @@
       padding: 0 10px;
       height: 26px;
       border-radius: 8px;
-      background: #151516;
-      color: #888888;
+      background: #e5dfd4;
+      color: #666666;
     }
 
     .toolbar-left {
       padding: 1px 6px;
       border-radius: 8px;
-      background: #151516;
+      background: #e5dfd4;
       gap: 6px;
     }
 
@@ -515,7 +516,7 @@
       width: 7px;
       height: 7px;
       border-radius: 50%;
-      background: #aaaaaa;
+      background: #666666;
       transition: width 0.2s ease, height 0.2s ease, border-radius 0.2s ease, background 0.2s ease, box-shadow 0.25s ease, transform 0.2s ease;
     }
 
@@ -564,7 +565,7 @@
     .content-card {
       min-height: 0;
       border-radius: 12px;
-      background: #0f1014;
+      background: #f5f0e8;
       border: none;
       overflow: hidden;
       display: flex;
@@ -600,7 +601,7 @@
       line-height: 1.1;
       letter-spacing: -0.01em;
       font-weight: 700;
-      color: #ffffff;
+      color: #3d3629;
     }
 
     .surface-card h2 {
@@ -608,7 +609,7 @@
       font-size: 18px;
       line-height: 1.1;
       font-weight: 700;
-      color: #ffffff;
+      color: #3d3629;
       letter-spacing: -0.01em;
     }
 
@@ -617,12 +618,12 @@
       font-size: 14px;
       line-height: 1.2;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.86);
+      color: #3d3629;
     }
 
     .surface-card p {
       margin: 0 0 12px;
-      color: rgba(255, 255, 255, 0.75);
+      color: #3d3629;
       font-size: 13px;
       line-height: 1.7;
     }
@@ -631,19 +632,19 @@
       margin: 16px 0;
       padding-left: 12px;
       border-left: 3px solid var(--green);
-      color: rgba(255, 255, 255, 0.55);
+      color: #666;
     }
 
     .surface-card ul {
       margin: 4px 0 0;
       padding-left: 20px;
-      color: rgba(255, 255, 255, 0.75);
+      color: #3d3629;
     }
 
     .surface-card ol {
       margin: 4px 0 8px;
       padding-left: 22px;
-      color: rgba(255, 255, 255, 0.75);
+      color: #3d3629;
     }
 
     .surface-card li {
@@ -656,7 +657,7 @@
       padding: 2px 6px;
       border-radius: 4px;
       background: rgba(255, 255, 255, 0.06);
-      color: #ff9cca;
+      color: #dc2626;
       font-size: 12px;
       font-family: "SF Mono", Consolas, monospace;
     }
@@ -685,7 +686,7 @@
 
     .check-box.done {
       background: var(--green);
-      border-color: var(--green);
+      border-color: var(--accent);
       box-shadow: 0 0 8px rgba(104, 204, 138, 0.22);
     }
 
@@ -729,7 +730,7 @@
       min-height: 35px;
       padding: 6px 10px 5px;
       border-top: none;
-      background: #1a1a1a;
+      background: #ede8df;
       border-radius: 0 0 8px 8px;
       flex-wrap: nowrap;
       overflow: hidden;
@@ -760,15 +761,15 @@
       border-radius: 5px;
       background: none;
       border: none;
-      color: #888888;
+      color: #666666;
       font-size: 9px;
       font-weight: 600;
       flex: 0 0 auto;
     }
 
     .format-key.active {
-      background: #2a2a2a;
-      color: var(--green);
+      background: #d9d3c6;
+      color: var(--accent);
       box-shadow: 0 0 6px rgba(74, 222, 128, 0.18);
     }
 
@@ -790,7 +791,7 @@
       align-items: center;
       gap: 7px;
       border-radius: 0;
-      color: var(--green);
+      color: var(--accent);
       font-size: 10px;
       background: none;
       border: none;
@@ -1047,7 +1048,7 @@
 
     .check.done {
       background: var(--green);
-      border-color: var(--green);
+      border-color: var(--accent);
       box-shadow: 0 0 10px rgba(104, 204, 138, 0.22);
     }
 
@@ -1073,7 +1074,7 @@
       border-radius: 14px;
       margin-bottom: 16px;
       background: var(--green-soft);
-      color: var(--green);
+      color: var(--accent);
     }
 
     .feature-icon svg {
@@ -1242,7 +1243,8 @@
   <div class="page">
     <nav class="nav">
       <a href="#top" class="brand">
-        <img src="https://github.com/TIUCSIB/notchpad/blob/main/build/icon.png" alt="Notchpad logo">
+        <img src="https://raw.githubusercontent.com/TIUCSIB/notchpad/refs/heads/main/build/icon.png"
+          alt="Notchpad logo">
         <span>Notchpad</span>
       </a>
       <div class="nav-links">
@@ -1376,11 +1378,11 @@
                               <line x1="15" y1="4" x2="9" y2="20" />
                             </svg>
                           </span>
-                          <span class="format-key" aria-hidden="true" title="删除线">
-                            <svg viewBox="0 0 24 24">
-                              <line x1="4" y1="12" x2="20" y2="12" />
-                              <path d="M7 6c1.2-1.3 2.9-2 5-2 3.3 0 5 1.5 5 4" />
-                              <path d="M17 18c-1.2 1.3-2.9 2-5 2-3.3 0-5-1.5-5-4" />
+                          <span class="format-key" aria-hidden="true" title="删除�?>
+                            <svg viewBox=" 0 0 24 24">
+                            <line x1="4" y1="12" x2="20" y2="12" />
+                            <path d="M7 6c1.2-1.3 2.9-2 5-2 3.3 0 5 1.5 5 4" />
+                            <path d="M17 18c-1.2 1.3-2.9 2-5 2-3.3 0-5-1.5-5-4" />
                             </svg>
                           </span>
                           <span class="format-key" aria-hidden="true" title="代码"><svg viewBox="0 0 24 24">
@@ -1421,9 +1423,10 @@
                               <circle cx="8.5" cy="8.5" r="1.5" />
                               <polyline points="21 15 16 10 5 21" />
                             </svg></span>
-                          <span class="format-key" aria-hidden="true" title="分割线"><svg viewBox="0 0 24 24">
-                              <line x1="2" y1="12" x2="22" y2="12" />
-                            </svg></span>
+                          <span class="format-key" aria-hidden="true" title="分割�?><svg viewBox=" 0 0 24 24">
+                            <line x1="2" y1="12" x2="22" y2="12" />
+                            </svg>
+                          </span>
                         </div>
                         <div class="footer-group">
                           <span class="format-key">16px</span>
