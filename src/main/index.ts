@@ -1,185 +1,60 @@
-import {
-  app,
-  BrowserWindow,
-  ipcMain,
-  screen,
-  Tray,
-  Menu,
-  nativeImage,
-  shell,
-  globalShortcut
-} from 'electron'
+import { app, BrowserWindow, screen, Tray, Menu, nativeImage, shell, globalShortcut } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import fs from 'fs'
-import initSqlJs, { Database } from 'sql.js'
+import { initDatabase, migrateDatabase, queryAll, queryOne, saveDatabase, closeDatabase, getDb } from './db'
+import { exitNotchMode, showInNotch, startNotchPolling, stopNotchPolling, pauseUntil, setWakeMode } from './notch'
+import { registerIpcHandlers } from './ipc'
 
 const WIN_WIDTH = 523
 const WIN_HEIGHT = 364
-const NOTCH_PILL_WIDTH = 64
-const NOTCH_PILL_HEIGHT = 8
-const NOTCH_PILL_TOP = 4
 
-let isNotched = false
 let isQuitting = false
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
-let db: Database | null = null
-let dbPath: string | null = null
-let notchPollTimer: ReturnType<typeof setInterval> | null = null
-let lastNotchChange = 0
-let wakeMode = 'hover'
-let pillHovering = false
-const NOTCH_COOLDOWN = 350
-let shortcutPauseUntil = 0
 
-async function initDatabase(): Promise<Database> {
-  const SQL = await initSqlJs()
-  dbPath = join(app.getPath('userData'), 'memo.db')
-
-  if (fs.existsSync(dbPath)) {
-    const buffer = fs.readFileSync(dbPath)
-    db = new SQL.Database(buffer)
-  } else {
-    db = new SQL.Database()
-  }
-
-  db.run(`CREATE TABLE IF NOT EXISTS pages (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL DEFAULT '',
-    content TEXT NOT NULL DEFAULT '',
-    sort_order INTEGER DEFAULT 0,
-    created_at TEXT DEFAULT (datetime('now','localtime')),
-    updated_at TEXT DEFAULT (datetime('now','localtime'))
-  )`)
-
-  db.run('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)')
-  saveDatabase()
-  return db
-}
-
-function migrateDatabase(): void {
-  try {
-    db!.run('ALTER TABLE pages ADD COLUMN pinned INTEGER DEFAULT 0')
-  } catch (_e) {
-    /* column exists */
-  }
-  saveDatabase()
-}
-
-function saveDatabase(): void {
-  if (!db || !dbPath) return
-  const data = db.export()
-  fs.writeFileSync(dbPath, Buffer.from(data))
-}
-
-function queryAll(sql: string, params: unknown[] = []): Record<string, unknown>[] {
-  if (!db) return []
-  const stmt = db.prepare(sql)
-  if (params.length) stmt.bind(params as initSqlJs.BindParams)
-  const rows: Record<string, unknown>[] = []
-  while (stmt.step()) rows.push(stmt.getAsObject())
-  stmt.free()
-  return rows
-}
-
-function queryOne(sql: string, params: unknown[] = []): Record<string, unknown> | null {
-  return queryAll(sql, params)[0] || null
-}
+function getMainWindow() { return mainWindow }
 
 function createTrayIcon(): Electron.NativeImage {
   const paths = [
     join(__dirname, '../../resources/tray-icon.png'),
     join(__dirname, '../../resources/icon.png'),
-    join(
-      app.isPackaged ? process.resourcesPath : join(__dirname, '../..'),
-      'resources/tray-icon.png'
-    ),
+    join(app.isPackaged ? process.resourcesPath : join(__dirname, '../..'), 'resources/tray-icon.png'),
     join(app.isPackaged ? process.resourcesPath : join(__dirname, '../..'), 'resources/icon.png')
   ]
   for (const p of paths) {
     if (fs.existsSync(p)) {
       const img = nativeImage.createFromPath(p)
-      if (img.isEmpty()) continue
-      return img
+      if (!img.isEmpty()) return img
     }
   }
   return nativeImage.createEmpty()
 }
 
-function showInNotch(): void {
-  if (!mainWindow) return
-  isNotched = true
-  mainWindow.setIgnoreMouseEvents(true)
-  mainWindow.webContents.send('notch-changed', true)
-  // Hide first to prevent flash, then show after renderer updates
-  mainWindow.hide()
-  mainWindow.setOpacity(0)
-  mainWindow.show()
-  setTimeout(() => {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.setOpacity(1)
-      mainWindow.focus()
-    }
-  }, 50)
-}
-
 function createWindow(): void {
   const workArea = screen.getPrimaryDisplay().workArea
-  const x = Math.round(workArea.x + (workArea.width - WIN_WIDTH) / 2)
-  const y = workArea.y
-
   mainWindow = new BrowserWindow({
-    x,
-    y,
+    x: Math.round(workArea.x + (workArea.width - WIN_WIDTH) / 2),
+    y: workArea.y,
     width: WIN_WIDTH,
     height: WIN_HEIGHT,
-    frame: false,
-    transparent: true,
-    resizable: false,
-    alwaysOnTop: true,
-    skipTaskbar: true,
-    hasShadow: false,
-    show: false,
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      devTools: is.dev
-    }
+    frame: false, transparent: true, resizable: false,
+    alwaysOnTop: true, skipTaskbar: true, hasShadow: false, show: false,
+    webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: false, devTools: is.dev }
   })
 
-  mainWindow.on('ready-to-show', () => {
-    showInNotch()
-    startNotchPolling()
-  })
-
-  mainWindow.on('close', (e) => {
-    if (!isQuitting) {
-      e.preventDefault()
-      mainWindow?.hide()
-    }
-  })
-
+  mainWindow.on('ready-to-show', () => { showInNotch(mainWindow); startNotchPolling(mainWindow) })
+  mainWindow.on('close', (e) => { if (!isQuitting) { e.preventDefault(); mainWindow?.hide() } })
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+  mainWindow.webContents.on('will-navigate', (e, url) => { e.preventDefault(); shell.openExternal(url) })
 
-  mainWindow.webContents.on('will-navigate', (e, url) => {
-    e.preventDefault()
-    shell.openExternal(url)
-  })
-
-  // F12 to toggle DevTools (dev mode only)
   if (is.dev) {
     mainWindow.webContents.on('before-input-event', (_event, input) => {
-      if (input.key === 'F12' && input.type === 'keyDown') {
-        mainWindow?.webContents.toggleDevTools()
-      }
+      if (input.key === 'F12' && input.type === 'keyDown') mainWindow?.webContents.toggleDevTools()
     })
   }
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url)
-    return { action: 'deny' }
-  })
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: 'deny' } })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
@@ -188,203 +63,34 @@ function createWindow(): void {
   }
 }
 
-// --- Notch mode ---
-function enterNotchMode(): void {
-  if (!mainWindow || isNotched) return
-  isNotched = true
-  pillHovering = false
-  mainWindow.setIgnoreMouseEvents(true)
-  mainWindow.webContents.send('notch-changed', true)
-}
-
-function exitNotchMode(): void {
-  if (!mainWindow || !isNotched) return
-  isNotched = false
-  mainWindow.setIgnoreMouseEvents(false)
-  mainWindow.webContents.send('notch-changed', false)
-}
-
-function startNotchPolling(): void {
-  if (notchPollTimer) return
-  notchPollTimer = setInterval(() => {
-    if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.isVisible()) return
-    if (Date.now() - lastNotchChange < NOTCH_COOLDOWN) return
-
-    const cursor = screen.getCursorScreenPoint()
-    const bounds = mainWindow!.getBounds()
-
-    if (isNotched) {
-      const pillLeft = bounds.x + (bounds.width - NOTCH_PILL_WIDTH) / 2
-      const pillRight = pillLeft + NOTCH_PILL_WIDTH
-      const pillTop = bounds.y + NOTCH_PILL_TOP
-      const pillBottom = pillTop + NOTCH_PILL_HEIGHT
-      const onPill =
-        cursor.x >= pillLeft &&
-        cursor.x <= pillRight &&
-        cursor.y >= pillTop &&
-        cursor.y <= pillBottom
-
-      if (wakeMode === 'click') {
-        if (onPill && !pillHovering) {
-          pillHovering = true
-          mainWindow.setIgnoreMouseEvents(false)
-        } else if (!onPill && pillHovering) {
-          pillHovering = false
-          mainWindow.setIgnoreMouseEvents(true)
-        }
-      } else {
-        if (onPill) {
-          lastNotchChange = Date.now()
-          exitNotchMode()
-        }
-      }
-    } else {
-      if (Date.now() < shortcutPauseUntil) return
-      const margin = 40
-      if (
-        cursor.x < bounds.x - margin ||
-        cursor.x > bounds.x + bounds.width + margin ||
-        cursor.y < bounds.y - margin ||
-        cursor.y > bounds.y + bounds.height + margin
-      ) {
-        lastNotchChange = Date.now()
-        enterNotchMode()
-      }
-    }
-  }, 50)
-}
-
-// IPC Handlers
-ipcMain.handle('get-pages', () => {
-  return queryAll('SELECT * FROM pages ORDER BY pinned DESC, sort_order ASC, created_at ASC')
-})
-
-ipcMain.handle('toggle-pin-page', (_: Electron.IpcMainInvokeEvent, id: number) => {
-  if (!db) return []
-  const row = queryOne('SELECT pinned FROM pages WHERE id = ?', [id])
-  const newPinned = row ? (row.pinned ? 0 : 1) : 1
-  db.run('UPDATE pages SET pinned = ? WHERE id = ?', [newPinned, id])
-  // Recalculate sort_order so pinned pages come first
-  const all = queryAll('SELECT id FROM pages ORDER BY pinned DESC, sort_order ASC, created_at ASC')
-  all.forEach((r, i) => {
-    db!.run('UPDATE pages SET sort_order = ? WHERE id = ?', [i, r.id])
-  })
-  saveDatabase()
-  return queryAll('SELECT * FROM pages ORDER BY pinned DESC, sort_order ASC, created_at ASC')
-})
-
-ipcMain.handle('add-page', () => {
-  const maxOrder = queryOne('SELECT MAX(sort_order) as m FROM pages')
-  const order = maxOrder && maxOrder.m !== null ? (maxOrder.m as number) + 1 : 0
-  db!.run('INSERT INTO pages (title, content, sort_order) VALUES (?, ?, ?)', ['', '', order])
-  saveDatabase()
-  const maxId = queryOne('SELECT MAX(id) as m FROM pages')
-  return queryOne('SELECT * FROM pages WHERE id = ?', [maxId?.m])
-})
-
-ipcMain.handle('delete-page', (_: Electron.IpcMainInvokeEvent, id: number) => {
-  db!.run('DELETE FROM pages WHERE id = ?', [id])
-  saveDatabase()
-})
-
-ipcMain.handle(
-  'update-page',
-  (_: Electron.IpcMainInvokeEvent, id: number, title: string, content: string) => {
-    db!.run('UPDATE pages SET title = ?, content = ?, updated_at = datetime(?, ?) WHERE id = ?', [
-      title,
-      content,
-      'now',
-      'localtime',
-      id
-    ])
-    saveDatabase()
-    return queryOne('SELECT * FROM pages WHERE id = ?', [id])
-  }
-)
-
-ipcMain.handle('reorder-pages', (_: Electron.IpcMainInvokeEvent, ids: number[]) => {
-  ids.forEach((id, i) => {
-    db!.run('UPDATE pages SET sort_order = ? WHERE id = ?', [i, id])
-  })
-  saveDatabase()
-})
-
-ipcMain.on('close-window', () => {
-  mainWindow?.close()
-})
-
-ipcMain.handle('enter-notch', () => {
-  enterNotchMode()
-})
-
-ipcMain.handle('exit-notch', () => {
-  exitNotchMode()
-})
-ipcMain.handle('get-notch-state', () => {
-  return isNotched
-})
-
-ipcMain.handle('get-settings', () => {
-  if (!db) return {}
-  const rows = db.exec('SELECT key, value FROM settings')
-  if (!rows.length) return {}
-  const result: Record<string, string> = {}
-  for (const row of rows[0].values) {
-    result[row[0] as string] = row[1] as string
-  }
-  return result
-})
-
-ipcMain.handle('set-setting', (_: Electron.IpcMainInvokeEvent, key: string, value: string) => {
-  if (!db) return
-  db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [key, value])
-  saveDatabase()
-  if (key === 'autoStart') {
-    app.setLoginItemSettings({ openAtLogin: value === 'true', path: app.getPath('exe') })
-  }
-  if (key === 'wakeMode') {
-    wakeMode = value
-    pillHovering = false
-    if (isNotched && mainWindow) {
-      mainWindow.setIgnoreMouseEvents(true)
-    }
-  }
-})
-
-ipcMain.on('open-external', (_: Electron.IpcMainEvent, url: string) => {
-  shell.openExternal(url)
-})
+// Register IPC handlers
+registerIpcHandlers(getMainWindow)
 
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.notchpad.app')
-
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
-  })
+  app.on('browser-window-created', (_, window) => { optimizer.watchWindowShortcuts(window) })
 
   await initDatabase()
   migrateDatabase()
 
-  // Register global shortcut Ctrl+Alt+Z to expand from notch
   const shortcutRegistered = globalShortcut.register('CommandOrControl+Alt+Z', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (!mainWindow.isVisible()) mainWindow.show()
       if (!mainWindow.isFocused()) mainWindow.focus()
-      if (isNotched) exitNotchMode()
-      shortcutPauseUntil = Date.now() + 1500
+      if (mainWindow) exitNotchMode(mainWindow)
+      pauseUntil(Date.now() + 1500)
     }
   })
-  if (!shortcutRegistered) {
-    console.error('[Notchpad] Failed to register global shortcut Ctrl+Alt+Z')
+  if (!shortcutRegistered) console.error('[Notchpad] Failed to register global shortcut Ctrl+Alt+Z')
+
+  const savedWakeMode = queryOne("SELECT value FROM settings WHERE key = 'wakeMode'")
+  if (savedWakeMode) {
+    setWakeMode(savedWakeMode.value as string)
   }
 
-  // Load wake mode from settings
-  const savedWakeMode = queryOne("SELECT value FROM settings WHERE key = 'wakeMode'")
-  if (savedWakeMode) wakeMode = savedWakeMode.value as string
-
   const allPages = queryAll('SELECT * FROM pages')
-  const nonEmpty = allPages.filter((p) => p.title || p.content || p.pinned)
-  if (nonEmpty.length === 0) {
+  if (allPages.filter((p) => p.title || p.content || p.pinned).length === 0) {
+    const db = getDb()
     db!.run('DELETE FROM pages')
     db!.run('INSERT INTO pages (title, content, sort_order) VALUES (?, ?, ?)', ['', '', 0])
     saveDatabase()
@@ -394,39 +100,18 @@ app.whenReady().then(async () => {
 
   tray = new Tray(createTrayIcon())
   tray.setToolTip('Notchpad')
-  tray.setContextMenu(
-    Menu.buildFromTemplate([
-      {
-        label: '\u663e\u793a\u7a97\u53e3',
-        click: () => {
-          showInNotch()
-        }
-      },
-      { type: 'separator' },
-      {
-        label: '\u9000\u51fa',
-        click: () => {
-          isQuitting = true
-          app.quit()
-        }
-      }
-    ])
-  )
-  tray.on('double-click', () => {
-    showInNotch()
-  })
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: '显示窗口', click: () => showInNotch(mainWindow) },
+    { type: 'separator' },
+    { label: '退出', click: () => { isQuitting = true; app.quit() } }
+  ]))
+  tray.on('double-click', () => { showInNotch(mainWindow) })
 })
 
-app.on('window-all-closed', () => {
-  app.quit()
-})
+app.on('window-all-closed', () => { app.quit() })
 
 app.on('before-quit', () => {
   globalShortcut.unregisterAll()
-  if (notchPollTimer) {
-    clearInterval(notchPollTimer)
-    notchPollTimer = null
-  }
-  saveDatabase()
-  db?.close()
+  stopNotchPolling()
+  closeDatabase()
 })

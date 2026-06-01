@@ -14,6 +14,7 @@ interface API {
   setSetting: (key: string, value: string) => Promise<void>
   closeWindow: () => void
   openExternal: (url: string) => void
+  togglePinPage: (id: number) => Promise<Page[]>
 }
 
 declare global {

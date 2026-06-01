@@ -1,0 +1,327 @@
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--overlay-bg, rgba(0, 0, 0, 0.4));
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 20px;
+  border-radius: 0 0 12px 12px;
+}
+
+.settings-panel {
+  width: 320px;
+  max-height: calc(100vh - 56px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card, #1a1a1c);
+  border: 1px solid var(--border, #2a2a2c);
+  border-radius: 12px;
+  /* box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5); */
+  position: relative;
+  flex-shrink: 0;
+}
+
+.settings-panel-inner {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: calc(100vh - 56px);
+  border-radius: 12px;
+  overflow: visible;
+  position: relative;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border, #2a2a2c);
+  flex-shrink: 0;
+}
+
+.settings-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #e5e5e5);
+}
+
+.settings-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background 0.15s,
+    color 0.15s;
+  -webkit-app-region: no-drag;
+}
+
+.settings-close-btn:hover {
+  background: var(--hover-bg, #3a3a3a);
+  color: var(--text-primary, #e5e5e5);
+}
+
+.settings-close-btn:active {
+  background: var(--hover-bg-strong, #4a4a4a);
+}
+
+.settings-body {
+  padding: 8px 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+}
+
+.setting-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--label-color, #aaa);
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.setting-label span {
+  color: var(--text-primary, #e5e5e5);
+}
+
+.setting-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.theme-btn {
+  padding: 4px 10px;
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid var(--border, #2a2a2c);
+  border-radius: 6px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.theme-btn:hover:not(.active) {
+  background: var(--hover-bg, #3a3a3a);
+  color: var(--text-primary, #e5e5e5);
+}
+
+.theme-btn.active {
+  background: var(--accent, #4ade80);
+  color: #1a1a1c;
+  border-color: var(--accent, #4ade80);
+  font-weight: 600;
+}
+
+.color-grid {
+  gap: 6px;
+}
+
+.color-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
+}
+
+.color-dot:hover {
+  transform: scale(1.15);
+}
+
+.color-dot.active {
+  border-color: var(--text-primary, #fff);
+  transform: scale(1.15);
+}
+
+.native-select {
+  min-width: 80px;
+  height: 30px;
+  padding: 0 24px 0 10px;
+  background: var(--bg-toolbar, #151516);
+  border: 1px solid var(--border, #2a2a2c);
+  border-radius: 6px;
+  color: var(--text-primary, #e5e5e5);
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  transition: border-color 0.15s;
+}
+
+.native-select:hover {
+  border-color: var(--border-strong, #3a3a3c);
+}
+
+.native-select option {
+  background: var(--bg-toolbar, #151516);
+  color: var(--text-primary, #e5e5e5);
+}
+
+.toggle-btn {
+  width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--active-bg, #3a3a3c);
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+  padding: 0;
+}
+
+.toggle-btn.active {
+  background: var(--accent, #4ade80);
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+
+.toggle-btn.active .toggle-knob {
+  transform: translateX(16px);
+}
+
+.action-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  background: var(--bg-toolbar, #2a2a2c);
+  border: 1px solid var(--border-strong, #3a3a3c);
+  border-radius: 6px;
+  color: var(--text-primary, #e5e5e5);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.action-btn:hover {
+  background: var(--hover-bg, #3a3a3c);
+}
+
+.action-btn.danger {
+  color: var(--danger-text, #f87171);
+  border-color: var(--danger-hover, #5a2a2a);
+}
+
+.action-btn.danger:hover {
+  background: var(--danger-hover, #3a1a1a);
+}
+
+.setting-divider {
+  height: 1px;
+  background: var(--divider, #2a2a2c);
+  margin: 4px 16px;
+}
+
+.shortcuts-section {
+  padding: 4px 16px 8px;
+}
+
+.shortcuts-title {
+  margin-bottom: 6px;
+}
+
+.shortcuts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shortcut-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-secondary, #888);
+}
+
+.shortcut-row kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-family: monospace;
+  background: var(--bg-toolbar, #151516);
+  border: 1px solid var(--border, #2a2a2c);
+  border-radius: 4px;
+  color: var(--text-primary, #e5e5e5);
+}
+
+.saved-toast {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent, #4ade80);
+  color: #1a1a1c;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 12px;
+  border-radius: 20px;
+  pointer-events: none;
+  z-index: 200;
+  white-space: nowrap;
+}
+
+.toast-enter-active {
+  animation: toastIn 0.2s ease;
+}
+
+.toast-leave-active {
+  animation: toastOut 0.15s ease;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translateX(-50%) translateY(4px);
+  }
+}
