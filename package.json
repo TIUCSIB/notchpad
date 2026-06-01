@@ -1,7 +1,7 @@
-{
+﻿{
     "name":  "notchpad",
     "version":  "1.0.0",
-    "description":  "A smart notch-powered floating notes app built with Electron and Vue 3",
+    "description":  "一款刘海风格的桌面笔记应用",
     "main":  "./out/main/index.js",
     "author":  "TIUCSIB",
     "homepage":  "https://github.com/TIUCSIB/notchpad",
