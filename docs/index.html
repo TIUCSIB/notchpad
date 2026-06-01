@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Notchpad，一款贴在屏幕顶部的极简浮动便签应用。快速展开，立即记录，然后安静退场。">
   <title>Notchpad</title>
-  <link rel="icon" type="image/png" href="../build/icon.png">
+  <link rel="icon" type="image/png" href="https://github.com/TIUCSIB/notchpad/blob/main/build/icon.png">
   <style>
     :root {
       color-scheme: dark;
@@ -20,8 +20,7 @@
       --quiet: rgba(245, 245, 247, 0.48);
       --green: #4ade80;
       --green-soft: rgba(74, 222, 128, 0.14);
-      --orange: #fb8b05;
-      --red: #ec2b24;
+      --capsule-orange: rgb(251, 139, 5);
       --demo-win-width: 523px;
       --demo-win-height: 364px;
       --shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
@@ -339,7 +338,7 @@
       justify-content: center;
       gap: 0;
       border-radius: 0 0 12px 12px;
-      background: linear-gradient(180deg, var(--red), #c8221d);
+      background: var(--capsule-orange);
       border: none;
       box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
       z-index: 4;
@@ -391,7 +390,7 @@
       width: 84px;
       height: 18px;
       border-radius: 0 0 12px 12px;
-      background: var(--red);
+      background: var(--capsule-orange);
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -410,7 +409,7 @@
       width: min(var(--demo-win-width), calc(100% - 250px));
       height: var(--demo-win-height);
       border-radius: 0 0 20px 20px;
-      background: #000000;
+      background: #000;
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: 0 28px 70px rgba(0, 0, 0, 0.48);
       backdrop-filter: blur(22px) saturate(1.15);
@@ -1243,7 +1242,7 @@
   <div class="page">
     <nav class="nav">
       <a href="#top" class="brand">
-        <img src="../build/icon.png" alt="Notchpad logo">
+        <img src="https://github.com/TIUCSIB/notchpad/blob/main/build/icon.png" alt="Notchpad logo">
         <span>Notchpad</span>
       </a>
       <div class="nav-links">
