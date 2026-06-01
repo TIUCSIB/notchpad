@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen, Tray, Menu, nativeImage, shell, globalShortcut } from 'electron'
+﻿import { app, BrowserWindow, screen, Tray, Menu, nativeImage, shell, globalShortcut } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import fs from 'fs'
@@ -25,7 +25,7 @@ function createTrayIcon(): Electron.NativeImage {
   for (const p of paths) {
     if (fs.existsSync(p)) {
       const img = nativeImage.createFromPath(p)
-      if (!img.isEmpty()) return img
+      if (!img.isEmpty()) return img.resize({ width: 16, height: 16 })
     }
   }
   return nativeImage.createEmpty()
