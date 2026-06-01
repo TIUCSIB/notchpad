@@ -442,6 +442,12 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       border-bottom: none;
       border-radius: 0;
+      opacity: 0;
+      transition: opacity 280ms ease;
+    }
+
+    .notchpad-surface.open .surface-toolbar {
+      opacity: 1;
     }
 
     .toolbar-left,
@@ -688,7 +694,22 @@
       background: var(--green);
       border-color: var(--green);
       box-shadow: 0 0 8px rgba(104, 204, 138, 0.22);
+      position: relative;
     }
+
+    .check-box.done::after {
+      content: '';
+      position: absolute;
+      left: 4px;
+      top: 1px;
+      width: 5px;
+      height: 9px;
+      border: solid #fff;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg) translateY(-1px);
+    }
+
+
 
     .check-text.done {
       text-decoration: line-through;
@@ -1380,9 +1401,9 @@
                           </span>
                           <span class="format-key" aria-hidden="true" title="Strikethrough">
                             <svg viewBox="0 0 24 24">
-                            <line x1="4" y1="12" x2="20" y2="12" />
-                            <path d="M7 6c1.2-1.3 2.9-2 5-2 3.3 0 5 1.5 5 4" />
-                            <path d="M17 18c-1.2 1.3-2.9 2-5 2-3.3 0-5-1.5-5-4" />
+                              <line x1="4" y1="12" x2="20" y2="12" />
+                              <path d="M7 6c1.2-1.3 2.9-2 5-2 3.3 0 5 1.5 5 4" />
+                              <path d="M17 18c-1.2 1.3-2.9 2-5 2-3.3 0-5-1.5-5-4" />
                             </svg>
                           </span>
                           <span class="format-key" aria-hidden="true" title="代码"><svg viewBox="0 0 24 24">
@@ -1413,18 +1434,15 @@
                               <rect x="3" y="5" width="6" height="6" rx="1" />
                               <path d="M5 8l1.5 1.5L9 6" />
                               <line x1="12" y1="8" x2="21" y2="8" />
+                              <line x1="12" y1="12" x2="21" y2="12" />
+                              <line x1="12" y1="16" x2="21" y2="16" />
                             </svg></span>
                           <span class="format-key" aria-hidden="true" title="链接"><svg viewBox="0 0 24 24">
                               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
                               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
                             </svg></span>
-                          <span class="format-key" aria-hidden="true" title="图片"><svg viewBox="0 0 24 24">
-                              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                              <circle cx="8.5" cy="8.5" r="1.5" />
-                              <polyline points="21 15 16 10 5 21" />
-                            </svg></span>
                           <span class="format-key" aria-hidden="true" title="Horizontal Rule"><svg viewBox="0 0 24 24">
-                            <line x1="2" y1="12" x2="22" y2="12" />
+                              <line x1="2" y1="12" x2="22" y2="12" />
                             </svg>
                           </span>
                         </div>
