@@ -90,14 +90,16 @@ export function usePages(
   }
 
   async function togglePinPage(id: number) {
+    const oldPageId = currentPage()?.id
     const updatedPages = await window.api.togglePinPage(id)
     pages.value = updatedPages
-    const current = currentPage()
-    if (current) {
-      const newIdx = updatedPages.findIndex((p: Page) => p.id === current.id)
-      if (newIdx >= 0) currentIndex.value = newIdx
+    if (oldPageId != null) {
+      const newIdx = updatedPages.findIndex((p: Page) => p.id === oldPageId)
+      if (newIdx >= 0) {
+        currentIndex.value = newIdx
+        editor.value?.commands.setContent(updatedPages[newIdx].content || '', false)
+      }
     } else if (updatedPages.length > 0) {
-      currentIndex.value = 0
       selectPage(0)
     } else {
       currentIndex.value = -1
