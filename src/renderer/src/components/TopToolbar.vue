@@ -1,20 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Minus, Plus, Trash2, Settings } from 'lucide-vue-next'
+import { ref, watch } from 'vue'
+import { Minus, Plus, Trash2, Settings, Star } from 'lucide-vue-next'
 
 interface Page {
   id: number
   title: string
   content: string
   sort_order: number
+  pinned: number
   created_at: string
   updated_at: string
 }
 
-defineProps<{
+const props = defineProps<{
   pages: Page[]
   currentIndex: number
   maxPages: number
+  isNotched: boolean
 }>()
 
 const emit = defineEmits<{
@@ -24,15 +26,24 @@ const emit = defineEmits<{
   (e: 'clear'): void
   (e: 'settings'): void
   (e: 'reorder', fromIndex: number, toIndex: number): void
+  (e: 'togglePin', id: number): void
 }>()
 
+// Close menu when notch collapses
+watch(
+  () => props.isNotched,
+  (v) => {
+    if (v) closeContextMenu()
+  }
+)
+
+// --- Drag state ---
 const dragIndex = ref<number | null>(null)
 const dragOverIndex = ref<number | null>(null)
 
 function onDragStart(e: DragEvent, index: number) {
   dragIndex.value = index
   e.dataTransfer!.effectAllowed = 'move'
-  // Use a transparent drag image
   const img = document.createElement('div')
   img.style.opacity = '0'
   document.body.appendChild(img)
@@ -41,6 +52,14 @@ function onDragStart(e: DragEvent, index: number) {
 }
 
 function onDragOver(e: DragEvent, index: number) {
+  if (dragIndex.value !== null) {
+    const srcPinned = props.pages[dragIndex.value]?.pinned
+    const dstPinned = props.pages[index]?.pinned
+    if (srcPinned !== dstPinned) {
+      e.dataTransfer!.dropEffect = 'none'
+      return
+    }
+  }
   e.preventDefault()
   e.dataTransfer!.dropEffect = 'move'
   dragOverIndex.value = index
@@ -66,6 +85,59 @@ function onDrop(e: DragEvent, index: number) {
   dragIndex.value = null
   dragOverIndex.value = null
 }
+
+// --- Long press ---
+let longPressTimer: ReturnType<typeof setTimeout> | null = null
+const contextMenuVisible = ref(false)
+const contextMenuPageId = ref<number | null>(null)
+const contextMenuX = ref(0)
+const contextMenuY = ref(0)
+
+function onPointerDown(e: PointerEvent, index: number) {
+  if (e.button !== 0) return
+  const target = e.currentTarget as HTMLElement
+  target.setPointerCapture(e.pointerId)
+  longPressTimer = setTimeout(() => {
+    longPressTimer = null
+    const rect = target.getBoundingClientRect()
+    contextMenuX.value = rect.left + rect.width / 2
+    contextMenuY.value = rect.top - 16
+    contextMenuPageId.value = props.pages[index].id
+    contextMenuVisible.value = true
+  }, 500)
+}
+
+function onPointerUp(_e: PointerEvent, index: number) {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
+    emit('select', index)
+  }
+}
+
+function onPointerCancel() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
+  }
+}
+
+function handleTogglePin() {
+  if (contextMenuPageId.value !== null) {
+    emit('togglePin', contextMenuPageId.value)
+  }
+  closeContextMenu()
+}
+
+function closeContextMenu() {
+  contextMenuVisible.value = false
+  contextMenuPageId.value = null
+}
+
+function isPagePinned(pageId: number): boolean {
+  const page = props.pages.find((p) => p.id === pageId)
+  return page ? !!page.pinned : false
+}
 </script>
 
 <template>
@@ -75,23 +147,15 @@ function onDrop(e: DragEvent, index: number) {
         <Minus :size="16" :stroke-width="2.5" />
       </button>
       <div class="page-dots">
-        <div
-          v-for="(page, i) in pages"
-          :key="page.id"
-          class="page-dot-wrap"
-          :class="{
-            active: i === currentIndex,
-            'drag-over-left': dragOverIndex === i && dragIndex !== null && dragIndex > i,
-            'drag-over-right': dragOverIndex === i && dragIndex !== null && dragIndex < i
-          }"
-          draggable="true"
-          @dragstart="onDragStart($event, i)"
-          @dragover="onDragOver($event, i)"
-          @dragend="onDragEnd"
-          @drop="onDrop($event, i)"
-          @click="emit('select', i)"
-        >
+        <div v-for="(page, i) in pages" :key="page.id" class="page-dot-wrap" :class="{
+          active: i === currentIndex,
+          'drag-over-left': dragOverIndex === i && dragIndex !== null && dragIndex > i,
+          'drag-over-right': dragOverIndex === i && dragIndex !== null && dragIndex < i
+        }" draggable="true" @dragstart="onDragStart($event, i)" @dragover="onDragOver($event, i)"
+          @dragend="onDragEnd" @drop="onDrop($event, i)" @pointerdown="onPointerDown($event, i)"
+          @pointerup="onPointerUp($event, i)" @pointercancel="onPointerCancel" @pointerleave="onPointerCancel">
           <div class="page-dot" />
+          <Star v-if="page.pinned" :size="8" :stroke-width="2" class="pin-star" />
         </div>
       </div>
       <button class="tool-btn" :disabled="pages.length >= maxPages" @click="emit('add')">
@@ -106,6 +170,18 @@ function onDrop(e: DragEvent, index: number) {
       <Settings :size="16" :stroke-width="2.5" />
     </button>
   </div>
+
+  <!-- Pin context menu -->
+  <Teleport to="body">
+    <div v-if="contextMenuVisible" class="pin-menu-overlay" @click="closeContextMenu"
+      @contextmenu.prevent="closeContextMenu">
+      <div class="pin-menu" :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
+        @click.stop="handleTogglePin">
+        <Star :size="12" :stroke-width="2.5"
+          :class="isPagePinned(contextMenuPageId!) ? 'menu-star-pinned' : 'menu-star-unpinned'" />
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -222,5 +298,53 @@ function onDrop(e: DragEvent, index: number) {
   border-radius: 4px;
   background: var(--accent, #4ade80);
   box-shadow: 0 0 8px rgba(74, 222, 128, 0.3);
+}
+
+.pin-star {
+  position: absolute;
+  top: -6px;
+  right: -2px;
+  z-index: 2;
+  pointer-events: none;
+  color: #fbbf24;
+  fill: #fbbf24;
+}
+</style>
+
+<style>
+.pin-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+}
+
+.pin-menu {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--bg-card, #1a1a1c);
+  border: 1px solid var(--border, #2a2a2c);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  transform: translate(-50%, -100%);
+  transition: background 0.12s;
+}
+
+.pin-menu:hover {
+  background: var(--hover-bg, #3a3a3a);
+}
+
+.menu-star-pinned {
+  color: #fbbf24;
+  fill: #fbbf24;
+}
+
+.menu-star-unpinned {
+  color: var(--text-secondary, #888);
+  fill: none;
 }
 </style>

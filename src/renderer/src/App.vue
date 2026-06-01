@@ -36,6 +36,7 @@ interface Page {
   title: string
   content: string
   sort_order: number
+  pinned: number
   created_at: string
   updated_at: string
 }
@@ -161,9 +162,9 @@ watch(isNotched, (notched) => {
 
 const notchColor = computed(() => {
   const n = pages.value.length
-  if (n === 0) return 'rgba(102,102,102,0.9)'
-  if (n >= 3) return 'rgba(251,113,133,0.9)'
-  return 'rgba(253,224,71,0.9)'
+  if (n === 0) return 'rgba(93,190,138,1)'
+  if (n >= 3) return 'rgba(236,43,36,1)'
+  return 'rgba(251,139,5,1)'
 })
 
 const panelBgColor = computed(() => {
@@ -465,6 +466,22 @@ async function reorderPages(fromIndex: number, toIndex: number) {
   await window.api.reorderPages(arr.map((p) => p.id))
 }
 
+async function togglePinPage(id: number) {
+  const updatedPages = await window.api.togglePinPage(id)
+  pages.value = updatedPages
+  const current = currentPage()
+  if (current) {
+    const newIdx = updatedPages.findIndex((p) => p.id === current.id)
+    if (newIdx >= 0) currentIndex.value = newIdx
+  } else if (updatedPages.length > 0) {
+    currentIndex.value = 0
+    selectPage(0)
+  } else {
+    currentIndex.value = -1
+    editor.value?.commands.setContent('')
+  }
+}
+
 function handlePillClick() {
   if (appSettings.value.wakeMode === 'click') {
     window.api.exitNotch()
@@ -602,9 +619,9 @@ onBeforeUnmount(() => {
       :style="{ pointerEvents: isNotched && appSettings.wakeMode !== 'click' ? 'none' : 'auto' }"
       @mouseenter="pillHovered = true" @mouseleave="pillHovered = false" @click="handlePillClick">
       <div v-show="!isNotched" class="panel">
-        <TopToolbar :pages="pages" :current-index="currentIndex" :max-pages="MAX_PAGES" @select="selectPage"
+        <TopToolbar :pages="pages" :current-index="currentIndex" :max-pages="MAX_PAGES" :is-notched="isNotched" @select="selectPage"
           @add="addPage" @delete="deletePage" @clear="clearCurrentPage" @settings="settingsVisible = true"
-          @reorder="reorderPages" />
+          @reorder="reorderPages" @toggle-pin="togglePinPage" />
 
         <div v-if="currentIndex >= 0" class="editor-area">
           <div class="content-card">

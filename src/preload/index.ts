@@ -8,6 +8,7 @@ const api = {
   updatePage: (id: number, title: string, content: string): Promise<Page> =>
     ipcRenderer.invoke('update-page', id, title, content),
   reorderPages: (ids: number[]): Promise<void> => ipcRenderer.invoke('reorder-pages', ids),
+  togglePinPage: (id: number): Promise<Page[]> => ipcRenderer.invoke('toggle-pin-page', id),
   enterNotch: (): Promise<void> => ipcRenderer.invoke('enter-notch'),
   exitNotch: (): Promise<void> => ipcRenderer.invoke('exit-notch'),
   onNotchChange: (cb: (notched: boolean) => void): void => {
@@ -29,6 +30,7 @@ export interface Page {
   title: string
   content: string
   sort_order: number
+  pinned: number
   created_at: string
   updated_at: string
 }

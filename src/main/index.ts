@@ -48,6 +48,10 @@ async function initDatabase(): Promise<Database> {
   return db
 }
 
+function migrateDatabase(): void {
+  try { db!.run('ALTER TABLE pages ADD COLUMN pinned INTEGER DEFAULT 0') } catch (_e) { /* column exists */ }
+}
+
 function saveDatabase(): void {
   if (!db || !dbPath) return
   const data = db.export()
@@ -69,7 +73,6 @@ function queryOne(sql: string, params: unknown[] = []): Record<string, unknown> 
 }
 
 function createTrayIcon(): Electron.NativeImage {
-  // Try tray-icon.png first, then icon.png
   const paths = [
     join(__dirname, '../../resources/tray-icon.png'),
     join(__dirname, '../../resources/icon.png'),
@@ -86,8 +89,6 @@ function createTrayIcon(): Electron.NativeImage {
   return nativeImage.createEmpty()
 }
 
-// Force notch state in renderer before showing window
-// Show window directly — renderer already defaults to notch state
 function showInNotch(): void {
   if (!mainWindow) return
   isNotched = true
@@ -95,6 +96,7 @@ function showInNotch(): void {
   mainWindow.show()
   mainWindow.focus()
 }
+
 function createWindow(): void {
   const workArea = screen.getPrimaryDisplay().workArea
   const x = Math.round(workArea.x + (workArea.width - WIN_WIDTH) / 2)
@@ -172,7 +174,7 @@ function startNotchPolling(): void {
     if (Date.now() - lastNotchChange < NOTCH_COOLDOWN) return
 
     const cursor = screen.getCursorScreenPoint()
-    const bounds = mainWindow.getBounds()
+    const bounds = mainWindow!.getBounds()
 
     if (isNotched) {
       const pillLeft = bounds.x + (bounds.width - NOTCH_PILL_WIDTH) / 2
@@ -200,7 +202,6 @@ function startNotchPolling(): void {
         }
       }
     } else {
-      // Skip auto-collapse right after shortcut expand
       if (Date.now() < shortcutPauseUntil) return
       const margin = 40
       if (
@@ -218,7 +219,19 @@ function startNotchPolling(): void {
 
 // IPC Handlers
 ipcMain.handle('get-pages', () => {
-  return queryAll('SELECT * FROM pages ORDER BY sort_order ASC, created_at ASC')
+  return queryAll('SELECT * FROM pages ORDER BY pinned DESC, sort_order ASC, created_at ASC')
+})
+
+ipcMain.handle('toggle-pin-page', (_: Electron.IpcMainInvokeEvent, id: number) => {
+  if (!db) return []
+  const row = queryOne('SELECT pinned FROM pages WHERE id = ?', [id])
+  const newPinned = row ? (row.pinned ? 0 : 1) : 1
+  db.run('UPDATE pages SET pinned = ? WHERE id = ?', [newPinned, id])
+  // Recalculate sort_order so pinned pages come first
+  const all = queryAll('SELECT id FROM pages ORDER BY pinned DESC, sort_order ASC, created_at ASC')
+  all.forEach((r, i) => { db!.run('UPDATE pages SET sort_order = ? WHERE id = ?', [i, r.id]) })
+  saveDatabase()
+  return queryAll('SELECT * FROM pages ORDER BY pinned DESC, sort_order ASC, created_at ASC')
 })
 
 ipcMain.handle('add-page', () => {
@@ -311,8 +324,9 @@ app.whenReady().then(async () => {
   })
 
   await initDatabase()
+  migrateDatabase()
 
-  // Register global shortcut Ctrl+Shift+Z to expand from notch
+  // Register global shortcut Ctrl+Alt+Z to expand from notch
   const shortcutRegistered = globalShortcut.register('CommandOrControl+Alt+Z', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (!mainWindow.isVisible()) mainWindow.show()
@@ -322,7 +336,7 @@ app.whenReady().then(async () => {
     }
   })
   if (!shortcutRegistered) {
-    console.error('[Notchpad] Failed to register global shortcut Ctrl+Shift+Z')
+    console.error('[Notchpad] Failed to register global shortcut Ctrl+Alt+Z')
   }
 
   // Load wake mode from settings
