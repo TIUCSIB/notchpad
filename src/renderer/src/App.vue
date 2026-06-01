@@ -49,7 +49,16 @@ interface FormatBtn {
 }
 
 const MAX_PAGES = 10
-const fontOptions = ['默认', '宋体', '黑体', '楷体', '微软雅黑', 'Arial', 'Georgia', 'Courier New']
+const fontOptions = [
+  'Microsoft YaHei',
+  'SimSun',
+  'SimHei',
+  'KaiTi',
+  'FangSong',
+  'Arial',
+  'Georgia',
+  'Courier New'
+]
 const fontSizeOptions = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px']
 const colorOptions = [
   '#e5e5e5',
@@ -74,6 +83,7 @@ const highlightColors = [
 ]
 
 const isNotched = ref(true)
+const appReady = ref(false)
 const isAnimating = ref(false)
 let animTimer: ReturnType<typeof setTimeout> | null = null
 let collapseColorTimer: ReturnType<typeof setTimeout> | null = null
@@ -178,7 +188,7 @@ const panelAnimate = computed(() => ({
   width: isNotched.value ? (pillHovered.value ? '80px' : '64px') : 'calc(100% - 4px)',
   height: isNotched.value ? (pillHovered.value ? '10px' : '8px') : '100vh',
   top: isNotched.value ? (pillHovered.value ? '3px' : '4px') : '0px',
-  borderRadius: isNotched.value ? '4px' : '0 0 12px 12px',
+  borderRadius: isNotched.value ? '4px' : '0 0 20px 20px',
   backgroundColor: panelBgColor.value
 }))
 
@@ -227,7 +237,7 @@ const editor = useEditor({
   extensions: [
     StarterKit,
     LinkExtension.configure({ openOnClick: false }),
-    Placeholder.configure({ placeholder: '写点什么吧....' }),
+    Placeholder.configure({ placeholder: '写点什么吧...' }),
     TaskList,
     TaskItem.configure({ nested: true }),
     Image,
@@ -498,7 +508,7 @@ function clearFontSize() {
   scheduleSave()
 }
 function setFontFamily(family: string) {
-  if (family === '默认') editor.value?.chain().focus().unsetFontFamily().run()
+  if (family === 'Microsoft YaHei') editor.value?.chain().focus().unsetFontFamily().run()
   else editor.value?.chain().focus().setFontFamily(family).run()
   scheduleSave()
 }
@@ -523,7 +533,7 @@ function currentFontSize(): string {
   return editor.value?.getAttributes('fontSize').fontSize || '14px'
 }
 function currentFontFamily(): string {
-  return editor.value?.getAttributes('textStyle').fontFamily || '默认'
+  return editor.value?.getAttributes('textStyle').fontFamily || 'Microsoft YaHei'
 }
 function currentTextColor(): string {
   return editor.value?.getAttributes('textStyle').color || '#e5e5e5'
@@ -586,6 +596,9 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 onMounted(async () => {
+  requestAnimationFrame(() => {
+    appReady.value = true
+  })
   const saved = await window.api.getSettings()
   if (saved && Object.keys(saved).length) appSettings.value = saved
   loadPages()
@@ -615,13 +628,14 @@ onBeforeUnmount(() => {
         'pill-hovered': pillHovered,
         'click-mode': appSettings.wakeMode === 'click'
       }
-    ]" :animate="panelAnimate" :transition="panelTransition"
-      :style="{ pointerEvents: isNotched && appSettings.wakeMode !== 'click' ? 'none' : 'auto' }"
-      @mouseenter="pillHovered = true" @mouseleave="pillHovered = false" @click="handlePillClick">
-      <div v-show="!isNotched" class="panel">
-        <TopToolbar :pages="pages" :current-index="currentIndex" :max-pages="MAX_PAGES" :is-notched="isNotched" @select="selectPage"
-          @add="addPage" @delete="deletePage" @clear="clearCurrentPage" @settings="settingsVisible = true"
-          @reorder="reorderPages" @toggle-pin="togglePinPage" />
+    ]" :animate="panelAnimate" :transition="panelTransition" :style="{
+        visibility: appReady ? 'visible' : 'hidden',
+        pointerEvents: isNotched && appSettings.wakeMode !== 'click' ? 'none' : 'auto'
+      }" @mouseenter="pillHovered = true" @mouseleave="pillHovered = false" @click="handlePillClick">
+      <div class="panel">
+        <TopToolbar :pages="pages" :current-index="currentIndex" :max-pages="MAX_PAGES" :is-notched="isNotched"
+          @select="selectPage" @add="addPage" @delete="deletePage" @clear="clearCurrentPage"
+          @settings="settingsVisible = true" @reorder="reorderPages" @toggle-pin="togglePinPage" />
 
         <div v-show="currentIndex >= 0" class="editor-area">
           <div class="content-card">
@@ -761,6 +775,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  clip-path: inset(0 round 0 0 20px 20px);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
   color: var(--text-primary, #e5e5e5);
 }
@@ -786,7 +801,7 @@ onBeforeUnmount(() => {
 .content-card {
   flex: 1;
   background: var(--bg-card, #0f1014);
-  border-radius: 8px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   overflow: visible;
@@ -797,7 +812,7 @@ onBeforeUnmount(() => {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 12px 14px;
-  border-radius: 8px 8px 0 0;
+  border-radius: 12px 12px 0 0;
 }
 
 .save-status {
