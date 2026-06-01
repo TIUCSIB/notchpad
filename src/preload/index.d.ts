@@ -1,4 +1,4 @@
-﻿import { ElectronAPI } from '@electron-toolkit/preload'
+import { ElectronAPI } from '@electron-toolkit/preload'
 import { Page } from './index'
 
 interface API {
@@ -14,6 +14,9 @@ interface API {
   getSettings: () => Promise<Record<string, string>>
   setSetting: (key: string, value: string) => Promise<void>
   resetSettings: () => Promise<void>
+  getDbPath: () => Promise<string>
+  chooseDbDir: () => Promise<string | null>
+  relocateDb: (targetDir: string) => Promise<{ ok: boolean; path?: string; error?: string }>
   closeWindow: () => void
   openExternal: (url: string) => void
   togglePinPage: (id: number) => Promise<Page[]>

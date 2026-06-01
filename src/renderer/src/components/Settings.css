@@ -325,3 +325,31 @@
     transform: translateX(-50%) translateY(4px);
   }
 }
+
+/* Database path row */
+.db-path-row {
+  flex-wrap: wrap;
+}
+
+.db-path-control {
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 0;
+}
+
+.db-path-text {
+  font-size: 10px;
+  color: var(--text-secondary, #888);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.db-relocate-msg {
+  padding: 0 16px 4px;
+  font-size: 11px;
+  color: var(--accent, #4ade80);
+}

@@ -1,4 +1,4 @@
-﻿import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 const api = {
@@ -19,6 +19,10 @@ const api = {
   setSetting: (key: string, value: string): Promise<void> =>
     ipcRenderer.invoke('set-setting', key, value),
   resetSettings: (): Promise<void> => ipcRenderer.invoke('reset-settings'),
+  getDbPath: (): Promise<string> => ipcRenderer.invoke('get-db-path'),
+  chooseDbDir: (): Promise<string | null> => ipcRenderer.invoke('choose-db-dir'),
+  relocateDb: (targetDir: string): Promise<{ ok: boolean; path?: string; error?: string }> =>
+    ipcRenderer.invoke('relocate-db', targetDir),
   closeWindow: (): void => {
     ipcRenderer.send('close-window')
   },

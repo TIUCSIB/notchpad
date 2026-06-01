@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import {
   X,
@@ -9,7 +9,8 @@ import {
   Download,
   Upload,
   RotateCcw,
-  MousePointerClick
+  MousePointerClick,
+  FolderOpen
 } from 'lucide-vue-next'
 import { Motion, AnimatePresence } from 'motion-v'
 import { exportAsJson, exportAsMarkdown, importFromJson } from '../utils/dataConverter'
@@ -38,6 +39,11 @@ const accentOptions = [
 
 const fontSizeOptions = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px']
 
+// Database path
+const dbPath = ref('')
+const dbRelocating = ref(false)
+const dbRelocateMsg = ref('')
+
 async function loadSettings() {
   const saved = await window.api.getSettings()
   if (saved && Object.keys(saved).length) {
@@ -46,6 +52,27 @@ async function loadSettings() {
     )
     settings.value = { ...settings.value, ...filtered }
   }
+}
+
+async function loadDbPath() {
+  dbPath.value = await window.api.getDbPath()
+}
+
+async function chooseDbDir() {
+  const dir = await window.api.chooseDbDir()
+  if (!dir) return
+  dbRelocating.value = true
+  dbRelocateMsg.value = ''
+  const result = await window.api.relocateDb(dir)
+  dbRelocating.value = false
+  if (result.ok) {
+    dbPath.value = result.path!
+    dbRelocateMsg.value = '迁移成功'
+    flashSaved()
+  } else {
+    dbRelocateMsg.value = '迁移失败: ' + (result.error || '未知错误')
+  }
+  setTimeout(() => { dbRelocateMsg.value = '' }, 3000)
 }
 
 async function save(key: string, value: string) {
@@ -73,7 +100,10 @@ async function handleReset() {
 
 function onClose() { emit('close') }
 
-onMounted(() => { loadSettings() })
+onMounted(() => {
+  loadSettings()
+  loadDbPath()
+})
 
 onBeforeUnmount(() => { if (savedTimer) clearTimeout(savedTimer) })
 </script>
@@ -158,6 +188,22 @@ onBeforeUnmount(() => { if (savedTimer) clearTimeout(savedTimer) })
                   </button>
                 </div>
               </div>
+
+              <div class="setting-divider" />
+
+              <div class="setting-row db-path-row">
+                <div class="setting-label">
+                  <FolderOpen :size="15" :stroke-width="2.5" />
+                  <span>存储位置</span>
+                </div>
+                <div class="setting-control db-path-control">
+                  <span class="db-path-text" :title="dbPath">{{ dbPath }}</span>
+                  <button class="action-btn" :disabled="dbRelocating" @click="chooseDbDir">
+                    {{ dbRelocating ? '迁移中...' : '更改' }}
+                  </button>
+                </div>
+              </div>
+              <div v-if="dbRelocateMsg" class="db-relocate-msg">{{ dbRelocateMsg }}</div>
 
               <div class="setting-divider" />
 

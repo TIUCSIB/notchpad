@@ -1,5 +1,5 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
-import { queryAll, queryOne, saveDatabase, getDb } from './db'
+import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron'
+import { queryAll, queryOne, saveDatabase, getDb, getDbPath, relocateDatabase } from './db'
 import { enterNotchMode, exitNotchMode, getIsNotched, setWakeMode } from './notch'
 
 export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): void {
@@ -89,5 +89,29 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
     saveDatabase()
     app.setLoginItemSettings({ openAtLogin: false, path: app.getPath('exe') })
   })
+
   ipcMain.on('open-external', (_: Electron.IpcMainEvent, url: string) => { shell.openExternal(url) })
+
+  // --- Database storage path ---
+  ipcMain.handle('get-db-path', () => getDbPath())
+
+  ipcMain.handle('choose-db-dir', async () => {
+    const win = getMainWindow()
+    if (!win) return null
+    const result = await dialog.showOpenDialog(win, {
+      title: '选择数据库存储目录',
+      properties: ['openDirectory', 'createDirectory']
+    })
+    return result.canceled ? null : result.filePaths[0]
+  })
+
+  ipcMain.handle('relocate-db', async (_: Electron.IpcMainInvokeEvent, targetDir: string) => {
+    try {
+      const newPath = relocateDatabase(targetDir)
+      return { ok: true, path: newPath }
+    } catch (e) {
+      console.error('[Notchpad] relocate-db error:', e)
+      return { ok: false, error: String(e) }
+    }
+  })
 }
