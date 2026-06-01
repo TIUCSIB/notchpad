@@ -25,7 +25,7 @@ function createTrayIcon(): Electron.NativeImage {
   for (const p of paths) {
     if (fs.existsSync(p)) {
       const img = nativeImage.createFromPath(p)
-      if (!img.isEmpty()) return img.resize({ width: 16, height: 16 })
+      if (!img.isEmpty()) return img
     }
   }
   return nativeImage.createEmpty()
