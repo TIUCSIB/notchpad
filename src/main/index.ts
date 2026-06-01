@@ -50,6 +50,7 @@ async function initDatabase(): Promise<Database> {
 
 function migrateDatabase(): void {
   try { db!.run('ALTER TABLE pages ADD COLUMN pinned INTEGER DEFAULT 0') } catch (_e) { /* column exists */ }
+  saveDatabase()
 }
 
 function saveDatabase(): void {
@@ -93,6 +94,7 @@ function showInNotch(): void {
   if (!mainWindow) return
   isNotched = true
   mainWindow.setIgnoreMouseEvents(true)
+  mainWindow.webContents.send('notch-changed', true)
   mainWindow.show()
   mainWindow.focus()
 }
@@ -344,7 +346,7 @@ app.whenReady().then(async () => {
   if (savedWakeMode) wakeMode = savedWakeMode.value as string
 
   const allPages = queryAll('SELECT * FROM pages')
-  const nonEmpty = allPages.filter((p) => p.title || p.content)
+  const nonEmpty = allPages.filter((p) => p.title || p.content || p.pinned)
   if (nonEmpty.length === 0) {
     db!.run('DELETE FROM pages')
     db!.run('INSERT INTO pages (title, content, sort_order) VALUES (?, ?, ?)', ['', '', 0])
@@ -360,8 +362,7 @@ app.whenReady().then(async () => {
       {
         label: '\u663e\u793a\u7a97\u53e3',
         click: () => {
-          mainWindow?.show()
-          mainWindow?.focus()
+          showInNotch()
         }
       },
       { type: 'separator' },
@@ -375,8 +376,7 @@ app.whenReady().then(async () => {
     ])
   )
   tray.on('double-click', () => {
-    mainWindow?.show()
-    mainWindow?.focus()
+    showInNotch()
   })
 })
 

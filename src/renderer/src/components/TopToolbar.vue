@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import { Minus, Plus, Trash2, Settings, Star } from 'lucide-vue-next'
 
 interface Page {
@@ -29,104 +29,182 @@ const emit = defineEmits<{
   (e: 'togglePin', id: number): void
 }>()
 
-// Close menu when notch collapses
 watch(
   () => props.isNotched,
   (v) => {
     if (v) closeContextMenu()
+    if (v) cancelDrag()
   }
 )
 
-// --- Drag state ---
-const dragIndex = ref<number | null>(null)
-const dragOverIndex = ref<number | null>(null)
-
-function onDragStart(e: DragEvent, index: number) {
-  dragIndex.value = index
-  e.dataTransfer!.effectAllowed = 'move'
-  const img = document.createElement('div')
-  img.style.opacity = '0'
-  document.body.appendChild(img)
-  e.dataTransfer!.setDragImage(img, 0, 0)
-  setTimeout(() => document.body.removeChild(img), 0)
-}
-
-function onDragOver(e: DragEvent, index: number) {
-  if (dragIndex.value !== null) {
-    const srcPinned = props.pages[dragIndex.value]?.pinned
-    const dstPinned = props.pages[index]?.pinned
-    if (srcPinned !== dstPinned) {
-      e.dataTransfer!.dropEffect = 'none'
-      return
-    }
-  }
-  e.preventDefault()
-  e.dataTransfer!.dropEffect = 'move'
-  dragOverIndex.value = index
-}
-
-function onDragEnd() {
-  if (
-    dragIndex.value !== null &&
-    dragOverIndex.value !== null &&
-    dragIndex.value !== dragOverIndex.value
-  ) {
-    emit('reorder', dragIndex.value, dragOverIndex.value)
-  }
-  dragIndex.value = null
-  dragOverIndex.value = null
-}
-
-function onDrop(e: DragEvent, index: number) {
-  e.preventDefault()
-  if (dragIndex.value !== null && dragIndex.value !== index) {
-    emit('reorder', dragIndex.value, index)
-  }
-  dragIndex.value = null
-  dragOverIndex.value = null
-}
-
-// --- Long press ---
+// ======== Custom pointer drag ========
+const isDragging = ref(false)
+const dragFromIndex = ref<number | null>(null)
+const dragToIndex = ref<number | null>(null)
+let dragGhost: HTMLElement | null = null
+let startX = 0
+let startY = 0
+let dragStarted = false
 let longPressTimer: ReturnType<typeof setTimeout> | null = null
-const contextMenuVisible = ref(false)
-const contextMenuPageId = ref<number | null>(null)
-const contextMenuX = ref(0)
-const contextMenuY = ref(0)
+const DRAG_THRESHOLD = 4
 
-function onPointerDown(e: PointerEvent, index: number) {
+function onDotPointerDown(e: PointerEvent, index: number) {
   if (e.button !== 0) return
+  if (contextMenuVisible.value) return
+
+  // Capture DOM ref now — event object gets recycled by browser after handler returns
   const target = e.currentTarget as HTMLElement
-  target.setPointerCapture(e.pointerId)
+  const rect = target.getBoundingClientRect()
+  startX = e.clientX
+  startY = e.clientY
+  dragStarted = false
+  dragFromIndex.value = index
+
   longPressTimer = setTimeout(() => {
     longPressTimer = null
-    const rect = target.getBoundingClientRect()
     contextMenuX.value = rect.left + rect.width / 2
     contextMenuY.value = rect.top - 16
     contextMenuPageId.value = props.pages[index].id
     contextMenuVisible.value = true
+    cancelDrag()
   }, 500)
+
+  document.addEventListener('pointermove', onGlobalPointerMove)
+  document.addEventListener('pointerup', onGlobalPointerUp)
 }
 
-function onPointerUp(_e: PointerEvent, index: number) {
+function onGlobalPointerMove(e: PointerEvent) {
+  if (dragFromIndex.value === null) return
+
+  const dx = e.clientX - startX
+  const dy = e.clientY - startY
+
+  if (!dragStarted) {
+    if (Math.abs(dx) + Math.abs(dy) < DRAG_THRESHOLD) return
+    if (longPressTimer) {
+      clearTimeout(longPressTimer)
+      longPressTimer = null
+    }
+    dragStarted = true
+    isDragging.value = true
+    createGhost(e.clientX, e.clientY)
+  }
+
+  if (dragGhost) {
+    dragGhost.style.left = e.clientX + 'px'
+    dragGhost.style.top = e.clientY + 'px'
+  }
+
+  updateDragTarget(e.clientX, e.clientY)
+}
+
+function onGlobalPointerUp(_e: PointerEvent) {
+  document.removeEventListener('pointermove', onGlobalPointerMove)
+  document.removeEventListener('pointerup', onGlobalPointerUp)
+
   if (longPressTimer) {
     clearTimeout(longPressTimer)
     longPressTimer = null
-    emit('select', index)
+  }
+
+  if (dragStarted && dragFromIndex.value !== null && dragToIndex.value !== null) {
+    if (dragFromIndex.value !== dragToIndex.value) {
+      emit('reorder', dragFromIndex.value, dragToIndex.value)
+    }
+  } else if (!dragStarted && dragFromIndex.value !== null) {
+    emit('select', dragFromIndex.value)
+  }
+
+  cancelDrag()
+}
+
+function cancelDrag() {
+  isDragging.value = false
+  dragFromIndex.value = null
+  dragToIndex.value = null
+  dragStarted = false
+  removeGhost()
+}
+
+function createGhost(x: number, y: number) {
+  removeGhost()
+  dragGhost = document.createElement('div')
+  dragGhost.className = 'drag-ghost'
+  document.body.appendChild(dragGhost)
+  dragGhost.style.left = x + 'px'
+  dragGhost.style.top = y + 'px'
+}
+
+function removeGhost() {
+  if (dragGhost) {
+    dragGhost.remove()
+    dragGhost = null
   }
 }
 
-function onPointerCancel() {
-  if (longPressTimer) {
-    clearTimeout(longPressTimer)
-    longPressTimer = null
+function updateDragTarget(x: number, y: number) {
+  const dotsEl = document.querySelector('.page-dots')
+  if (!dotsEl) { dragToIndex.value = null; return }
+
+  const wraps = dotsEl.querySelectorAll('.page-dot-wrap')
+  let closest: number | null = null
+  let closestDist = Infinity
+
+  wraps.forEach((el, i) => {
+    const rect = el.getBoundingClientRect()
+    const cx = rect.left + rect.width / 2
+    const dist = Math.abs(x - cx)
+    if (dist < closestDist) {
+      closestDist = dist
+      closest = i
+    }
+  })
+
+  if (closest === null || closestDist > 40) {
+    dragToIndex.value = null
+    return
   }
+
+  const fromPinned = props.pages[dragFromIndex.value!]?.pinned
+  const toPinned = props.pages[closest!]?.pinned
+  if (fromPinned !== toPinned) {
+    dragToIndex.value = null
+    return
+  }
+
+  dragToIndex.value = closest
 }
+
+function canDrop(): boolean {
+  return dragToIndex.value !== null
+}
+
+function isDragTarget(i: number): boolean {
+  return isDragging.value && dragToIndex.value === i && dragFromIndex.value !== i
+}
+
+function isDragSource(i: number): boolean {
+  return isDragging.value && dragFromIndex.value === i
+}
+
+// ======== Long press / context menu ========
+const contextMenuVisible = ref(false)
+const contextMenuPageId = ref<number | null>(null)
+const contextMenuX = ref(0)
+const contextMenuY = ref(0)
 
 function handleTogglePin() {
   if (contextMenuPageId.value !== null) {
     emit('togglePin', contextMenuPageId.value)
   }
   closeContextMenu()
+}
+
+function onToolbarClick(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (!target.closest('.page-dot-wrap') && !target.closest('.pin-menu') && contextMenuVisible.value) {
+    closeContextMenu()
+  }
 }
 
 function closeContextMenu() {
@@ -138,22 +216,33 @@ function isPagePinned(pageId: number): boolean {
   const page = props.pages.find((p) => p.id === pageId)
   return page ? !!page.pinned : false
 }
+
+onUnmounted(() => {
+  document.removeEventListener('pointermove', onGlobalPointerMove)
+  document.removeEventListener('pointerup', onGlobalPointerUp)
+  if (longPressTimer) clearTimeout(longPressTimer)
+  removeGhost()
+})
 </script>
 
 <template>
-  <div class="toolbar">
+  <div class="toolbar" @click="onToolbarClick">
     <div class="toolbar-group">
       <button class="tool-btn danger" @click="emit('delete')">
         <Minus :size="16" :stroke-width="2.5" />
       </button>
-      <div class="page-dots">
-        <div v-for="(page, i) in pages" :key="page.id" class="page-dot-wrap" :class="{
-          active: i === currentIndex,
-          'drag-over-left': dragOverIndex === i && dragIndex !== null && dragIndex > i,
-          'drag-over-right': dragOverIndex === i && dragIndex !== null && dragIndex < i
-        }" draggable="true" @dragstart="onDragStart($event, i)" @dragover="onDragOver($event, i)"
-          @dragend="onDragEnd" @drop="onDrop($event, i)" @pointerdown="onPointerDown($event, i)"
-          @pointerup="onPointerUp($event, i)" @pointercancel="onPointerCancel" @pointerleave="onPointerCancel">
+      <div class="page-dots" :class="{ 'no-drop': isDragging && !canDrop() }">
+        <div
+          v-for="(page, i) in pages"
+          :key="page.id"
+          class="page-dot-wrap"
+          :class="{
+            active: i === currentIndex && !isDragging,
+            'drag-source': isDragSource(i),
+            'drag-target': isDragTarget(i),
+          }"
+          @pointerdown="onDotPointerDown($event, i)"
+        >
           <div class="page-dot" />
           <Star v-if="page.pinned" :size="8" :stroke-width="2" class="pin-star" />
         </div>
@@ -171,7 +260,6 @@ function isPagePinned(pageId: number): boolean {
     </button>
   </div>
 
-  <!-- Pin context menu -->
   <Teleport to="body">
     <div v-if="contextMenuVisible" class="pin-menu-overlay" @click="closeContextMenu"
       @contextmenu.prevent="closeContextMenu">
@@ -192,7 +280,6 @@ function isPagePinned(pageId: number): boolean {
   margin-top: 40px;
   padding: 4px 22px;
   flex-shrink: 0;
-  -webkit-app-region: drag;
 }
 
 .toolbar-spacer {
@@ -200,7 +287,6 @@ function isPagePinned(pageId: number): boolean {
 }
 
 .toolbar-group {
-  -webkit-app-region: no-drag;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -211,7 +297,6 @@ function isPagePinned(pageId: number): boolean {
 }
 
 .tool-btn {
-  -webkit-app-region: no-drag;
   flex-shrink: 0;
   width: 26px;
   height: 26px;
@@ -246,11 +331,14 @@ function isPagePinned(pageId: number): boolean {
 }
 
 .page-dots {
-  -webkit-app-region: no-drag;
   display: flex;
   align-items: center;
   gap: 4px;
   padding: 0 2px;
+}
+
+.page-dots.no-drop {
+  cursor: not-allowed;
 }
 
 .page-dot-wrap {
@@ -262,26 +350,28 @@ function isPagePinned(pageId: number): boolean {
   border: none;
   padding: 0;
   position: relative;
-  transition: transform 0.15s ease;
+  touch-action: none;
+  user-select: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 .page-dot-wrap:active {
-  transform: scale(0.9);
+  transform: scale(0.85);
 }
 
-.page-dot-wrap.drag-over-left {
-  box-shadow: -3px 0 0 0 var(--accent, #4ade80);
+.page-dot-wrap.drag-source {
+  opacity: 0.35;
 }
 
-.page-dot-wrap.drag-over-right {
-  box-shadow: 3px 0 0 0 var(--accent, #4ade80);
+.page-dot-wrap.drag-target .page-dot {
+  box-shadow: 0 0 0 2px var(--accent, #4ade80), 0 0 8px rgba(74, 222, 128, 0.3);
 }
 
 .page-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: var(--text-secondary, #555);
+  background: #aaa;
   position: absolute;
   left: 50%;
   top: 50%;
@@ -295,6 +385,7 @@ function isPagePinned(pageId: number): boolean {
 
 .page-dot-wrap.active .page-dot {
   width: 20px;
+  height: 8px;
   border-radius: 4px;
   background: var(--accent, #4ade80);
   box-shadow: 0 0 8px rgba(74, 222, 128, 0.3);
@@ -312,6 +403,20 @@ function isPagePinned(pageId: number): boolean {
 </style>
 
 <style>
+.drag-ghost {
+  position: fixed;
+  z-index: 99999;
+  width: 20px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--accent, #4ade80);
+  opacity: 0.85;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transform: translate(-50%, -50%) scale(1.5);
+  pointer-events: none;
+  transition: none;
+}
+
 .pin-menu-overlay {
   position: fixed;
   inset: 0;
