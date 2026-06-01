@@ -623,7 +623,7 @@ onBeforeUnmount(() => {
           @add="addPage" @delete="deletePage" @clear="clearCurrentPage" @settings="settingsVisible = true"
           @reorder="reorderPages" @toggle-pin="togglePinPage" />
 
-        <div v-if="currentIndex >= 0" class="editor-area">
+        <div v-show="currentIndex >= 0" class="editor-area">
           <div class="content-card">
             <div class="content-body">
               <EditorContent :editor="editor" />
@@ -650,7 +650,7 @@ onBeforeUnmount(() => {
             </AnimatePresence>
           </div>
         </div>
-        <div v-else class="editor-area empty">
+        <div v-show="currentIndex < 0" class="editor-area empty">
           <p class="empty-hint">空白白的~</p>
         </div>
       </div>

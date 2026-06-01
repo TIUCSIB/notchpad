@@ -52,7 +52,7 @@ function onDotPointerDown(e: PointerEvent, index: number) {
   if (e.button !== 0) return
   if (contextMenuVisible.value) return
 
-  // Capture DOM ref now — event object gets recycled by browser after handler returns
+  // Capture DOM ref now 鈥?event object gets recycled by browser after handler returns
   const target = e.currentTarget as HTMLElement
   const rect = target.getBoundingClientRect()
   startX = e.clientX
@@ -144,7 +144,10 @@ function removeGhost() {
 
 function updateDragTarget(x: number, y: number) {
   const dotsEl = document.querySelector('.page-dots')
-  if (!dotsEl) { dragToIndex.value = null; return }
+  if (!dotsEl) {
+    dragToIndex.value = null
+    return
+  }
 
   const wraps = dotsEl.querySelectorAll('.page-dot-wrap')
   let closest: number | null = null
@@ -202,7 +205,11 @@ function handleTogglePin() {
 
 function onToolbarClick(e: MouseEvent) {
   const target = e.target as HTMLElement
-  if (!target.closest('.page-dot-wrap') && !target.closest('.pin-menu') && contextMenuVisible.value) {
+  if (
+    !target.closest('.page-dot-wrap') &&
+    !target.closest('.pin-menu') &&
+    contextMenuVisible.value
+  ) {
     closeContextMenu()
   }
 }
@@ -228,34 +235,28 @@ onUnmounted(() => {
 <template>
   <div class="toolbar" @click="onToolbarClick">
     <div class="toolbar-group">
-      <button class="tool-btn danger" @click="emit('delete')">
+      <button v-jelly class="tool-btn danger" @click="emit('delete')">
         <Minus :size="16" :stroke-width="2.5" />
       </button>
       <div class="page-dots" :class="{ 'no-drop': isDragging && !canDrop() }">
-        <div
-          v-for="(page, i) in pages"
-          :key="page.id"
-          class="page-dot-wrap"
-          :class="{
-            active: i === currentIndex && !isDragging,
-            'drag-source': isDragSource(i),
-            'drag-target': isDragTarget(i),
-          }"
-          @pointerdown="onDotPointerDown($event, i)"
-        >
+        <div v-for="(page, i) in pages" :key="page.id" class="page-dot-wrap" :class="{
+          active: i === currentIndex && !isDragging,
+          'drag-source': isDragSource(i),
+          'drag-target': isDragTarget(i)
+        }" @pointerdown="onDotPointerDown($event, i)">
           <div class="page-dot" />
           <Star v-if="page.pinned" :size="8" :stroke-width="2" class="pin-star" />
         </div>
       </div>
-      <button class="tool-btn" :disabled="pages.length >= maxPages" @click="emit('add')">
+      <button v-jelly class="tool-btn" :disabled="pages.length >= maxPages" @click="emit('add')">
         <Plus :size="16" :stroke-width="2.5" />
       </button>
     </div>
     <div class="toolbar-spacer"></div>
-    <button class="tool-btn standalone" @click="emit('clear')">
+    <button v-jelly class="tool-btn standalone" @click="emit('clear')">
       <Trash2 :size="16" :stroke-width="2.5" />
     </button>
-    <button class="tool-btn standalone" @click="emit('settings')">
+    <button v-jelly class="tool-btn standalone" @click="emit('settings')">
       <Settings :size="16" :stroke-width="2.5" />
     </button>
   </div>
@@ -352,7 +353,9 @@ onUnmounted(() => {
   position: relative;
   touch-action: none;
   user-select: none;
-  transition: transform 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .page-dot-wrap:active {
@@ -364,7 +367,9 @@ onUnmounted(() => {
 }
 
 .page-dot-wrap.drag-target .page-dot {
-  box-shadow: 0 0 0 2px var(--accent, #4ade80), 0 0 8px rgba(74, 222, 128, 0.3);
+  box-shadow:
+    0 0 0 2px var(--accent, #4ade80),
+    0 0 8px rgba(74, 222, 128, 0.3);
 }
 
 .page-dot {

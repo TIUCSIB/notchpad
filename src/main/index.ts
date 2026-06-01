@@ -126,7 +126,8 @@ function createWindow(): void {
     show: false,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      devTools: is.dev
     }
   })
 
@@ -148,6 +149,15 @@ function createWindow(): void {
     e.preventDefault()
     shell.openExternal(url)
   })
+
+  // F12 to toggle DevTools (dev mode only)
+  if (is.dev) {
+    mainWindow.webContents.on('before-input-event', (_event, input) => {
+      if (input.key === 'F12' && input.type === 'keyDown') {
+        mainWindow?.webContents.toggleDevTools()
+      }
+    })
+  }
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url)

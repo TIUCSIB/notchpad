@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { Motion, AnimatePresence } from 'motion-v'
 import type { LucideIcon } from 'lucide-vue-next'
@@ -121,14 +121,14 @@ function clearHighlightColor() {
 <template>
   <div class="bottom-bar" @click.stop>
     <div class="format-group">
-      <button v-for="btn in formatBtns" :key="btn.title" class="fmt-btn" :class="{ active: btn.isActive?.() }"
+      <button v-for="btn in formatBtns" :key="btn.title" class="fmt-btn" v-jelly :class="{ active: btn.isActive?.() }"
         @click="btn.action">
         <component :is="btn.icon" :size="14" :stroke-width="2.5" />
       </button>
     </div>
     <div class="font-controls">
       <div class="font-control-wrap">
-        <button class="fmt-btn" @click.stop="toggleFontSize">
+        <button class="fmt-btn" v-jelly @click.stop="toggleFontSize">
           <span class="font-size-label">{{ currentFontSize() }}</span>
         </button>
         <div class="popup-anchor">
@@ -150,7 +150,7 @@ function clearHighlightColor() {
         </div>
       </div>
       <div class="font-control-wrap">
-        <button class="fmt-btn" @click.stop="toggleFontFamily">
+        <button class="fmt-btn" v-jelly @click.stop="toggleFontFamily">
           <span class="font-family-label">Aa</span>
         </button>
         <div class="popup-anchor">
@@ -172,7 +172,7 @@ function clearHighlightColor() {
         </div>
       </div>
       <div class="font-control-wrap">
-        <button class="fmt-btn" @click.stop="toggleColor">
+        <button class="fmt-btn" v-jelly @click.stop="toggleColor">
           <span class="color-indicator" :style="{ borderBottomColor: currentTextColor() }">A</span>
         </button>
         <div class="popup-anchor">
@@ -194,7 +194,7 @@ function clearHighlightColor() {
         </div>
       </div>
       <div class="font-control-wrap">
-        <button class="fmt-btn" @click.stop="toggleHighlight">
+        <button class="fmt-btn" v-jelly @click.stop="toggleHighlight">
           <span class="highlight-label" :style="{ background: currentHighlightColor() }">B</span>
         </button>
         <div class="popup-anchor">
