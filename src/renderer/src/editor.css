@@ -22,30 +22,90 @@ body,
 .editor-content p {
   margin: 0 0 8px;
 }
+
+/* --- Headings --- */
 .editor-content h1 {
   font-size: 22px;
   font-weight: 700;
-  margin: 0 0 8px;
+  margin: 16px 0 10px;
 }
 .editor-content h2 {
   font-size: 18px;
   font-weight: 700;
-  margin: 16px 0 6px;
+  margin: 14px 0 6px;
 }
 .editor-content h3 {
   font-size: 15px;
   font-weight: 600;
-  margin: 12px 0 4px;
+  margin: 10px 0 4px;
 }
+
+/* --- Lists --- */
 .editor-content ul,
 .editor-content ol {
   margin: 4px 0 8px;
-  padding-left: 20px;
+  padding-left: 22px;
 }
 .editor-content li {
   margin: 2px 0;
+  position: relative;
 }
 
+/* Unordered: solid dot */
+.editor-content ul > li {
+  list-style: none;
+}
+.editor-content ul > li::before {
+  content: '';
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #bbb;
+}
+/* Nested: hollow dot */
+.editor-content ul > li > ul > li::before {
+  background: transparent;
+  border: 1.5px solid #aaa;
+  width: 4px;
+  height: 4px;
+}
+
+/* Ordered: numbered */
+.editor-content ol {
+  counter-reset: list-counter;
+  list-style: none;
+}
+.editor-content ol > li {
+  counter-increment: list-counter;
+}
+.editor-content ol > li::before {
+  content: counter(list-counter) '.';
+  position: absolute;
+  left: -22px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-weight: 600;
+  color: #aaa;
+  min-width: 16px;
+  text-align: right;
+}
+/* Nested: letter */
+.editor-content ol > li > ol {
+  counter-reset: nested-counter;
+}
+.editor-content ol > li > ol > li {
+  counter-increment: nested-counter;
+}
+.editor-content ol > li > ol > li::before {
+  content: counter(nested-counter, lower-alpha) ')';
+}
+
+/* --- Task List --- */
 .editor-content ul[data-type='taskList'] {
   list-style: none;
   padding-left: 0;
@@ -54,6 +114,9 @@ body,
   display: flex;
   align-items: center;
   gap: 8px;
+}
+.editor-content ul[data-type='taskList'] li::before {
+  display: none;
 }
 .editor-content ul[data-type='taskList'] li label {
   flex-shrink: 0;
@@ -92,46 +155,61 @@ body,
 .editor-content ul[data-type='taskList'] li > div {
   flex: 1;
 }
-
-.editor-content code {
-  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
-  font-size: 12px;
-  background: var(--bg-toolbar, #2a2a2a);
-  padding: 2px 5px;
-  border-radius: 4px;
-  color: #f59e0b;
+.editor-content ul[data-type='taskList'] li ul[data-type='taskList'] {
+  margin-left: 24px;
+  margin-top: 2px;
 }
 
+/* --- Inline Code --- */
+.editor-content code {
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 0.9em;
+  background: var(--bg-toolbar, #2a2a2a);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #f59e0b;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* --- Code Block --- */
 .editor-content pre {
   background: var(--bg-main, #1a1a1a);
   color: var(--text-primary, #ccc);
-  padding: 12px;
+  padding: 14px 16px;
   border-radius: 8px;
+  border-top: 2px solid #333;
   overflow-x: auto;
-  margin: 8px 0;
+  margin: 10px 0;
 }
 .editor-content pre code {
   background: none;
   padding: 0;
+  border: none;
   color: inherit;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
+/* --- Blockquote --- */
 .editor-content blockquote {
   margin: 8px 0;
-  padding: 6px 12px;
+  padding: 8px 14px;
   border-left: 3px solid var(--accent, #4ade80);
   background: var(--accent-dim, rgba(74, 222, 128, 0.06));
-  color: var(--text-secondary, #aaa);
-  border-radius: 0 6px 6px 0;
+  color: var(--text-primary, #ccc);
+  border-radius: 0 8px 8px 0;
+  font-style: italic;
 }
 
+/* --- HR --- */
 .editor-content hr {
   border: none;
   height: 1px;
-  background: #333;
-  margin: 12px 0;
+  background: linear-gradient(to right, transparent, #444, transparent);
+  margin: 16px 0;
 }
 
+/* --- Links --- */
 .editor-content a {
   color: var(--accent, #4ade80);
   text-decoration: none;
@@ -142,6 +220,7 @@ body,
   border-bottom-color: var(--accent, #4ade80);
 }
 
+/* --- Placeholder --- */
 .editor-content p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   color: var(--text-secondary, #555);
@@ -151,6 +230,7 @@ body,
   pointer-events: none;
 }
 
+/* --- Images --- */
 .editor-content img {
   max-width: 100%;
   height: auto;
@@ -158,21 +238,24 @@ body,
   margin: 8px 0;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
 }
-
 .ProseMirror-selectednode {
   outline: none !important;
   box-shadow: none !important;
   background: none !important;
 }
 .ProseMirror-selectednode img {
-  box-shadow: 0 0 0 2px #4ade80;
+  box-shadow: 0 0 0 2px var(--accent, #4ade80);
   border-radius: 8px;
 }
 
+/* --- Highlight / Mark --- */
+.editor-content mark {
+  border-radius: 3px;
+  padding: 1px 3px;
+  color: inherit;
+}
+
+/* --- Selection --- */
 .editor-content ::selection {
   background: var(--accent-dim, rgba(74, 222, 128, 0.15));
-}
-.editor-content mark {
-  border-radius: 2px;
-  padding: 0 1px;
 }
