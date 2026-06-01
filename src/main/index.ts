@@ -1,4 +1,4 @@
-﻿import { app, BrowserWindow, screen, Tray, Menu, nativeImage, shell, globalShortcut } from 'electron'
+import { app, BrowserWindow, screen, Tray, Menu, nativeImage, shell, globalShortcut } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import fs from 'fs'
@@ -16,13 +16,10 @@ let tray: Tray | null = null
 function getMainWindow() { return mainWindow }
 
 function createTrayIcon(): Electron.NativeImage {
-  const paths = [
-    join(__dirname, '../../resources/tray-icon.png'),
-    join(__dirname, '../../resources/icon.png'),
-    join(app.isPackaged ? process.resourcesPath : join(__dirname, '../..'), 'resources/tray-icon.png'),
-    join(app.isPackaged ? process.resourcesPath : join(__dirname, '../..'), 'resources/icon.png')
-  ]
-  for (const p of paths) {
+  const resDir = app.isPackaged ? join(process.resourcesPath, 'resources') : join(__dirname, '../../resources')
+  console.log('[Notchpad] Tray icon search dir:', resDir)
+  for (const name of ['tray-icon.png', 'icon.png']) {
+    const p = join(resDir, name)
     if (fs.existsSync(p)) {
       const img = nativeImage.createFromPath(p)
       if (!img.isEmpty()) return img
@@ -81,7 +78,7 @@ app.whenReady().then(async () => {
       pauseUntil(Date.now() + 1500)
     }
   })
-  if (!shortcutRegistered) console.error('[Notchpad] Failed to register global shortcut Ctrl+Alt+Z')
+  if (!shortcutRegistered) console.warn('[Notchpad] Global shortcut Ctrl+Alt+Z already registered by another instance')
 
   const savedWakeMode = queryOne("SELECT value FROM settings WHERE key = 'wakeMode'")
   if (savedWakeMode) {
