@@ -1,10 +1,20 @@
-import { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, shell, globalShortcut } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  screen,
+  Tray,
+  Menu,
+  nativeImage,
+  shell,
+  globalShortcut
+} from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import fs from 'fs'
 import initSqlJs, { Database } from 'sql.js'
 
-const WIN_WIDTH = 530
+const WIN_WIDTH = 523
 const WIN_HEIGHT = 364
 const NOTCH_PILL_WIDTH = 64
 const NOTCH_PILL_HEIGHT = 8
@@ -49,7 +59,11 @@ async function initDatabase(): Promise<Database> {
 }
 
 function migrateDatabase(): void {
-  try { db!.run('ALTER TABLE pages ADD COLUMN pinned INTEGER DEFAULT 0') } catch (_e) { /* column exists */ }
+  try {
+    db!.run('ALTER TABLE pages ADD COLUMN pinned INTEGER DEFAULT 0')
+  } catch (_e) {
+    /* column exists */
+  }
   saveDatabase()
 }
 
@@ -77,7 +91,10 @@ function createTrayIcon(): Electron.NativeImage {
   const paths = [
     join(__dirname, '../../resources/tray-icon.png'),
     join(__dirname, '../../resources/icon.png'),
-    join(app.isPackaged ? process.resourcesPath : join(__dirname, '../..'), 'resources/tray-icon.png'),
+    join(
+      app.isPackaged ? process.resourcesPath : join(__dirname, '../..'),
+      'resources/tray-icon.png'
+    ),
     join(app.isPackaged ? process.resourcesPath : join(__dirname, '../..'), 'resources/icon.png')
   ]
   for (const p of paths) {
@@ -249,7 +266,9 @@ ipcMain.handle('toggle-pin-page', (_: Electron.IpcMainInvokeEvent, id: number) =
   db.run('UPDATE pages SET pinned = ? WHERE id = ?', [newPinned, id])
   // Recalculate sort_order so pinned pages come first
   const all = queryAll('SELECT id FROM pages ORDER BY pinned DESC, sort_order ASC, created_at ASC')
-  all.forEach((r, i) => { db!.run('UPDATE pages SET sort_order = ? WHERE id = ?', [i, r.id]) })
+  all.forEach((r, i) => {
+    db!.run('UPDATE pages SET sort_order = ? WHERE id = ?', [i, r.id])
+  })
   saveDatabase()
   return queryAll('SELECT * FROM pages ORDER BY pinned DESC, sort_order ASC, created_at ASC')
 })
@@ -291,8 +310,8 @@ ipcMain.handle('reorder-pages', (_: Electron.IpcMainInvokeEvent, ids: number[]) 
 })
 
 ipcMain.on('close-window', () => {
-    mainWindow?.close()
-  })
+  mainWindow?.close()
+})
 
 ipcMain.handle('enter-notch', () => {
   enterNotchMode()
