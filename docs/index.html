@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Notchpad — 一款刘海风格的桌面浮动便签应用，Electron + Vue 3 + TipTap">
   <title>Notchpad - 刘海风格浮动便签</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%234ade80'/%3E%3Cstop offset='100%25' stop-color='%2322c55e'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='22' fill='url(%23g)'/%3E%3Cpath d='M30 68V32a4 4 0 0 1 4-4h14l6 8h16a4 4 0 0 1 4 4v24a4 4 0 0 1-4 4H34a4 4 0 0 1-4-4z' fill='white' opacity='0.9'/%3E%3Cline x1='38' y1='42' x2='62' y2='42' stroke='%2322c55e' stroke-width='2.5' stroke-linecap='round'/%3E%3Cline x1='38' y1='50' x2='56' y2='50' stroke='%2322c55e' stroke-width='2.5' stroke-linecap='round'/%3E%3Cline x1='38' y1='58' x2='50' y2='58' stroke='%2322c55e' stroke-width='2.5' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="../build/icon.png">
   <style>
     :root {
       color-scheme: dark;
@@ -34,11 +34,33 @@
       font-family: "SF Pro Text", "SF Pro Display", "Helvetica Neue", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "PingFang SC", "Noto Sans SC", sans-serif;
     }
 
-    *, *::before, *::after { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body { margin: 0; min-height: 100%; background: var(--page); color: var(--ink); overflow-x: hidden; }
-    a { color: inherit; text-decoration: none; }
-    button { font: inherit; cursor: pointer; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: var(--page);
+      color: var(--ink);
+      overflow-x: hidden;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+    }
 
     /* ═══ Page ═══ */
     .page {
@@ -51,6 +73,7 @@
         radial-gradient(circle at 22% 70%, rgba(255, 167, 204, 0.05), transparent 26%),
         linear-gradient(180deg, #0d0e13 0%, #08090b 54%, #06070a 100%);
     }
+
     .page::before {
       content: "";
       position: absolute;
@@ -79,9 +102,10 @@
       font-size: 13px;
       backdrop-filter: blur(16px) saturate(1.4);
       -webkit-backdrop-filter: blur(16px) saturate(1.4);
-      background: rgba(8, 9, 11, 0.6);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      /* background: rgba(8, 9, 11, 0.6); */
+      /* border-bottom: 1px solid rgba(255, 255, 255, 0.04); */
     }
+
     .brand {
       display: inline-flex;
       align-items: center;
@@ -89,6 +113,7 @@
       color: rgba(255, 255, 255, 0.92);
       font-weight: 700;
     }
+
     .brand-icon {
       width: 28px;
       height: 28px;
@@ -98,8 +123,23 @@
       align-items: center;
       justify-content: center;
     }
-    .brand-icon svg { width: 16px; height: 16px; fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-    .nav-links { display: flex; align-items: center; gap: 4px; }
+
+    .brand-icon svg {
+      width: 16px;
+      height: 16px;
+      fill: none;
+      stroke: white;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
     .nav-link {
       min-height: 34px;
       display: inline-flex;
@@ -109,8 +149,17 @@
       border-radius: 8px;
       transition: background 150ms ease, color 150ms ease;
     }
-    .nav-link svg { width: 15px; height: 15px; flex: 0 0 auto; }
-    .nav-link:hover { background: rgba(255, 255, 255, 0.07); color: rgba(255, 255, 255, 0.96); }
+
+    .nav-link svg {
+      width: 15px;
+      height: 15px;
+      flex: 0 0 auto;
+    }
+
+    .nav-link:hover {
+      background: rgba(255, 255, 255, 0.07);
+      color: rgba(255, 255, 255, 0.96);
+    }
 
     /* ═══ Hero ═══ */
     .hero {
@@ -124,6 +173,7 @@
       min-height: calc(100vh - 58px);
       justify-content: center;
     }
+
     .eyebrow {
       display: inline-flex;
       align-items: center;
@@ -138,6 +188,7 @@
       font-weight: 680;
       letter-spacing: 0.02em;
     }
+
     .eyebrow::before {
       content: "";
       width: 7px;
@@ -146,6 +197,7 @@
       background: var(--green);
       box-shadow: 0 0 18px var(--green-glow);
     }
+
     h1 {
       max-width: 720px;
       margin: 20px auto 0;
@@ -153,11 +205,12 @@
       line-height: 1.02;
       letter-spacing: -0.03em;
       font-weight: 800;
-      background: linear-gradient(180deg, #fff 20%, rgba(255,255,255,0.6) 100%);
+      background: linear-gradient(180deg, #fff 20%, rgba(255, 255, 255, 0.6) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
+
     .subhead {
       max-width: 600px;
       margin: 16px auto 0;
@@ -166,6 +219,7 @@
       line-height: 1.7;
       font-weight: 450;
     }
+
     .actions {
       display: flex;
       align-items: center;
@@ -174,6 +228,7 @@
       margin-top: 28px;
       flex-wrap: wrap;
     }
+
     .btn {
       min-height: 44px;
       display: inline-flex;
@@ -189,12 +244,19 @@
       transition: transform 160ms ease, background 160ms ease;
       border: none;
     }
-    .btn svg { width: 16px; height: 16px; flex: 0 0 auto; }
+
+    .btn svg {
+      width: 16px;
+      height: 16px;
+      flex: 0 0 auto;
+    }
+
     .btn.primary {
       color: #090a0d;
       background: linear-gradient(180deg, #fff, #e9e9ec);
       box-shadow: 0 12px 30px rgba(255, 255, 255, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
+
     .btn.primary::after {
       content: "";
       position: absolute;
@@ -205,21 +267,36 @@
       pointer-events: none;
       opacity: 0.72;
     }
+
     .btn.secondary {
       color: rgba(255, 255, 255, 0.78);
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.090), rgba(255, 255, 255, 0.055));
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 26px rgba(0, 0, 0, 0.16);
     }
-    .btn:hover { transform: translateY(-1px); }
-    .btn:active { transform: translateY(0); }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
     .install-note {
       margin: 12px 0 0;
       color: rgba(245, 245, 246, 0.36);
       font-size: 12px;
       font-weight: 500;
     }
-    .install-note a { color: rgba(155, 184, 255, 0.8); transition: color 150ms ease; }
-    .install-note a:hover { color: var(--blue); }
+
+    .install-note a {
+      color: rgba(155, 184, 255, 0.8);
+      transition: color 150ms ease;
+    }
+
+    .install-note a:hover {
+      color: var(--blue);
+    }
 
     /* ═══ Realistic Notchpad Demo ═══ */
     .demo-wrap {
@@ -247,6 +324,7 @@
       transition: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     }
+
     .np-notch::before {
       content: '';
       position: absolute;
@@ -257,8 +335,15 @@
       opacity: 0;
       transition: opacity 0.3s ease;
     }
-    .np-notch:hover::before { opacity: 1; background: rgba(255, 255, 255, 0.12); }
-    .np-notch:hover { filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.15)); }
+
+    .np-notch:hover::before {
+      opacity: 1;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .np-notch:hover {
+      filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.15));
+    }
 
     .np-notch-dot {
       width: 6px;
@@ -268,6 +353,7 @@
       box-shadow: 0 0 10px var(--green-glow);
       flex-shrink: 0;
     }
+
     .np-notch-label {
       font-size: 11px;
       font-weight: 600;
@@ -286,6 +372,7 @@
       transition: max-height 0.5s cubic-bezier(0.34, 1.2, 0.64, 1), opacity 0.3s ease;
       opacity: 0;
     }
+
     .np-panel.open {
       max-height: 420px;
       opacity: 1;
@@ -300,7 +387,11 @@
       padding: 4px 16px;
       flex-shrink: 0;
     }
-    .np-topbar-spacer { flex: 1; }
+
+    .np-topbar-spacer {
+      flex: 1;
+    }
+
     .np-topbar-group {
       display: flex;
       align-items: center;
@@ -310,6 +401,7 @@
       overflow: hidden;
       padding: 1px 6px;
     }
+
     .np-tool-btn {
       flex-shrink: 0;
       width: 26px;
@@ -325,9 +417,21 @@
       cursor: pointer;
       transition: background 150ms, color 150ms;
     }
-    .np-tool-btn:hover { background: var(--np-hover); color: var(--np-text); }
-    .np-tool-btn.danger:hover { background: rgba(220, 38, 38, 0.1); color: #dc2626; }
-    .np-tool-btn svg { width: 16px; height: 16px; }
+
+    .np-tool-btn:hover {
+      background: var(--np-hover);
+      color: var(--np-text);
+    }
+
+    .np-tool-btn.danger:hover {
+      background: rgba(220, 38, 38, 0.1);
+      color: #dc2626;
+    }
+
+    .np-tool-btn svg {
+      width: 16px;
+      height: 16px;
+    }
 
     /* Page dots */
     .np-page-dots {
@@ -336,6 +440,7 @@
       gap: 4px;
       padding: 0 2px;
     }
+
     .np-page-dot {
       width: 6px;
       height: 6px;
@@ -344,6 +449,7 @@
       cursor: pointer;
       transition: all 0.2s ease;
     }
+
     .np-page-dot.active {
       width: 20px;
       height: 8px;
@@ -360,6 +466,7 @@
       padding: 6px 16px 4px 16px;
       overflow: hidden;
     }
+
     .np-content-card {
       flex: 1;
       background: var(--np-card);
@@ -368,6 +475,7 @@
       flex-direction: column;
       overflow: visible;
     }
+
     .np-content-body {
       flex: 1;
       overflow-y: auto;
@@ -383,9 +491,20 @@
       line-height: 1.7;
       color: rgba(255, 255, 255, 0.75);
     }
-    .np-editor-content p { margin: 0 0 8px; }
-    .np-editor-content strong { color: #fff; font-weight: 600; }
-    .np-editor-content em { color: var(--blue); }
+
+    .np-editor-content p {
+      margin: 0 0 8px;
+    }
+
+    .np-editor-content strong {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .np-editor-content em {
+      color: var(--blue);
+    }
+
     .np-editor-content h2 {
       font-size: 18px;
       font-weight: 700;
@@ -393,12 +512,14 @@
       margin: 0 0 10px;
       letter-spacing: -0.01em;
     }
+
     .np-editor-content h3 {
       font-size: 14px;
       font-weight: 600;
       color: rgba(255, 255, 255, 0.85);
       margin: 12px 0 6px;
     }
+
     .np-editor-content blockquote {
       border-left: 3px solid var(--green);
       padding-left: 12px;
@@ -406,8 +527,17 @@
       color: rgba(255, 255, 255, 0.55);
       font-style: italic;
     }
-    .np-editor-content ul, .np-editor-content ol { padding-left: 20px; margin: 4px 0 8px; }
-    .np-editor-content li { margin-bottom: 3px; }
+
+    .np-editor-content ul,
+    .np-editor-content ol {
+      padding-left: 20px;
+      margin: 4px 0 8px;
+    }
+
+    .np-editor-content li {
+      margin-bottom: 3px;
+    }
+
     .np-editor-content code {
       background: rgba(255, 255, 255, 0.06);
       padding: 2px 6px;
@@ -416,12 +546,14 @@
       font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
       color: var(--pink);
     }
+
     .np-editor-content .check-item {
       display: flex;
       align-items: center;
       gap: 8px;
       margin: 4px 0;
     }
+
     .np-check-box {
       width: 14px;
       height: 14px;
@@ -432,10 +564,12 @@
       justify-content: center;
       flex-shrink: 0;
     }
+
     .np-check-box.done {
       background: var(--green);
       border-color: var(--green);
     }
+
     .np-check-box.done::after {
       content: "";
       width: 7px;
@@ -444,7 +578,11 @@
       border-bottom: 1.5px solid #000;
       transform: rotate(-45deg) translateY(-1px);
     }
-    .np-check-done { text-decoration: line-through; color: rgba(255, 255, 255, 0.35); }
+
+    .np-check-done {
+      text-decoration: line-through;
+      color: rgba(255, 255, 255, 0.35);
+    }
 
     /* Bottom bar — matches BottomBar.css exactly */
     .np-bottombar {
@@ -456,7 +594,13 @@
       flex-shrink: 0;
       border-radius: 0 0 8px 8px;
     }
-    .np-format-group { display: flex; align-items: center; gap: 2px; }
+
+    .np-format-group {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+
     .np-fmt-btn {
       width: 26px;
       height: 26px;
@@ -472,21 +616,43 @@
       font-weight: 700;
       transition: background 150ms, color 150ms;
     }
-    .np-fmt-btn:hover { background: var(--np-hover); color: var(--np-text); }
-    .np-fmt-btn.active { background: var(--np-hover); color: var(--green); }
-    .np-fmt-btn svg { width: 14px; height: 14px; }
-    .np-font-controls { display: flex; align-items: center; gap: 2px; margin-left: auto; margin-right: 4px; }
+
+    .np-fmt-btn:hover {
+      background: var(--np-hover);
+      color: var(--np-text);
+    }
+
+    .np-fmt-btn.active {
+      background: var(--np-hover);
+      color: var(--green);
+    }
+
+    .np-fmt-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .np-font-controls {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      margin-left: auto;
+      margin-right: 4px;
+    }
+
     .np-font-size {
       font-size: 10px;
       font-weight: 600;
       line-height: 1;
     }
+
     .np-font-family {
       font-size: 12px;
       font-weight: 700;
       font-family: Georgia, serif;
       line-height: 1;
     }
+
     .np-color-a {
       font-size: 13px;
       font-weight: 700;
@@ -494,6 +660,7 @@
       border-bottom: 3px solid var(--purple);
       padding-bottom: 1px;
     }
+
     .np-highlight-b {
       font-size: 13px;
       font-weight: 700;
@@ -512,6 +679,7 @@
       padding-right: 4px;
       flex-shrink: 0;
     }
+
     .np-save-indicator {
       display: flex;
       align-items: center;
@@ -520,6 +688,7 @@
       color: var(--green);
       animation: fadeInUp 0.3s ease;
     }
+
     .np-save-dot {
       width: 5px;
       height: 5px;
@@ -528,8 +697,18 @@
     }
 
     /* Demo state transitions */
-    .np-notch.collapsed { opacity: 1; max-height: 32px; }
-    .np-notch.expanded { opacity: 0; max-height: 0; overflow: hidden; margin: 0 auto; pointer-events: none; }
+    .np-notch.collapsed {
+      opacity: 1;
+      max-height: 32px;
+    }
+
+    .np-notch.expanded {
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      margin: 0 auto;
+      pointer-events: none;
+    }
 
     /* Glow behind the panel */
     .np-glow {
@@ -546,7 +725,10 @@
       opacity: 0;
       transition: opacity 0.5s ease;
     }
-    .np-glow.show { opacity: 1; }
+
+    .np-glow.show {
+      opacity: 1;
+    }
 
     /* Desktop background inside demo */
     .np-desktop {
@@ -559,6 +741,7 @@
       border: 1px solid rgba(255, 255, 255, 0.1);
       box-shadow: var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.15);
     }
+
     .np-desktop::before {
       content: "";
       position: absolute;
@@ -568,6 +751,7 @@
       pointer-events: none;
       z-index: 20;
     }
+
     /* Simulated desktop background elements */
     .np-desktop-bg {
       position: absolute;
@@ -579,11 +763,13 @@
       opacity: 0.12;
       pointer-events: none;
     }
+
     .np-desktop-bg .line {
       height: 4px;
       border-radius: 2px;
       background: rgba(255, 255, 255, 0.3);
     }
+
     /* Taskbar at bottom of desktop */
     .np-taskbar {
       position: absolute;
@@ -600,13 +786,18 @@
       z-index: 5;
       border-top: 1px solid rgba(255, 255, 255, 0.06);
     }
+
     .np-taskbar-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
       background: rgba(255, 255, 255, 0.15);
     }
-    .np-taskbar-dot.active { background: var(--green); box-shadow: 0 0 8px var(--green-glow); }
+
+    .np-taskbar-dot.active {
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green-glow);
+    }
 
     /* Demo controls */
     .demo-controls {
@@ -616,6 +807,7 @@
       gap: 10px;
       margin-top: 20px;
     }
+
     .demo-btn {
       min-height: 32px;
       padding: 0 14px;
@@ -627,8 +819,17 @@
       border: 1px solid rgba(255, 255, 255, 0.06);
       transition: all 150ms ease;
     }
-    .demo-btn:hover { background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.8); }
-    .demo-btn.active { background: rgba(74, 222, 128, 0.12); color: var(--green); border-color: rgba(74, 222, 128, 0.2); }
+
+    .demo-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .demo-btn.active {
+      background: rgba(74, 222, 128, 0.12);
+      color: var(--green);
+      border-color: rgba(74, 222, 128, 0.2);
+    }
 
     /* ═══ Section titles ═══ */
     .section-title {
@@ -638,6 +839,7 @@
       margin: 0 0 12px;
       letter-spacing: -0.02em;
     }
+
     .section-sub {
       text-align: center;
       color: rgba(245, 245, 246, 0.44);
@@ -657,6 +859,7 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 14px;
     }
+
     .feature-card {
       padding: 28px 24px;
       border-radius: var(--radius);
@@ -664,7 +867,13 @@
       border: 1px solid rgba(255, 255, 255, 0.055);
       transition: background 250ms ease, border-color 250ms ease, transform 250ms ease;
     }
-    .feature-card:hover { background: rgba(255, 255, 255, 0.055); border-color: rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
+
+    .feature-card:hover {
+      background: rgba(255, 255, 255, 0.055);
+      border-color: rgba(255, 255, 255, 0.1);
+      transform: translateY(-2px);
+    }
+
     .feature-icon {
       width: 38px;
       height: 38px;
@@ -674,14 +883,50 @@
       justify-content: center;
       margin-bottom: 16px;
     }
-    .feature-icon svg { width: 18px; height: 18px; }
-    .feature-icon.blue { background: rgba(155, 184, 255, 0.12); color: var(--blue); }
-    .feature-icon.green { background: rgba(74, 222, 128, 0.12); color: var(--green); }
-    .feature-icon.pink { background: rgba(255, 167, 204, 0.12); color: var(--pink); }
-    .feature-icon.purple { background: rgba(196, 168, 255, 0.12); color: var(--purple); }
-    .feature-icon.amber { background: rgba(255, 213, 153, 0.12); color: var(--amber); }
-    .feature-card h3 { margin: 0 0 8px; font-size: 16px; font-weight: 700; }
-    .feature-card p { margin: 0; color: rgba(245, 245, 246, 0.5); font-size: 13px; line-height: 1.65; font-weight: 450; }
+
+    .feature-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .feature-icon.blue {
+      background: rgba(155, 184, 255, 0.12);
+      color: var(--blue);
+    }
+
+    .feature-icon.green {
+      background: rgba(74, 222, 128, 0.12);
+      color: var(--green);
+    }
+
+    .feature-icon.pink {
+      background: rgba(255, 167, 204, 0.12);
+      color: var(--pink);
+    }
+
+    .feature-icon.purple {
+      background: rgba(196, 168, 255, 0.12);
+      color: var(--purple);
+    }
+
+    .feature-icon.amber {
+      background: rgba(255, 213, 153, 0.12);
+      color: var(--amber);
+    }
+
+    .feature-card h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .feature-card p {
+      margin: 0;
+      color: rgba(245, 245, 246, 0.5);
+      font-size: 13px;
+      line-height: 1.65;
+      font-weight: 450;
+    }
 
     /* ═══ Tech Stack ═══ */
     .tech-section {
@@ -689,11 +934,13 @@
       margin: 0 auto;
       padding: 20px 0 60px;
     }
+
     .tech-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 10px;
     }
+
     .tech-item {
       display: flex;
       align-items: center;
@@ -704,7 +951,11 @@
       border: 1px solid rgba(255, 255, 255, 0.045);
       transition: background 200ms ease;
     }
-    .tech-item:hover { background: rgba(255, 255, 255, 0.055); }
+
+    .tech-item:hover {
+      background: rgba(255, 255, 255, 0.055);
+    }
+
     .tech-logo {
       width: 34px;
       height: 34px;
@@ -715,8 +966,18 @@
       font-size: 16px;
       flex-shrink: 0;
     }
-    .tech-name { font-size: 13px; font-weight: 680; }
-    .tech-desc { font-size: 11px; color: rgba(245, 245, 246, 0.4); font-weight: 450; margin-top: 2px; }
+
+    .tech-name {
+      font-size: 13px;
+      font-weight: 680;
+    }
+
+    .tech-desc {
+      font-size: 11px;
+      color: rgba(245, 245, 246, 0.4);
+      font-weight: 450;
+      margin-top: 2px;
+    }
 
     /* ═══ Shortcuts ═══ */
     .shortcuts-section {
@@ -724,6 +985,7 @@
       margin: 0 auto;
       padding: 20px 0 80px;
     }
+
     .shortcuts-table {
       width: 100%;
       border-collapse: collapse;
@@ -731,12 +993,15 @@
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.06);
     }
-    .shortcuts-table th, .shortcuts-table td {
+
+    .shortcuts-table th,
+    .shortcuts-table td {
       padding: 14px 20px;
       text-align: left;
       border-bottom: 1px solid rgba(255, 255, 255, 0.04);
       font-size: 13px;
     }
+
     .shortcuts-table th {
       background: rgba(255, 255, 255, 0.03);
       color: rgba(245, 245, 246, 0.5);
@@ -745,8 +1010,15 @@
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
-    .shortcuts-table tr:last-child td { border-bottom: none; }
-    .shortcuts-table tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+    .shortcuts-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .shortcuts-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
     kbd {
       display: inline-flex;
       align-items: center;
@@ -770,6 +1042,7 @@
       margin: 0 auto;
       padding: 0 0 100px;
     }
+
     .cta-box {
       text-align: center;
       padding: 56px 32px;
@@ -779,8 +1052,19 @@
         rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.06);
     }
-    .cta-box h2 { margin: 0 0 12px; font-size: clamp(22px, 2.8vw, 30px); font-weight: 760; }
-    .cta-box p { margin: 0 0 24px; color: rgba(245, 245, 246, 0.5); font-size: 14px; line-height: 1.65; }
+
+    .cta-box h2 {
+      margin: 0 0 12px;
+      font-size: clamp(22px, 2.8vw, 30px);
+      font-weight: 760;
+    }
+
+    .cta-box p {
+      margin: 0 0 24px;
+      color: rgba(245, 245, 246, 0.5);
+      font-size: 14px;
+      line-height: 1.65;
+    }
 
     /* ═══ Footer ═══ */
     .footer {
@@ -794,9 +1078,20 @@
       font-size: 12px;
       border-top: 1px solid rgba(255, 255, 255, 0.04);
     }
-    .footer-links { display: flex; gap: 16px; }
-    .footer-links a { color: rgba(245, 245, 246, 0.35); transition: color 150ms ease; }
-    .footer-links a:hover { color: rgba(245, 245, 246, 0.7); }
+
+    .footer-links {
+      display: flex;
+      gap: 16px;
+    }
+
+    .footer-links a {
+      color: rgba(245, 245, 246, 0.35);
+      transition: color 150ms ease;
+    }
+
+    .footer-links a:hover {
+      color: rgba(245, 245, 246, 0.7);
+    }
 
     /* ═══ Scroll reveal ═══ */
     .reveal {
@@ -804,27 +1099,73 @@
       transform: translateY(18px);
       transition: opacity 0.55s ease, transform 0.55s ease;
     }
-    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
 
     /* ═══ Animations ═══ */
     @keyframes fadeInUp {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     /* ═══ Responsive ═══ */
     @media (max-width: 768px) {
-      .features { grid-template-columns: 1fr; }
-      .tech-grid { grid-template-columns: repeat(2, 1fr); }
-      .footer { flex-direction: column; gap: 12px; text-align: center; }
-      .nav { padding: 0 8px; }
-      .nav-links { gap: 2px; }
-      .nav-link { padding: 0 8px; font-size: 12px; }
-      .np-desktop { aspect-ratio: 4/3; }
+      .features {
+        grid-template-columns: 1fr;
+      }
+
+      .tech-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .footer {
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+      }
+
+      .nav {
+        padding: 0 8px;
+      }
+
+      .nav-links {
+        gap: 2px;
+      }
+
+      .nav-link {
+        padding: 0 8px;
+        font-size: 12px;
+      }
+
+      .np-desktop {
+        aspect-ratio: 4/3;
+      }
     }
+
     @media (max-width: 480px) {
-      .tech-grid { grid-template-columns: 1fr; }
-      .shortcuts-table th, .shortcuts-table td { padding: 10px 12px; }
+      .tech-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .shortcuts-table th,
+      .shortcuts-table td {
+        padding: 10px 12px;
+      }
+    }
+
+    .logo {
+      width: 30px;
+      height: 30px;
     }
   </style>
 </head>
@@ -834,22 +1175,17 @@
     <!-- Nav -->
     <nav class="nav">
       <a href="#" class="brand">
-        <span class="brand-icon">
-          <svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="13" y2="12"/></svg>
-        </span>
+        <img src="../build/icon.png" class="logo" />
         Notchpad
       </a>
       <div class="nav-links">
-        <a href="#features" class="nav-link">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          功能
-        </a>
-        <a href="#tech" class="nav-link">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-          技术栈
-        </a>
+
+
         <a href="https://github.com/TIUCSIB/notchpad" target="_blank" rel="noopener" class="nav-link">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+          </svg>
           GitHub
         </a>
       </div>
@@ -862,15 +1198,23 @@
       <p class="subhead">启动后紧贴屏幕顶部，收起为小药丸，展开即写。弹性动画、深色/浅色主题、富文本编辑器，一切尽在指尖。</p>
       <div class="actions">
         <a href="https://github.com/TIUCSIB/notchpad/releases" target="_blank" rel="noopener" class="btn primary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
           下载安装包
         </a>
         <a href="https://github.com/TIUCSIB/notchpad" target="_blank" rel="noopener" class="btn secondary">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path
+              d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+          </svg>
           查看源代码
         </a>
       </div>
-      <p class="install-note">开源免费 · MIT License · <a href="https://github.com/TIUCSIB/notchpad/releases" target="_blank" rel="noopener">查看构建指南</a></p>
+
 
       <!-- ═══ Realistic Notchpad Demo ═══ -->
       <div class="demo-wrap">
@@ -888,18 +1232,22 @@
           <div class="np-glow" id="npGlow"></div>
 
           <!-- Notch pill (collapsed state) -->
-          <div class="np-notch" id="npNotch" style="position:absolute; top:0; left:50%; transform:translateX(-50%); z-index:15;">
+          <div class="np-notch" id="npNotch"
+            style="position:absolute; top:0; left:50%; transform:translateX(-50%); z-index:15;">
             <span class="np-notch-dot"></span>
             <span class="np-notch-label">Notchpad</span>
           </div>
 
           <!-- Full panel (hidden by default, shown on expand) -->
-          <div class="np-panel" id="npPanel" style="position:absolute; top:0; left:50%; transform:translateX(-50%); width:92%; z-index:12;">
+          <div class="np-panel" id="npPanel"
+            style="position:absolute; top:0; left:50%; transform:translateX(-50%); width:92%; z-index:12;">
             <!-- Top toolbar — exact replica of TopToolbar.vue -->
             <div class="np-topbar">
               <div class="np-topbar-group">
                 <button class="np-tool-btn danger">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
                 </button>
                 <div class="np-page-dots">
                   <span class="np-page-dot active" data-page="0"></span>
@@ -908,15 +1256,27 @@
                   <span class="np-page-dot" data-page="3"></span>
                 </div>
                 <button class="np-tool-btn">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
                 </button>
               </div>
               <div class="np-topbar-spacer"></div>
               <button class="np-tool-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
               </button>
               <button class="np-tool-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                  stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
               </button>
             </div>
 
@@ -932,24 +1292,54 @@
                     <button class="np-fmt-btn active" title="加粗"><strong>B</strong></button>
                     <button class="np-fmt-btn" title="斜体"><em>I</em></button>
                     <button class="np-fmt-btn" title="删除线"><s>U</s></button>
-                    <button class="np-fmt-btn" title="行内代码" style="font-family:monospace;font-size:11px;">&lt;/&gt;</button>
+                    <button class="np-fmt-btn" title="行内代码"
+                      style="font-family:monospace;font-size:11px;">&lt;/&gt;</button>
                     <button class="np-fmt-btn" title="引用">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round">
+                        <path
+                          d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z" />
+                      </svg>
                     </button>
                     <button class="np-fmt-btn" title="有序列表">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><text x="4" y="8" font-size="7" fill="currentColor" stroke="none" font-weight="bold">1</text><text x="4" y="14" font-size="7" fill="currentColor" stroke="none" font-weight="bold">2</text><text x="4" y="20" font-size="7" fill="currentColor" stroke="none" font-weight="bold">3</text></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round">
+                        <line x1="10" y1="6" x2="21" y2="6" />
+                        <line x1="10" y1="12" x2="21" y2="12" />
+                        <line x1="10" y1="18" x2="21" y2="18" /><text x="4" y="8" font-size="7" fill="currentColor"
+                          stroke="none" font-weight="bold">1</text><text x="4" y="14" font-size="7" fill="currentColor"
+                          stroke="none" font-weight="bold">2</text><text x="4" y="20" font-size="7" fill="currentColor"
+                          stroke="none" font-weight="bold">3</text>
+                      </svg>
                     </button>
                     <button class="np-fmt-btn" title="任务清单">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="6" height="6" rx="1"/><path d="M5 8l1.5 1.5L9 6"/><line x1="12" y1="8" x2="21" y2="8"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="5" width="6" height="6" rx="1" />
+                        <path d="M5 8l1.5 1.5L9 6" />
+                        <line x1="12" y1="8" x2="21" y2="8" />
+                      </svg>
                     </button>
                     <button class="np-fmt-btn" title="链接">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                      </svg>
                     </button>
                     <button class="np-fmt-btn" title="图片">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21 15 16 10 5 21" />
+                      </svg>
                     </button>
                     <button class="np-fmt-btn" title="分割线">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="2" y1="12" x2="22" y2="12"/></svg>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round">
+                        <line x1="2" y1="12" x2="22" y2="12" />
+                      </svg>
                     </button>
                   </div>
                   <div class="np-font-controls">
@@ -988,165 +1378,9 @@
       </div>
     </section>
 
-    <!-- Features -->
-    <section class="features" id="features">
-      <div class="feature-card reveal">
-        <div class="feature-icon green">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
-        </div>
-        <h3>灵动刘海交互</h3>
-        <p>启动后自动收起为屏幕顶部中央的小药丸，悬浮或点击即刻展开编辑区域，收回时带有弹性弹簧动画和高斯模糊过渡。</p>
-      </div>
-      <div class="feature-card reveal">
-        <div class="feature-icon blue">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
-        </div>
-        <h3>富文本编辑器</h3>
-        <p>基于 TipTap 构建，支持加粗、斜体、删除线、行内代码、引用块、有序/无序列表、任务列表、链接插入、截图粘贴、分割线等。</p>
-      </div>
-      <div class="feature-card reveal">
-        <div class="feature-icon pink">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        </div>
-        <h3>多页面管理</h3>
-        <p>最多支持 10 个页面，顶部胶囊式导航栏切换，支持拖拽排序，动画平滑无抖动。长按弹出置顶菜单。</p>
-      </div>
-      <div class="feature-card reveal">
-        <div class="feature-icon purple">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        </div>
-        <h3>个性化设置</h3>
-        <p>深色/浅色/跟随系统主题，多种强调色可选，默认字号调节，唤醒方式切换，开机自启，数据导入导出。</p>
-      </div>
-      <div class="feature-card reveal">
-        <div class="feature-icon amber">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><path d="M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001"/></svg>
-        </div>
-        <h3>全局快捷键</h3>
-        <p><kbd>Ctrl+Alt+Z</kbd> 直接呼出窗口并展开编辑区域，随时随地快速记录灵感，不打断工作流。</p>
-      </div>
-      <div class="feature-card reveal">
-        <div class="feature-icon green">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-        </div>
-        <h3>数据持久化</h3>
-        <p>使用 SQLite (sql.js) 本地存储，数据保存在 userData/memo.db。关闭窗口后驻留系统托盘，双击托盘图标即可恢复。</p>
-      </div>
-    </section>
 
-    <!-- Tech Stack -->
-    <section class="tech-section" id="tech">
-      <h2 class="section-title reveal">技术栈</h2>
-      <p class="section-sub reveal">现代化技术选型，轻量高效</p>
-      <div class="tech-grid">
-        <div class="tech-item reveal">
-          <div class="tech-logo" style="background:rgba(155,184,255,0.12);color:var(--blue);">⚡</div>
-          <div>
-            <div class="tech-name">Electron 39</div>
-            <div class="tech-desc">桌面应用框架</div>
-          </div>
-        </div>
-        <div class="tech-item reveal">
-          <div class="tech-logo" style="background:rgba(74,222,128,0.12);color:var(--green);">💚</div>
-          <div>
-            <div class="tech-name">Vue 3.5</div>
-            <div class="tech-desc">响应式 UI 框架</div>
-          </div>
-        </div>
-        <div class="tech-item reveal">
-          <div class="tech-logo" style="background:rgba(255,167,204,0.12);color:var(--pink);">📝</div>
-          <div>
-            <div class="tech-name">TipTap 3</div>
-            <div class="tech-desc">富文本编辑器</div>
-          </div>
-        </div>
-        <div class="tech-item reveal">
-          <div class="tech-logo" style="background:rgba(196,168,255,0.12);color:var(--purple);">⚡</div>
-          <div>
-            <div class="tech-name">Vite 7</div>
-            <div class="tech-desc">构建工具</div>
-          </div>
-        </div>
-        <div class="tech-item reveal">
-          <div class="tech-logo" style="background:rgba(255,213,153,0.12);color:var(--amber);">🎬</div>
-          <div>
-            <div class="tech-name">motion-v</div>
-            <div class="tech-desc">弹簧物理动画</div>
-          </div>
-        </div>
-        <div class="tech-item reveal">
-          <div class="tech-logo" style="background:rgba(155,184,255,0.12);color:var(--blue);">🗄️</div>
-          <div>
-            <div class="tech-name">sql.js</div>
-            <div class="tech-desc">SQLite WASM</div>
-          </div>
-        </div>
-        <div class="tech-item reveal">
-          <div class="tech-logo" style="background:rgba(74,222,128,0.12);color:var(--green);">🔒</div>
-          <div>
-            <div class="tech-name">TypeScript</div>
-            <div class="tech-desc">类型安全</div>
-          </div>
-        </div>
-        <div class="tech-item reveal">
-          <div class="tech-logo" style="background:rgba(255,167,204,0.12);color:var(--pink);">📦</div>
-          <div>
-            <div class="tech-name">pnpm</div>
-            <div class="tech-desc">包管理器</div>
-          </div>
-        </div>
-      </div>
-    </section>
 
-    <!-- Shortcuts -->
-    <section class="shortcuts-section" id="shortcuts">
-      <h2 class="section-title reveal">快捷键</h2>
-      <p class="section-sub reveal">高效操作，一键直达</p>
-      <table class="shortcuts-table reveal">
-        <thead>
-          <tr>
-            <th>快捷键</th>
-            <th>功能</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td><kbd>Ctrl</kbd> + <kbd>N</kbd></td><td>新建页面</td></tr>
-          <tr><td><kbd>Ctrl</kbd> + <kbd>S</kbd></td><td>保存</td></tr>
-          <tr><td><kbd>Ctrl</kbd> + <kbd>Z</kbd></td><td>撤销</td></tr>
-          <tr><td><kbd>Ctrl</kbd> + <kbd>Y</kbd></td><td>重做</td></tr>
-          <tr><td><kbd>Ctrl</kbd> + <kbd>W</kbd></td><td>最小化</td></tr>
-          <tr><td><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>Z</kbd></td><td>呼出窗口</td></tr>
-        </tbody>
-      </table>
-    </section>
 
-    <!-- CTA -->
-    <section class="cta-section">
-      <div class="cta-box reveal">
-        <h2>开始使用 Notchpad</h2>
-        <p>免费开源，支持 Windows / macOS / Linux。<br>克隆仓库，安装依赖，即刻构建属于你的浮动便签。</p>
-        <div class="actions">
-          <a href="https://github.com/TIUCSIB/notchpad/releases" target="_blank" rel="noopener" class="btn primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            下载安装包
-          </a>
-          <a href="https://github.com/TIUCSIB/notchpad" target="_blank" rel="noopener" class="btn secondary">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
-            查看源代码
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-      <span>Notchpad &copy; 2026 · MIT License</span>
-      <div class="footer-links">
-        <a href="https://github.com/TIUCSIB/notchpad" target="_blank" rel="noopener">GitHub</a>
-        <a href="https://github.com/TIUCSIB/notchpad/issues" target="_blank" rel="noopener">反馈问题</a>
-        <a href="https://github.com/TIUCSIB/notchpad/releases" target="_blank" rel="noopener">版本记录</a>
-      </div>
-    </footer>
   </div>
 
   <script>
@@ -1304,4 +1538,5 @@
     });
   </script>
 </body>
+
 </html>
