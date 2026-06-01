@@ -10,11 +10,21 @@ import { useNotch } from './composables/useNotch'
 import { useSettings } from './composables/useSettings'
 import { useSave } from './composables/useSave'
 import { usePages } from './composables/usePages'
-import { useEditorSetup, fontOptions, fontSizeOptions, colorOptions, highlightColors } from './composables/useEditorSetup'
+import {
+  useEditorSetup,
+  fontOptions,
+  fontSizeOptions,
+  colorOptions,
+  highlightColors
+} from './composables/useEditorSetup'
 
 const {
-  appSettings, isLightTheme, appStyle,
-  initSettingsListeners, cleanupSettings, loadSettings
+  appSettings,
+  isLightTheme,
+  appStyle,
+  initSettingsListeners,
+  cleanupSettings,
+  loadSettings
 } = useSettings()
 
 const linkPromptVisible = ref(false)
@@ -25,34 +35,73 @@ const pagesRef = ref<any[]>([])
 const currentIndexRef = ref(-1)
 
 const {
-  saveStatus, flushSave, scheduleSave, cleanup: cleanupSave
+  saveStatus,
+  flushSave,
+  scheduleSave,
+  cleanup: cleanupSave
 } = useSave(tempEditor, pagesRef, currentIndexRef)
 
 const {
-  pages, currentIndex, loadPages, selectPage,
-  addPage, deletePage, clearCurrentPage, reorderPages,
-  togglePinPage, getIsSwitching
+  pages,
+  currentIndex,
+  loadPages,
+  selectPage,
+  addPage,
+  deletePage,
+  clearCurrentPage,
+  reorderPages,
+  togglePinPage,
+  getIsSwitching
 } = usePages(tempEditor, scheduleSave, flushSave)
 
-watch(pages, (v) => { pagesRef.value = v }, { deep: true })
-watch(currentIndex, (v) => { currentIndexRef.value = v })
+watch(
+  pages,
+  (v) => {
+    pagesRef.value = v
+  },
+  { deep: true }
+)
+watch(currentIndex, (v) => {
+  currentIndexRef.value = v
+})
 
 const {
-  isNotched, appReady, isAnimating, pillHovered,
-  panelAnimate, panelTransition,
-  isLightTheme: notchIsLight, cleanup: cleanupNotch
+  isNotched,
+  isAnimating,
+  pillHovered,
+  panelAnimate,
+  panelTransition,
+  isLightTheme: notchIsLight,
+  cleanup: cleanupNotch
 } = useNotch(pages, settingsVisible)
-watch(isLightTheme, (v) => { notchIsLight.value = v }, { immediate: true })
+watch(
+  isLightTheme,
+  (v) => {
+    notchIsLight.value = v
+  },
+  { immediate: true }
+)
 
 const {
-  editor, formatBtns,
-  setFontSize, clearFontSize, setFontFamily,
-  setTextColor, setHighlight, clearTextColor, clearHighlightColor,
-  currentFontSize, currentFontFamily, currentTextColor, currentHighlightColor,
+  editor,
+  formatBtns,
+  setFontSize,
+  clearFontSize,
+  setFontFamily,
+  setTextColor,
+  setHighlight,
+  clearTextColor,
+  clearHighlightColor,
+  currentFontSize,
+  currentFontFamily,
+  currentTextColor,
+  currentHighlightColor,
   confirmLink
 } = useEditorSetup(scheduleSave, getIsSwitching, linkPromptVisible, linkUrlInput)
 tempEditor.value = editor.value
-watch(editor, (v) => { tempEditor.value = v })
+watch(editor, (v) => {
+  tempEditor.value = v
+})
 
 function handlePillClick() {
   if (appSettings.value.wakeMode === 'click') window.api.exitNotch()
@@ -66,22 +115,39 @@ function handleKeydown(e: KeyboardEvent) {
   const ctrl = e.ctrlKey || e.metaKey
   if (!ctrl) return
   switch (e.key.toLowerCase()) {
-    case 'n': e.preventDefault(); addPage(); break
-    case 's': e.preventDefault(); flushSave(); break
-    case 'z':
-      if (!e.shiftKey) { e.preventDefault(); editor.value?.chain().focus().undo().run() }
+    case 'n':
+      e.preventDefault()
+      addPage()
       break
-    case 'y': e.preventDefault(); editor.value?.chain().focus().redo().run(); break
-    case 'w': e.preventDefault(); window.api.closeWindow(); break
+    case 's':
+      e.preventDefault()
+      flushSave()
+      break
+    case 'z':
+      if (!e.shiftKey) {
+        e.preventDefault()
+        editor.value?.chain().focus().undo().run()
+      }
+      break
+    case 'y':
+      e.preventDefault()
+      editor.value?.chain().focus().redo().run()
+      break
+    case 'w':
+      e.preventDefault()
+      window.api.closeWindow()
+      break
   }
 }
 
 onMounted(async () => {
-  requestAnimationFrame(() => { appReady.value = true })
+  
   await loadSettings()
   initSettingsListeners()
   await loadPages()
-  window.api.onNotchChange((v: boolean) => { isNotched.value = v })
+  window.api.onNotchChange((v: boolean) => {
+    isNotched.value = v
+  })
   document.addEventListener('keydown', handleKeydown)
 })
 
@@ -96,7 +162,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="app-root" :style="appStyle">
-    <Motion :class="[
+    <Motion :initial="{ opacity: 0, scale: 0.3 }" :class="[
       'panel-motion',
       {
         notched: isNotched,
@@ -104,9 +170,9 @@ onBeforeUnmount(() => {
         'pill-hovered': pillHovered,
         'click-mode': appSettings.wakeMode === 'click'
       }
-    ]" :animate="panelAnimate" :transition="panelTransition"
-      :style="{ visibility: appReady ? 'visible' : 'hidden', pointerEvents: isNotched && appSettings.wakeMode !== 'click' ? 'none' : 'auto' }"
-      @mouseenter="pillHovered = true" @mouseleave="pillHovered = false" @click="handlePillClick">
+    ]" :animate="panelAnimate" :transition="panelTransition" :style="{
+        pointerEvents: isNotched && appSettings.wakeMode !== 'click' ? 'none' : 'auto'
+      }" @mouseenter="pillHovered = true" @mouseleave="pillHovered = false" @click="handlePillClick">
       <div class="panel">
         <TopToolbar :pages="pages" :current-index="currentIndex" :max-pages="10" :is-notched="isNotched"
           @select="selectPage" @add="addPage" @delete="deletePage" @clear="clearCurrentPage"
@@ -139,7 +205,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
         <div v-show="currentIndex < 0" class="editor-area empty">
-          <p class="empty-hint">空白的~</p>
+          <p class="empty-hint">空白白的~</p>
         </div>
       </div>
     </Motion>

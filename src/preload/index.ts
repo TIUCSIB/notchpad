@@ -1,9 +1,9 @@
-import { contextBridge, ipcRenderer } from 'electron'
+﻿import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 const api = {
   getPages: (): Promise<Page[]> => ipcRenderer.invoke('get-pages'),
-  addPage: (): Promise<Page> => ipcRenderer.invoke('add-page'),
+  addPage: (): Promise<Page[] | null> => ipcRenderer.invoke('add-page'),
   deletePage: (id: number): Promise<void> => ipcRenderer.invoke('delete-page', id),
   updatePage: (id: number, title: string, content: string): Promise<Page> =>
     ipcRenderer.invoke('update-page', id, title, content),
@@ -17,6 +17,7 @@ const api = {
   getSettings: (): Promise<Record<string, string>> => ipcRenderer.invoke('get-settings'),
   setSetting: (key: string, value: string): Promise<void> =>
     ipcRenderer.invoke('set-setting', key, value),
+  resetSettings: (): Promise<void> => ipcRenderer.invoke('reset-settings'),
   closeWindow: (): void => {
     ipcRenderer.send('close-window')
   },

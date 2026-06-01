@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import {
   X,
@@ -40,7 +40,12 @@ const fontSizeOptions = ['12px', '14px', '16px', '18px', '20px', '24px', '28px',
 
 async function loadSettings() {
   const saved = await window.api.getSettings()
-  if (saved && Object.keys(saved).length) settings.value = { ...settings.value, ...saved }
+  if (saved && Object.keys(saved).length) {
+    const filtered = Object.fromEntries(
+      Object.entries(saved).filter(([_, v]) => v !== '' && v != null)
+    )
+    settings.value = { ...settings.value, ...filtered }
+  }
 }
 
 async function save(key: string, value: string) {
@@ -57,10 +62,7 @@ function flashSaved() {
 }
 
 async function handleReset() {
-  for (const k of Object.keys(settings.value)) {
-    settings.value[k] = ''
-    await window.api.setSetting(k, '')
-  }
+  await window.api.resetSettings()
   settings.value = {
     theme: 'dark', accentColor: '#4ade80', defaultFontSize: '14px',
     autoStart: 'false', wakeMode: 'hover'

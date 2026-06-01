@@ -21,12 +21,17 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
 
   ipcMain.handle('add-page', () => {
     const db = getDb()
-    const maxOrder = queryOne('SELECT MAX(sort_order) as m FROM pages')
-    const order = maxOrder && maxOrder.m !== null ? (maxOrder.m as number) + 1 : 0
-    db!.run('INSERT INTO pages (title, content, sort_order) VALUES (?, ?, ?)', ['', '', order])
-    saveDatabase()
-    const newId = db!.exec('SELECT last_insert_rowid() as id')[0]?.values[0][0]
-    return queryOne('SELECT * FROM pages WHERE id = ?', [newId])
+    if (!db) return null
+    try {
+      const maxOrder = queryOne('SELECT COALESCE(MAX(sort_order), -1) as m FROM pages')
+      const order = ((maxOrder?.m as number) ?? -1) + 1
+      db.run('INSERT INTO pages (title, content, sort_order) VALUES (?, ?, ?)', ['', '', order])
+      saveDatabase()
+      return queryAll('SELECT * FROM pages ORDER BY pinned DESC, sort_order ASC, created_at ASC')
+    } catch (e) {
+      console.error('[Notchpad] add-page error:', e)
+      return null
+    }
   })
 
   ipcMain.handle('delete-page', (_: Electron.IpcMainInvokeEvent, id: number) => {
@@ -77,5 +82,12 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
     }
   })
 
+  ipcMain.handle('reset-settings', () => {
+    const db = getDb()
+    if (!db) return
+    db.run('DELETE FROM settings')
+    saveDatabase()
+    app.setLoginItemSettings({ openAtLogin: false, path: app.getPath('exe') })
+  })
   ipcMain.on('open-external', (_: Electron.IpcMainEvent, url: string) => { shell.openExternal(url) })
 }

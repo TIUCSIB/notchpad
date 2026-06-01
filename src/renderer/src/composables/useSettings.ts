@@ -1,9 +1,17 @@
 import { ref, computed, watch } from 'vue'
 
-export function useSettings() {
-  const appSettings = ref<Record<string, string>>({})
+const SETTINGS_DEFAULTS: Record<string, string> = {
+  theme: 'dark',
+  accentColor: '#4ade80',
+  defaultFontSize: '14px',
+  autoStart: 'false',
+  wakeMode: 'hover'
+}
 
-  const accentColor = computed(() => appSettings.value.accentColor || '#4ade80')
+export function useSettings() {
+  const appSettings = ref<Record<string, string>>({ ...SETTINGS_DEFAULTS })
+
+  const accentColor = computed(() => appSettings.value.accentColor || SETTINGS_DEFAULTS.accentColor)
   const osThemeDark = ref(window.matchMedia('(prefers-color-scheme: dark)').matches)
   const osMedia = window.matchMedia('(prefers-color-scheme: dark)')
 
@@ -37,7 +45,7 @@ export function useSettings() {
     '--divider': isLightTheme.value ? '#ddd' : '#2a2a2c',
     '--danger-text': '#dc2626',
     '--danger-hover': isLightTheme.value ? '#fecaca' : '#3a1a1a',
-    '--editor-font-size': appSettings.value.defaultFontSize || '14px'
+    '--editor-font-size': appSettings.value.defaultFontSize || SETTINGS_DEFAULTS.defaultFontSize
   }))
 
   function applyRootVars(vars: Record<string, string>) {
@@ -58,7 +66,9 @@ export function useSettings() {
 
   async function loadSettings() {
     const saved = await window.api.getSettings()
-    if (saved && Object.keys(saved).length) appSettings.value = saved
+    if (saved && Object.keys(saved).length) {
+      appSettings.value = { ...SETTINGS_DEFAULTS, ...saved }
+    }
   }
 
   return {

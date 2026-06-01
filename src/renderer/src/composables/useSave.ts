@@ -11,16 +11,20 @@ export function useSave(
   let savedStatusTimer: ReturnType<typeof setTimeout> | null = null
 
   async function saveCurrentPage() {
-    const idx = currentIndex.value
-    const page = idx >= 0 && idx < pages.value.length ? pages.value[idx] : null
-    if (!page || !editor.value) return
-    const updated = await window.api.updatePage(page.id, '', editor.value.getHTML())
-    pages.value[idx] = updated
-    saveStatus.value = 'saved'
-    if (savedStatusTimer) clearTimeout(savedStatusTimer)
-    savedStatusTimer = setTimeout(() => {
-      if (saveStatus.value === 'saved') saveStatus.value = 'idle'
-    }, 2000)
+    try {
+      const idx = currentIndex.value
+      const page = idx >= 0 && idx < pages.value.length ? pages.value[idx] : null
+      if (!page || !editor.value) return
+      const updated = await window.api.updatePage(page.id, '', editor.value.getHTML())
+      if (updated) pages.value[idx] = updated
+      saveStatus.value = 'saved'
+      if (savedStatusTimer) clearTimeout(savedStatusTimer)
+      savedStatusTimer = setTimeout(() => {
+        if (saveStatus.value === 'saved') saveStatus.value = 'idle'
+      }, 2000)
+    } catch (e) {
+      console.error('[Notchpad] saveCurrentPage error:', e)
+    }
   }
 
   function flushSave() {

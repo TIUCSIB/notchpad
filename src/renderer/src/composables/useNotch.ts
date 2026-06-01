@@ -1,4 +1,4 @@
-import { ref, computed, watch } from 'vue'
+﻿import { ref, computed, watch } from 'vue'
 
 const expandSpring = { type: 'spring' as const, stiffness: 150, damping: 22, mass: 0.8 }
 const collapseSpring = { type: 'spring' as const, stiffness: 200, damping: 30, mass: 0.6 }
@@ -25,6 +25,8 @@ export function useNotch(
   // panelBgColor needs isLightTheme, passed from useSettings
   const panelBgColor = ref('#000')
   const isLightTheme = ref(false)
+  // Initialize panelBgColor to notch color on first render
+  // (updatePanelBg won't fire from watchers since isNotched starts as true)
 
   function updatePanelBg() {
     const light = isLightTheme.value
@@ -34,11 +36,14 @@ export function useNotch(
   }
 
   const panelAnimate = computed(() => ({
+    x: '-50%',
     width: isNotched.value ? (pillHovered.value ? '80px' : '64px') : 'calc(100% - 4px)',
     height: isNotched.value ? (pillHovered.value ? '10px' : '8px') : '100vh',
     top: isNotched.value ? (pillHovered.value ? '3px' : '4px') : '0px',
     borderRadius: isNotched.value ? '4px' : '0 0 20px 20px',
-    backgroundColor: panelBgColor.value
+    backgroundColor: panelBgColor.value,
+    opacity: 1,
+    scale: 1
   }))
 
   const panelTransition = computed(() => (isNotched.value ? collapseSpring : expandSpring))
@@ -64,6 +69,9 @@ export function useNotch(
   })
 
   watch([isAnimating, isLightTheme], () => updatePanelBg())
+
+  // Initialize pill color on setup (watcher won't fire since isNotched starts true)
+  updatePanelBg()
 
   function cleanup() {
     if (animTimer) clearTimeout(animTimer)

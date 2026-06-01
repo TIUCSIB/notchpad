@@ -10,24 +10,51 @@ import { Color } from '@tiptap/extension-color'
 import { Highlight } from '@tiptap/extension-highlight'
 import { FontFamily } from '@tiptap/extension-font-family'
 import {
-  Minus, Bold, Italic, Strikethrough, Code, Link, Quote,
-  List, ListOrdered, ListChecks
+  Minus,
+  Bold,
+  Italic,
+  Strikethrough,
+  Code,
+  Link,
+  Quote,
+  List,
+  ListOrdered,
+  ListChecks
 } from 'lucide-vue-next'
 import { FontSize } from '../extensions/fontSize'
 import type { FormatBtn } from '../../types'
 
 export const fontOptions = [
-  'Microsoft YaHei', 'SimSun', 'SimHei', 'KaiTi',
-  'FangSong', 'Arial', 'Georgia', 'Courier New'
+  'Microsoft YaHei',
+  'SimSun',
+  'SimHei',
+  'KaiTi',
+  'FangSong',
+  'Arial',
+  'Georgia',
+  'Courier New'
 ]
 export const fontSizeOptions = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px']
 export const colorOptions = [
-  '#e5e5e5', '#ffffff', '#dc2626', '#ea580c',
-  '#ca8a04', '#4ade80', '#0284c7', '#7c3aed', '#db2777'
+  '#e5e5e5',
+  '#ffffff',
+  '#dc2626',
+  '#ea580c',
+  '#ca8a04',
+  '#4ade80',
+  '#0284c7',
+  '#7c3aed',
+  '#db2777'
 ]
 export const highlightColors = [
-  '#fef08a', '#bbf7d0', '#bfdbfe', '#fecaca',
-  '#e9d5ff', '#fed7aa', '#d1fae5', '#ffffff'
+  '#fef08a',
+  '#bbf7d0',
+  '#bfdbfe',
+  '#fecaca',
+  '#e9d5ff',
+  '#fed7aa',
+  '#d1fae5',
+  '#ffffff'
 ]
 
 export function useEditorSetup(
@@ -38,9 +65,9 @@ export function useEditorSetup(
 ) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({ link: false }),
       LinkExtension.configure({ openOnClick: false }),
-      Placeholder.configure({ placeholder: '输入内容...' }),
+      Placeholder.configure({ placeholder: '写点什么吧...' }),
       TaskList,
       TaskItem.configure({ nested: true }),
       Image,
@@ -75,7 +102,11 @@ export function useEditorSetup(
             if (!file) continue
             const reader = new FileReader()
             reader.onload = () => {
-              editor.value?.chain().focus().setImage({ src: reader.result as string }).run()
+              editor.value
+                ?.chain()
+                .focus()
+                .setImage({ src: reader.result as string })
+                .run()
             }
             reader.readAsDataURL(file)
             return true
@@ -107,33 +138,97 @@ export function useEditorSetup(
   }
 
   const formatBtns: FormatBtn[] = [
-    { title: '加粗', icon: Bold, action: fmtBold, isActive: () => editor.value?.isActive('bold') ?? false },
-    { title: '斜体', icon: Italic, action: fmtItalic, isActive: () => editor.value?.isActive('italic') ?? false },
-    { title: '删除线', icon: Strikethrough, action: fmtStrike, isActive: () => editor.value?.isActive('strike') ?? false },
-    { title: '代码', icon: Code, action: fmtCode, isActive: () => editor.value?.isActive('code') ?? false },
-    { title: '链接', icon: Link, action: fmtLink, isActive: () => editor.value?.isActive('link') ?? false },
-    { title: '引用', icon: Quote, action: fmtQuote, isActive: () => editor.value?.isActive('blockquote') ?? false },
-    { title: '无序列表', icon: List, action: fmtBullet, isActive: () => editor.value?.isActive('bulletList') ?? false },
-    { title: '有序列表', icon: ListOrdered, action: fmtOrdered, isActive: () => editor.value?.isActive('orderedList') ?? false },
-    { title: '任务列表', icon: ListChecks, action: fmtTask, isActive: () => editor.value?.isActive('taskList') ?? false },
+    {
+      title: '加粗',
+      icon: Bold,
+      action: fmtBold,
+      isActive: () => editor.value?.isActive('bold') ?? false
+    },
+    {
+      title: '斜体',
+      icon: Italic,
+      action: fmtItalic,
+      isActive: () => editor.value?.isActive('italic') ?? false
+    },
+    {
+      title: '删除线',
+      icon: Strikethrough,
+      action: fmtStrike,
+      isActive: () => editor.value?.isActive('strike') ?? false
+    },
+    {
+      title: '代码',
+      icon: Code,
+      action: fmtCode,
+      isActive: () => editor.value?.isActive('code') ?? false
+    },
+    {
+      title: '链接',
+      icon: Link,
+      action: fmtLink,
+      isActive: () => editor.value?.isActive('link') ?? false
+    },
+    {
+      title: '引用',
+      icon: Quote,
+      action: fmtQuote,
+      isActive: () => editor.value?.isActive('blockquote') ?? false
+    },
+    {
+      title: '无序列表',
+      icon: List,
+      action: fmtBullet,
+      isActive: () => editor.value?.isActive('bulletList') ?? false
+    },
+    {
+      title: '有序列表',
+      icon: ListOrdered,
+      action: fmtOrdered,
+      isActive: () => editor.value?.isActive('orderedList') ?? false
+    },
+    {
+      title: '任务列表',
+      icon: ListChecks,
+      action: fmtTask,
+      isActive: () => editor.value?.isActive('taskList') ?? false
+    },
     { title: '分割线', icon: Minus, action: fmtHr }
   ]
 
   // Font / color actions
-  const setFontSize = (size: string) => { editor.value?.chain().focus().setFontSize(size).run(); scheduleSave() }
-  const clearFontSize = () => { editor.value?.chain().focus().unsetFontSize().run(); scheduleSave() }
+  const setFontSize = (size: string) => {
+    editor.value?.chain().focus().setFontSize(size).run()
+    scheduleSave()
+  }
+  const clearFontSize = () => {
+    editor.value?.chain().focus().unsetFontSize().run()
+    scheduleSave()
+  }
   const setFontFamily = (family: string) => {
     if (family === 'Microsoft YaHei') editor.value?.chain().focus().unsetFontFamily().run()
     else editor.value?.chain().focus().setFontFamily(family).run()
     scheduleSave()
   }
-  const setTextColor = (color: string) => { editor.value?.chain().focus().setColor(color).run(); scheduleSave() }
-  const setHighlight = (color: string) => { editor.value?.chain().focus().toggleHighlight({ color }).run(); scheduleSave() }
-  const clearTextColor = () => { editor.value?.chain().focus().unsetColor().run(); scheduleSave() }
-  const clearHighlightColor = () => { editor.value?.chain().focus().unsetHighlight().run(); scheduleSave() }
+  const setTextColor = (color: string) => {
+    editor.value?.chain().focus().setColor(color).run()
+    scheduleSave()
+  }
+  const setHighlight = (color: string) => {
+    editor.value?.chain().focus().toggleHighlight({ color }).run()
+    scheduleSave()
+  }
+  const clearTextColor = () => {
+    editor.value?.chain().focus().unsetColor().run()
+    scheduleSave()
+  }
+  const clearHighlightColor = () => {
+    editor.value?.chain().focus().unsetHighlight().run()
+    scheduleSave()
+  }
 
   const currentFontSize = () => editor.value?.getAttributes('fontSize').fontSize || '14px'
-  const currentFontFamily = () => editor.value?.getAttributes('textStyle').fontFamily || 'Microsoft YaHei'
+  const currentFontFamily = () =>
+    editor.value?.getAttributes('textStyle').fontFamily || 'Microsoft YaHei'
   const currentTextColor = () => editor.value?.getAttributes('textStyle').color || '#e5e5e5'
   const currentHighlightColor = () => editor.value?.getAttributes('highlight').color || '#fef08a'
 
@@ -149,10 +244,20 @@ export function useEditorSetup(
   }
 
   return {
-    editor, formatBtns,
-    setFontSize, clearFontSize, setFontFamily,
-    setTextColor, setHighlight, clearTextColor, clearHighlightColor,
-    currentFontSize, currentFontFamily, currentTextColor, currentHighlightColor,
-    fmtLink, confirmLink
+    editor,
+    formatBtns,
+    setFontSize,
+    clearFontSize,
+    setFontFamily,
+    setTextColor,
+    setHighlight,
+    clearTextColor,
+    clearHighlightColor,
+    currentFontSize,
+    currentFontFamily,
+    currentTextColor,
+    currentHighlightColor,
+    fmtLink,
+    confirmLink
   }
 }

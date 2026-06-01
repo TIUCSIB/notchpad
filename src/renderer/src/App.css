@@ -1,4 +1,4 @@
-
+﻿
 .app-root {
   width: 100%;
   height: 100vh;
@@ -9,10 +9,10 @@
 .panel-motion {
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);
   z-index: 2;
   background: var(--bg-main, #000);
   will-change: transform, width, height;
+  overflow: hidden;
   filter: blur(0px);
   transition: filter 0.25s ease-out;
 }
@@ -31,6 +31,10 @@
 
 .panel-motion.notched::before {
   opacity: 1;
+}
+.panel-motion.notched .panel {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .panel-motion.notched.pill-hovered::before {
@@ -75,6 +79,7 @@
   clip-path: inset(0 round 0 0 20px 20px);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
   color: var(--text-primary, #e5e5e5);
+  transition: opacity 0.2s ease;
 }
 
 .editor-area {

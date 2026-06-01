@@ -42,9 +42,14 @@ export function usePages(
 
   async function addPage() {
     if (pages.value.length >= MAX_PAGES) return
-    const page = await window.api.addPage()
-    pages.value.push(page)
-    selectPage(pages.value.length - 1)
+    try {
+      const result = await window.api.addPage()
+      if (!result || !Array.isArray(result)) return
+      pages.value = result
+      selectPage(pages.value.length - 1)
+    } catch (e) {
+      console.error('[Notchpad] addPage error:', e)
+    }
   }
 
   async function deletePage() {
