@@ -4,7 +4,7 @@
 
 # Notchpad
 
-**一款刘海风格的桌面笔记应用**
+**一款刘海风格的桌面便签应用**
 
 Electron + Vue 3 + TipTap · 紧贴屏幕顶部 · 弹性动画 · 深色/浅色主题
 
@@ -13,11 +13,9 @@ Electron + Vue 3 + TipTap · 紧贴屏幕顶部 · 弹性动画 · 深色/浅色
 ---
 
 ## 特性
-
 ### 灵动刘海交互
 
-应用启动后自动收起为屏幕顶部中央的**小药丸**，悬浮或点击即可展开完整编辑区域。收回时带有弹性弹簧动画和高斯模糊过渡，流畅自然。
-
+应用启动后自动收起为屏幕顶部中央的*小药丸*（顶部齐平、底部圆润的刘海造型），悬浮或点击即可展开完整编辑区域。收回时带有弹性弹簧动画，流畅自然。
 ### 富文本编辑器
 
 基于 [TipTap](https://tiptap.dev/) 构建，支持：
@@ -28,27 +26,21 @@ Electron + Vue 3 + TipTap · 紧贴屏幕顶部 · 弹性动画 · 深色/浅色
 - 截图粘贴（`Ctrl+V` 直接插入图片）
 - 分割线
 - 字体大小、字体颜色、文字高亮、字体样式
-
 ### 多页面管理
 
-最多支持 **10 个页面**，顶部胶囊式导航栏切换，支持拖拽排序，动画平滑无抖动。
-
+最多支持 **10 个页面**，顶部胶囊状导航栏切换，支持拖拽排序，动画平滑无抖动。
 ### 置顶/星标页面
 
-长按页面标签弹出置顶菜单，置顶页始终排在最前面，标签上显示星标图标。置顶状态持久化存储。
-
+长按页面标签弹出置顶菜单，置顶页面始终排在最前面，标签上显示星标图标。置顶状态持久化存储。
 ### 全局快捷键
 
 `Ctrl+Alt+Z` 直接呼出窗口并展开编辑区域。
-
 ### 数据持久化
 
-使用 SQLite（sql.js）本地存储，数据保存在 `userData/memo.db`。
-
+使用 SQLite（sql.js）本地存储，数据保存在 `userData/memo.db`。支持自定义存储位置，可在设置中将数据库迁移到其他目录。
 ### 系统托盘
 
 关闭窗口后应用驻留系统托盘，双击托盘图标即可恢复，右键菜单提供显示/退出选项。
-
 ### 设置中心
 
 - **主题**：深色 / 浅色 / 跟随系统
@@ -56,11 +48,10 @@ Electron + Vue 3 + TipTap · 紧贴屏幕顶部 · 弹性动画 · 深色/浅色
 - **默认字号**：12px - 32px
 - **唤醒方式**：悬浮展开 / 点击展开（带 Jelly 弹跳动效）
 - **开机自启**：一键开关
+- **存储位置**：自定义数据库存储目录
 - **数据导入/导出**：JSON 和 Markdown 格式备份与恢复
-
 ### 键盘快捷键
-
-| 快捷键       | 功能     |
+| 快捷键        | 功能     |
 | ------------ | -------- |
 | `Ctrl+N`     | 新建页面 |
 | `Ctrl+S`     | 保存     |
@@ -71,34 +62,31 @@ Electron + Vue 3 + TipTap · 紧贴屏幕顶部 · 弹性动画 · 深色/浅色
 
 ### 自动保存
 
-编辑内容后自动保存，底部显示"保存中"/"已保存"状态指示器，无需手动操作。
-
+编辑内容后自动保存，底部显示"保存中/已保存"状态指示器，无需手动操作。
 ---
 
 ## 技术栈
 
-| 类别   | 技术                         |
-| ------ | ---------------------------- |
-| 框架   | Electron 39 + Vue 3.5        |
-| 构建   | electron-vite + Vite 7       |
+| 类别   | 技术                        |
+| ------ | --------------------------- |
+| 框架   | Electron 39 + Vue 3.5       |
+| 构建   | electron-vite + Vite 7      |
 | 编辑器 | TipTap 3 (StarterKit + 扩展) |
-| 动画   | motion-v（弹簧物理动画）     |
-| 图标   | Lucide Vue Next              |
-| 数据库 | sql.js (SQLite WASM)         |
-| 语言   | TypeScript                   |
-| 包管理 | pnpm                         |
+| 动画   | motion-v（弹性物理动画）     |
+| 图标   | Lucide Vue Next             |
+| 数据库 | sql.js (SQLite WASM)        |
+| 语言   | TypeScript                  |
+| 包管理 | pnpm                        |
 
 ---
 
 ## 快速开始
-
 ### 环境要求
 
 - Node.js >= 18
 - pnpm >= 8
 
 ### 安装与运行
-
 ```bash
 # 克隆仓库
 git clone https://github.com/TIUCSIB/notchpad.git
@@ -128,7 +116,7 @@ pnpm build:linux
 src/
 ├── main/
 │   ├── index.ts                  # Electron 入口（窗口、托盘、快捷键）
-│   ├── db.ts                     # SQLite 数据库操作
+│   ├── db.ts                     # SQLite 数据库操作 + 自定义路径配置
 │   ├── ipc.ts                    # IPC 处理器注册
 │   └── notch.ts                  # 刘海轮询与模式切换
 ├── preload/
@@ -147,7 +135,7 @@ src/
         │   ├── BottomBar.vue     # 底部工具栏（格式化、字体控制）
         │   ├── BottomBar.css
         │   ├── LinkDialog.vue    # 链接插入弹窗
-        │   ├── Settings.vue      # 设置面板
+        │   ├── Settings.vue      # 设置面板（含存储位置配置）
         │   └── Settings.css
         ├── composables/
         │   ├── useNotch.ts       # 刘海动画状态管理
@@ -160,7 +148,7 @@ src/
         ├── extensions/
         │   └── fontSize.ts       # TipTap FontSize 自定义 Mark
         ├── utils/
-        │   └── dataConverter.ts  # HTML↔Markdown 转换 + 导入导出
+        │   └── dataConverter.ts  # HTML→Markdown 转换 + 导入导出
         └── directives/
             └── jelly.ts          # Jelly 弹跳动画指令
 ```
