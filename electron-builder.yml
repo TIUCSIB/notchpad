@@ -1,8 +1,14 @@
-appId: com.notchpad.app
+﻿appId: com.notchpad.app
 productName: Notchpad
 directories:
   buildResources: build
 files:
+  - out/**/*
+  - package.json
+  - node_modules/{@electron-toolkit/**,electron-updater/**,electron-builder/**}
+  - node_modules/{@tiptap/**,lucide-vue-next/**,marked/**,motion-v/**,motion-dom/**,motion-utils/**,sql.js/**}
+  - node_modules/{framer-motion/**,tslib/**,hey-listen/**}
+  - node_modules/{prosemirror-*,@floating-ui/**,@vueuse/**,vue/**}
   - '!**/.vscode/*'
   - '!src/*'
   - '!electron.vite.config.{js,ts,mjs,cjs}'
