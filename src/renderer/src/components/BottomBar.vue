@@ -121,13 +121,8 @@ function clearHighlightColor() {
 <template>
   <div class="bottom-bar" @click.stop>
     <div class="format-group">
-      <button
-        v-for="btn in formatBtns"
-        :key="btn.title"
-        class="fmt-btn"
-        :class="{ active: btn.isActive?.() }"
-        @click="btn.action"
-      >
+      <button v-for="btn in formatBtns" :key="btn.title" class="fmt-btn" :class="{ active: btn.isActive?.() }"
+        @click="btn.action">
         <component :is="btn.icon" :size="14" :stroke-width="2.5" />
       </button>
     </div>
@@ -139,23 +134,14 @@ function clearHighlightColor() {
         <div class="popup-anchor">
           <div class="popup-centerer">
             <AnimatePresence>
-              <Motion
-                v-if="fontSizePopup"
-                class="font-popup"
+              <Motion v-if="fontSizePopup" class="font-popup"
                 :initial="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
                 :animate="{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }"
                 :exit="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
-                :transition="{ type: 'spring', stiffness: 300, damping: 25, mass: 0.6 }"
-                @click.stop
-              >
+                :transition="{ type: 'spring', stiffness: 300, damping: 25, mass: 0.6 }" @click.stop>
                 <button class="font-popup-item" @click="clearFontSize">默认</button>
-                <button
-                  v-for="s in fontSizeOptions"
-                  :key="s"
-                  class="font-popup-item"
-                  :class="{ active: currentFontSize() === s }"
-                  @click="() => setFontSize(s)"
-                >
+                <button v-for="s in fontSizeOptions" :key="s" class="font-popup-item"
+                  :class="{ active: currentFontSize() === s }" @click="() => setFontSize(s)">
                   {{ s }}
                 </button>
               </Motion>
@@ -170,23 +156,14 @@ function clearHighlightColor() {
         <div class="popup-anchor">
           <div class="popup-centerer">
             <AnimatePresence>
-              <Motion
-                v-if="fontFamilyPopup"
-                class="font-popup font-popup-wide"
+              <Motion v-if="fontFamilyPopup" class="font-popup font-popup-wide"
                 :initial="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
                 :animate="{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }"
                 :exit="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
-                :transition="{ type: 'spring', stiffness: 300, damping: 25, mass: 0.6 }"
-                @click.stop
-              >
-                <button
-                  v-for="f in fontOptions"
-                  :key="f"
-                  class="font-popup-item"
-                  :class="{ active: currentFontFamily() === f }"
-                  :style="{ fontFamily: f === '默认' ? 'inherit' : f }"
-                  @click="() => setFontFamily(f)"
-                >
+                :transition="{ type: 'spring', stiffness: 300, damping: 25, mass: 0.6 }" @click.stop>
+                <button v-for="f in fontOptions" :key="f" class="font-popup-item"
+                  :class="{ active: currentFontFamily() === f }" :style="{ fontFamily: f === '默认' ? 'inherit' : f }"
+                  @click="() => setFontFamily(f)">
                   {{ f }}
                 </button>
               </Motion>
@@ -201,26 +178,16 @@ function clearHighlightColor() {
         <div class="popup-anchor">
           <div class="popup-centerer">
             <AnimatePresence>
-              <Motion
-                v-if="colorPopup"
-                class="font-popup color-popup"
+              <Motion v-if="colorPopup" class="font-popup color-popup"
                 :initial="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
                 :animate="{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }"
                 :exit="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
-                :transition="{ type: 'spring', stiffness: 300, damping: 25, mass: 0.6 }"
-                @click.stop
-              >
+                :transition="{ type: 'spring', stiffness: 300, damping: 25, mass: 0.6 }" @click.stop>
                 <button class="color-swatch clear-swatch" @click="clearTextColor">
                   <span class="clear-diag"></span>
                 </button>
-                <button
-                  v-for="c in colorOptions"
-                  :key="c"
-                  class="color-swatch"
-                  :style="{ background: c }"
-                  :class="{ active: currentTextColor() === c }"
-                  @click="() => setTextColor(c)"
-                />
+                <button v-for="c in colorOptions" :key="c" class="color-swatch" :style="{ background: c }"
+                  :class="{ active: currentTextColor() === c }" @click="() => setTextColor(c)" />
               </Motion>
             </AnimatePresence>
           </div>
@@ -233,25 +200,16 @@ function clearHighlightColor() {
         <div class="popup-anchor">
           <div class="popup-centerer">
             <AnimatePresence>
-              <Motion
-                v-if="highlightPopup"
-                class="font-popup color-popup"
+              <Motion v-if="highlightPopup" class="font-popup color-popup"
                 :initial="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
                 :animate="{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }"
                 :exit="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
-                :transition="{ type: 'spring', stiffness: 300, damping: 25, mass: 0.6 }"
-                @click.stop
-              >
+                :transition="{ type: 'spring', stiffness: 300, damping: 25, mass: 0.6 }" @click.stop>
                 <button class="color-swatch clear-swatch" @click="clearHighlightColor">
                   <span class="clear-diag"></span>
                 </button>
-                <button
-                  v-for="hc in highlightColors"
-                  :key="hc"
-                  class="color-swatch"
-                  :style="{ background: hc }"
-                  @click="() => setHighlight(hc)"
-                />
+                <button v-for="hc in highlightColors" :key="hc" class="color-swatch" :style="{ background: hc }"
+                  @click="() => setHighlight(hc)" />
               </Motion>
             </AnimatePresence>
           </div>
@@ -365,7 +323,7 @@ function clearHighlightColor() {
   background: var(--bg-toolbar, #2a2a2a);
   border: 1px solid var(--border-strong, #3a3a3a);
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  /* box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4); */
   padding: 4px;
   display: flex;
   flex-direction: column;

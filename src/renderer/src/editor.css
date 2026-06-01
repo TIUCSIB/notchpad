@@ -52,18 +52,42 @@ body,
 }
 .editor-content ul[data-type='taskList'] li {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
 }
 .editor-content ul[data-type='taskList'] li label {
   flex-shrink: 0;
-  margin-top: 4px;
 }
 .editor-content ul[data-type='taskList'] li label input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
   width: 16px;
   height: 16px;
-  accent-color: var(--accent, #4ade80);
+  border: 2px solid #555;
+  border-radius: 5px;
+  background: transparent;
   cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+}
+.editor-content ul[data-type='taskList'] li label input[type='checkbox']:checked {
+  background: var(--accent, #4ade80);
+  border-color: var(--accent, #4ade80);
+}
+.editor-content ul[data-type='taskList'] li label input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 0px;
+  width: 5px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.editor-content ul[data-type='taskList'] li[data-checked='true'] > div {
+  text-decoration: line-through;
+  opacity: 0.5;
 }
 .editor-content ul[data-type='taskList'] li > div {
   flex: 1;

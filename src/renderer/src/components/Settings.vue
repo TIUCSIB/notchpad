@@ -413,7 +413,7 @@ onMounted(() => {
   background: var(--bg-card, #1a1a1c);
   border: 1px solid var(--border, #2a2a2c);
   border-radius: 12px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+  /* box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5); */
   position: relative;
   flex-shrink: 0;
 }
