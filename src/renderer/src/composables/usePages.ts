@@ -61,7 +61,9 @@ export function usePages(
     await window.api.deletePage(page.id)
     pages.value.splice(currentIndex.value, 1)
     if (pages.value.length > 0) {
-      selectPage(Math.min(currentIndex.value, pages.value.length - 1))
+      const next = Math.min(currentIndex.value, pages.value.length - 1)
+      currentIndex.value = -1
+      selectPage(next)
     } else {
       currentIndex.value = -1
       editor.value?.commands.setContent('')

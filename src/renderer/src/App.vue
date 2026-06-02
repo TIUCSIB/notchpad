@@ -132,6 +132,10 @@ function handleKeydown(e: KeyboardEvent) {
       e.preventDefault()
       editor.value?.chain().focus().redo().run()
       break
+    case 'd':
+      e.preventDefault()
+      deletePage()
+      break
     case 'w':
       e.preventDefault()
       window.api.closeWindow()

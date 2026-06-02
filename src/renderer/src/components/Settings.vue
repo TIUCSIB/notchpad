@@ -33,8 +33,13 @@ const showSaved = ref(false)
 let savedTimer: ReturnType<typeof setTimeout> | null = null
 
 const accentOptions = [
-  { color: '#4ade80' }, { color: '#60a5fa' }, { color: '#f87171' },
-  { color: '#fbbf24' }, { color: '#c084fc' }, { color: '#fb923c' }, { color: '#e5e5e5' }
+  { color: '#4ade80' },
+  { color: '#60a5fa' },
+  { color: '#f87171' },
+  { color: '#fbbf24' },
+  { color: '#c084fc' },
+  { color: '#fb923c' },
+  { color: '#e5e5e5' }
 ]
 
 const fontSizeOptions = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px']
@@ -72,7 +77,9 @@ async function chooseDbDir() {
   } else {
     dbRelocateMsg.value = '迁移失败: ' + (result.error || '未知错误')
   }
-  setTimeout(() => { dbRelocateMsg.value = '' }, 3000)
+  setTimeout(() => {
+    dbRelocateMsg.value = ''
+  }, 3000)
 }
 
 async function save(key: string, value: string) {
@@ -85,27 +92,36 @@ async function save(key: string, value: string) {
 function flashSaved() {
   showSaved.value = true
   if (savedTimer) clearTimeout(savedTimer)
-  savedTimer = setTimeout(() => { showSaved.value = false }, 1200)
+  savedTimer = setTimeout(() => {
+    showSaved.value = false
+  }, 1200)
 }
 
 async function handleReset() {
   await window.api.resetSettings()
   settings.value = {
-    theme: 'dark', accentColor: '#4ade80', defaultFontSize: '14px',
-    autoStart: 'false', wakeMode: 'hover'
+    theme: 'dark',
+    accentColor: '#4ade80',
+    defaultFontSize: '14px',
+    autoStart: 'false',
+    wakeMode: 'hover'
   }
   emit('updateSettings', { ...settings.value })
   flashSaved()
 }
 
-function onClose() { emit('close') }
+function onClose() {
+  emit('close')
+}
 
 onMounted(() => {
   loadSettings()
   loadDbPath()
 })
 
-onBeforeUnmount(() => { if (savedTimer) clearTimeout(savedTimer) })
+onBeforeUnmount(() => {
+  if (savedTimer) clearTimeout(savedTimer)
+})
 </script>
 
 <template>
@@ -131,8 +147,12 @@ onBeforeUnmount(() => { if (savedTimer) clearTimeout(savedTimer) })
                   <span>主题</span>
                 </div>
                 <div class="setting-control">
-                  <button v-for="t in [{ key: 'dark', label: '深色' }, { key: 'light', label: '浅色' }, { key: 'system', label: '系统' }]"
-                    :key="t.key" class="theme-btn" :class="{ active: settings.theme === t.key }" @click="save('theme', t.key)">
+                  <button v-for="t in [
+                    { key: 'dark', label: '深色' },
+                    { key: 'light', label: '浅色' },
+                    { key: 'system', label: '系统' }
+                  ]" :key="t.key" class="theme-btn" :class="{ active: settings.theme === t.key }"
+                    @click="save('theme', t.key)">
                     {{ t.label }}
                   </button>
                 </div>
@@ -182,8 +202,11 @@ onBeforeUnmount(() => { if (savedTimer) clearTimeout(savedTimer) })
                   <span>唤醒方式</span>
                 </div>
                 <div class="setting-control">
-                  <button v-for="m in [{ key: 'hover', label: '悬浮' }, { key: 'click', label: '点击' }]"
-                    :key="m.key" class="theme-btn" :class="{ active: settings.wakeMode === m.key }" @click="save('wakeMode', m.key)">
+                  <button v-for="m in [
+                    { key: 'hover', label: '悬浮' },
+                    { key: 'click', label: '点击' }
+                  ]" :key="m.key" class="theme-btn" :class="{ active: settings.wakeMode === m.key }"
+                    @click="save('wakeMode', m.key)">
                     {{ m.label }}
                   </button>
                 </div>
@@ -223,7 +246,9 @@ onBeforeUnmount(() => { if (savedTimer) clearTimeout(savedTimer) })
                   <Upload :size="15" :stroke-width="2.5" />
                   <span>导入数据</span>
                 </div>
-                <button class="action-btn" @click="() => importFromJson(() => flashSaved())">导入</button>
+                <button class="action-btn" @click="() => importFromJson(() => flashSaved())">
+                  导入
+                </button>
               </div>
 
               <div class="setting-divider" />
@@ -242,6 +267,7 @@ onBeforeUnmount(() => { if (savedTimer) clearTimeout(savedTimer) })
                 <div class="setting-label shortcuts-title"><span>快捷键</span></div>
                 <div class="shortcuts-list">
                   <div class="shortcut-row"><kbd>Ctrl+N</kbd> <span>新建页面</span></div>
+                  <div class="shortcut-row"><kbd>Ctrl+D</kbd> <span>删除页面</span></div>
                   <div class="shortcut-row"><kbd>Ctrl+S</kbd> <span>保存</span></div>
                   <div class="shortcut-row"><kbd>Ctrl+Z</kbd> <span>撤销</span></div>
                   <div class="shortcut-row"><kbd>Ctrl+Y</kbd> <span>重做</span></div>
