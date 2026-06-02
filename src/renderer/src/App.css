@@ -22,7 +22,7 @@
   position: absolute;
   inset: -6px;
   border-radius: 0 0 18px 18px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.28);
   z-index: -1;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -118,7 +118,8 @@
   display: flex;
   flex-direction: column;
   overflow: visible;
-  min-height: 0; position: relative;
+  min-height: 0;
+  position: relative;
 }
 
 .content-body {
@@ -176,7 +177,6 @@
     opacity: 0.3;
   }
 }
-
 
 .char-count {
   position: absolute;
