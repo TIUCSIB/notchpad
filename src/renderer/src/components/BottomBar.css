@@ -1,4 +1,4 @@
-
+﻿
 .bottom-bar {
   display: flex;
   align-items: center;
@@ -102,7 +102,7 @@
   background: var(--bg-toolbar, #2a2a2a);
   border: 1px solid var(--border-strong, #3a3a3a);
   border-radius: 8px;
-  /* box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4); */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   padding: 4px;
   display: flex;
   flex-direction: column;
@@ -112,6 +112,15 @@
 
 .font-popup-wide {
   min-width: 120px;
+}
+
+.popup-anchor-right {
+  left: auto;
+  right: 0;
+}
+
+.popup-anchor-right .popup-centerer {
+  transform: none;
 }
 
 .color-popup {

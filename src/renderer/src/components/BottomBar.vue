@@ -1,4 +1,5 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
+import { watch } from 'vue'
 import type { LucideIcon } from 'lucide-vue-next'
 import { Motion, AnimatePresence } from 'motion-v'
 import { useFontPopups } from '../composables/useFontPopups'
@@ -10,7 +11,7 @@ interface FormatBtn {
   isActive?: () => boolean
 }
 
-defineProps<{
+const props = defineProps<{
   formatBtns: FormatBtn[]
   fontSizeOptions: string[]
   fontOptions: string[]
@@ -20,6 +21,7 @@ defineProps<{
   currentFontFamily: () => string
   currentTextColor: () => string
   currentHighlightColor: () => string
+  isNotched: boolean
 }>()
 
 const emit = defineEmits<{
@@ -36,6 +38,9 @@ const emit = defineEmits<{
 const {
   fontSizePopup, fontFamilyPopup, colorPopup, highlightPopup, closeAll
 } = useFontPopups()
+
+// Close popups when notch collapses
+watch(() => props.isNotched, (v) => { if (v) closeAll() })
 
 function setAndClose(emitFn: () => void) { emitFn(); closeAll() }
 function toggleFontSizePopup() { const o = fontSizePopup.value; closeAll(); fontSizePopup.value = !o }
@@ -59,9 +64,9 @@ function toggleHighlightPopup() { const o = highlightPopup.value; closeAll(); hi
         <div class="popup-anchor"><div class="popup-centerer">
           <AnimatePresence>
             <Motion v-if="fontSizePopup" class="font-popup"
-              :initial="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
-              :animate="{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }"
-              :exit="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
+              :initial="{ opacity: 0, y: 8, scale: 0.95 }"
+              :animate="{ opacity: 1, y: 0, scale: 1 }"
+              :exit="{ opacity: 0, y: 8, scale: 0.95 }"
               :transition="{ type: 'spring', stiffness: 300, damping: 25, mass: 0.6 }" @click.stop>
               <button class="font-popup-item" @click="setAndClose(() => emit('clearFontSize'))">默认</button>
               <button v-for="s in fontSizeOptions" :key="s" class="font-popup-item" :class="{ active: currentFontSize() === s }" @click="setAndClose(() => emit('setFontSize', s))">{{ s }}</button>
@@ -76,11 +81,11 @@ function toggleHighlightPopup() { const o = highlightPopup.value; closeAll(); hi
         <div class="popup-anchor"><div class="popup-centerer">
           <AnimatePresence>
             <Motion v-if="fontFamilyPopup" class="font-popup font-popup-wide"
-              :initial="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
-              :animate="{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }"
-              :exit="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
+              :initial="{ opacity: 0, y: 8, scale: 0.95 }"
+              :animate="{ opacity: 1, y: 0, scale: 1 }"
+              :exit="{ opacity: 0, y: 8, scale: 0.95 }"
               :transition="{ type: 'spring', stiffness: 300, damping: 25, mass: 0.6 }" @click.stop>
-              <button v-for="f in fontOptions" :key="f" class="font-popup-item" :class="{ active: currentFontFamily() === f }" :style="{ fontFamily: f === '默认' ? 'inherit' : f }" @click="setAndClose(() => emit('setFontFamily', f))">{{ f }}</button>
+              <button v-for="f in fontOptions" :key="f" class="font-popup-item" :class="{ active: currentFontFamily() === f }" :style="{ fontFamily: f }" @click="setAndClose(() => emit('setFontFamily', f))">{{ f }}</button>
             </Motion>
           </AnimatePresence>
         </div></div>
@@ -92,9 +97,9 @@ function toggleHighlightPopup() { const o = highlightPopup.value; closeAll(); hi
         <div class="popup-anchor"><div class="popup-centerer">
           <AnimatePresence>
             <Motion v-if="colorPopup" class="font-popup color-popup"
-              :initial="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
-              :animate="{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }"
-              :exit="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
+              :initial="{ opacity: 0, y: 8, scale: 0.95 }"
+              :animate="{ opacity: 1, y: 0, scale: 1 }"
+              :exit="{ opacity: 0, y: 8, scale: 0.95 }"
               :transition="{ type: 'spring', stiffness: 300, damping: 25, mass: 0.6 }" @click.stop>
               <button class="color-swatch clear-swatch" @click="setAndClose(() => emit('clearTextColor'))"><span class="clear-diag"></span></button>
               <button v-for="c in colorOptions" :key="c" class="color-swatch" :style="{ background: c }" :class="{ active: currentTextColor() === c }" @click="setAndClose(() => emit('setTextColor', c))" />
@@ -109,9 +114,9 @@ function toggleHighlightPopup() { const o = highlightPopup.value; closeAll(); hi
         <div class="popup-anchor"><div class="popup-centerer">
           <AnimatePresence>
             <Motion v-if="highlightPopup" class="font-popup color-popup"
-              :initial="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
-              :animate="{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }"
-              :exit="{ opacity: 0, y: 8, scale: 0.95, filter: 'blur(4px)' }"
+              :initial="{ opacity: 0, y: 8, scale: 0.95 }"
+              :animate="{ opacity: 1, y: 0, scale: 1 }"
+              :exit="{ opacity: 0, y: 8, scale: 0.95 }"
               :transition="{ type: 'spring', stiffness: 300, damping: 25, mass: 0.6 }" @click.stop>
               <button class="color-swatch clear-swatch" @click="setAndClose(() => emit('clearHighlightColor'))"><span class="clear-diag"></span></button>
               <button v-for="hc in highlightColors" :key="hc" class="color-swatch" :style="{ background: hc }" @click="setAndClose(() => emit('setHighlight', hc))" />

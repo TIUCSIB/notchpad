@@ -190,7 +190,7 @@ onBeforeUnmount(() => {
               :current-highlight-color="currentHighlightColor" @set-font-size="setFontSize"
               @clear-font-size="clearFontSize" @set-font-family="setFontFamily" @set-text-color="setTextColor"
               @clear-text-color="clearTextColor" @clear-highlight-color="clearHighlightColor"
-              @set-highlight="setHighlight" @open-link="linkPromptVisible = true" />
+              :is-notched="isNotched" @set-highlight="setHighlight" @open-link="linkPromptVisible = true" />
           </div>
           <div class="save-status">
             <AnimatePresence>
