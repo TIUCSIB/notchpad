@@ -1,8 +1,8 @@
-import { app, BrowserWindow, screen, Tray, Menu, nativeImage, shell, globalShortcut } from 'electron'
+﻿import { app, BrowserWindow, screen, Tray, Menu, nativeImage, shell, globalShortcut } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import fs from 'fs'
-import { initDatabase, migrateDatabase, queryAll, queryOne, saveDatabase, closeDatabase, getDb } from './db'
+import { initDatabase, migrateDatabase, queryOne, closeDatabase } from './db'
 import { exitNotchMode, showInNotch, startNotchPolling, stopNotchPolling, pauseUntil, setWakeMode } from './notch'
 import { registerIpcHandlers } from './ipc'
 
@@ -85,13 +85,7 @@ app.whenReady().then(async () => {
     setWakeMode(savedWakeMode.value as string)
   }
 
-  const allPages = queryAll('SELECT * FROM pages')
-  if (allPages.filter((p) => p.title || p.content || p.pinned).length === 0) {
-    const db = getDb()
-    db!.run('DELETE FROM pages')
-    db!.run('INSERT INTO pages (title, content, sort_order) VALUES (?, ?, ?)', ['', '', 0])
-    saveDatabase()
-  }
+  
 
   createWindow()
 

@@ -17,6 +17,7 @@ export function useNotch(
   let collapseColorTimer: ReturnType<typeof setTimeout> | null = null
 
   const notchColor = computed(() => {
+    if (!appReady.value) return 'rgba(251,139,5,1)'
     const n = pages.value.length
     if (n === 0) return 'rgba(93,190,138,1)'
     if (n >= 3) return 'rgba(236,43,36,1)'
@@ -33,7 +34,6 @@ export function useNotch(
     else panelBgColor.value = notchColor.value
   }
 
-  // Notch pill: flat top, rounded bottom — phone notch style
   const pillWidth = computed(() => isNotched.value ? (pillHovered.value ? '84px' : '72px') : 'calc(100% - 4px)')
   const pillHeight = computed(() => isNotched.value ? (pillHovered.value ? '18px' : '14px') : '100vh')
   const pillTop = computed(() => '0px')
@@ -75,7 +75,7 @@ export function useNotch(
     updatePanelBg()
   })
 
-  watch([isAnimating, isLightTheme], () => updatePanelBg())
+  watch([isAnimating, isLightTheme, notchColor], () => updatePanelBg())
 
   updatePanelBg()
 

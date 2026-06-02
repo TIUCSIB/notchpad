@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { EditorContent } from '@tiptap/vue-3'
 import TopToolbar from './components/TopToolbar.vue'
@@ -68,6 +68,7 @@ const {
   panelAnimate,
   panelTransition,
   isLightTheme: notchIsLight,
+  appReady,
   cleanup: cleanupNotch
 } = useNotch(pages, settingsVisible, linkPromptVisible)
 watch(
@@ -142,6 +143,7 @@ onMounted(async () => {
   await loadSettings()
   initSettingsListeners()
   await loadPages()
+  appReady.value = true
 
   await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
 
