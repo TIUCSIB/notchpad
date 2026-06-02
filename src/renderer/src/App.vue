@@ -1,5 +1,5 @@
-﻿<script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+<script setup lang="ts">
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { EditorContent } from '@tiptap/vue-3'
 import TopToolbar from './components/TopToolbar.vue'
 import BottomBar from './components/BottomBar.vue'
@@ -99,6 +99,8 @@ watch(editor, (v) => {
   tempEditor.value = v
 })
 
+const charCount = computed(() => editor.value?.state.doc.textContent.length ?? 0)
+
 function handlePillClick() {
   if (appSettings.value.wakeMode === 'click') window.api.exitNotch()
 }
@@ -141,8 +143,6 @@ onMounted(async () => {
   initSettingsListeners()
   await loadPages()
 
-  // Pre-warm: force browser to compute full editor layout before first hover
-  // This eliminates the lag on first expansion
   await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
 
   window.api.onNotchChange((v: boolean) => {
@@ -184,6 +184,7 @@ onBeforeUnmount(() => {
             <div class="content-body">
               <EditorContent :editor="editor" />
             </div>
+            <span class="char-count">{{ charCount }} 字</span>
             <BottomBar :format-btns="formatBtns" :font-size-options="fontSizeOptions" :font-options="fontOptions"
               :color-options="colorOptions" :highlight-colors="highlightColors" :current-font-size="currentFontSize"
               :current-font-family="currentFontFamily" :current-text-color="currentTextColor"

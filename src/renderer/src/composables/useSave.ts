@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+﻿import { ref, type Ref } from 'vue'
 import type { Page } from '../../types'
 
 export function useSave(
@@ -10,14 +10,14 @@ export function useSave(
   let saveTimer: ReturnType<typeof setTimeout> | null = null
   let savedStatusTimer: ReturnType<typeof setTimeout> | null = null
 
-  async function saveCurrentPage() {
+  async function saveCurrentPage(silent = false) {
     try {
       const idx = currentIndex.value
       const page = idx >= 0 && idx < pages.value.length ? pages.value[idx] : null
       if (!page || !editor.value) return
       const updated = await window.api.updatePage(page.id, '', editor.value.getHTML())
       if (updated) pages.value[idx] = updated
-      saveStatus.value = 'saved'
+      if (!silent) { saveStatus.value = 'saved' }
       if (savedStatusTimer) clearTimeout(savedStatusTimer)
       savedStatusTimer = setTimeout(() => {
         if (saveStatus.value === 'saved') saveStatus.value = 'idle'
@@ -29,7 +29,7 @@ export function useSave(
 
   function flushSave() {
     if (saveTimer) { clearTimeout(saveTimer); saveTimer = null }
-    saveCurrentPage()
+    saveCurrentPage(true)
   }
 
   function scheduleSave() {
