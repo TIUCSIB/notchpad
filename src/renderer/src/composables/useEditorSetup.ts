@@ -1,4 +1,4 @@
-import { useEditor } from '@tiptap/vue-3'
+﻿import { useEditor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import TaskList from '@tiptap/extension-task-list'
@@ -82,10 +82,20 @@ export function useEditorSetup(
       attributes: { class: 'editor-content' },
       handleDOMEvents: {
         contextmenu: (_view, event) => {
-          const target = event.target as HTMLElement
-          if (target.tagName === 'A') {
+          const anchor = (event.target as HTMLElement).closest('a')
+          if (anchor) {
             event.preventDefault()
-            const href = (target as HTMLAnchorElement).href
+            const href = anchor.getAttribute('href') || anchor.href
+            if (href) window.api.openExternal(href)
+            return true
+          }
+          return false
+        },
+        click: (_view, event) => {
+          const anchor = (event.target as HTMLElement).closest('a')
+          if (anchor) {
+            event.preventDefault()
+            const href = anchor.getAttribute('href') || anchor.href
             if (href) window.api.openExternal(href)
             return true
           }
@@ -120,7 +130,6 @@ export function useEditorSetup(
     }
   })
 
-  // Format actions
   const fmtBold = () => editor.value?.chain().focus().toggleBold().run()
   const fmtItalic = () => editor.value?.chain().focus().toggleItalic().run()
   const fmtStrike = () => editor.value?.chain().focus().toggleStrike().run()
@@ -138,126 +147,46 @@ export function useEditorSetup(
   }
 
   const formatBtns: FormatBtn[] = [
-    {
-      title: '加粗',
-      icon: Bold,
-      action: fmtBold,
-      isActive: () => editor.value?.isActive('bold') ?? false
-    },
-    {
-      title: '斜体',
-      icon: Italic,
-      action: fmtItalic,
-      isActive: () => editor.value?.isActive('italic') ?? false
-    },
-    {
-      title: '删除线',
-      icon: Strikethrough,
-      action: fmtStrike,
-      isActive: () => editor.value?.isActive('strike') ?? false
-    },
-    {
-      title: '代码',
-      icon: Code,
-      action: fmtCode,
-      isActive: () => editor.value?.isActive('code') ?? false
-    },
-    {
-      title: '链接',
-      icon: Link,
-      action: fmtLink,
-      isActive: () => editor.value?.isActive('link') ?? false
-    },
-    {
-      title: '引用',
-      icon: Quote,
-      action: fmtQuote,
-      isActive: () => editor.value?.isActive('blockquote') ?? false
-    },
-    {
-      title: '无序列表',
-      icon: List,
-      action: fmtBullet,
-      isActive: () => editor.value?.isActive('bulletList') ?? false
-    },
-    {
-      title: '有序列表',
-      icon: ListOrdered,
-      action: fmtOrdered,
-      isActive: () => editor.value?.isActive('orderedList') ?? false
-    },
-    {
-      title: '任务列表',
-      icon: ListChecks,
-      action: fmtTask,
-      isActive: () => editor.value?.isActive('taskList') ?? false
-    },
+    { title: '加粗', icon: Bold, action: fmtBold, isActive: () => editor.value?.isActive('bold') ?? false },
+    { title: '斜体', icon: Italic, action: fmtItalic, isActive: () => editor.value?.isActive('italic') ?? false },
+    { title: '删除线', icon: Strikethrough, action: fmtStrike, isActive: () => editor.value?.isActive('strike') ?? false },
+    { title: '代码', icon: Code, action: fmtCode, isActive: () => editor.value?.isActive('code') ?? false },
+    { title: '链接', icon: Link, action: fmtLink, isActive: () => editor.value?.isActive('link') ?? false },
+    { title: '引用', icon: Quote, action: fmtQuote, isActive: () => editor.value?.isActive('blockquote') ?? false },
+    { title: '无序列表', icon: List, action: fmtBullet, isActive: () => editor.value?.isActive('bulletList') ?? false },
+    { title: '有序列表', icon: ListOrdered, action: fmtOrdered, isActive: () => editor.value?.isActive('orderedList') ?? false },
+    { title: '任务列表', icon: ListChecks, action: fmtTask, isActive: () => editor.value?.isActive('taskList') ?? false },
     { title: '分割线', icon: Minus, action: fmtHr }
   ]
 
-  // Font / color actions
-  const setFontSize = (size: string) => {
-    editor.value?.chain().focus().setFontSize(size).run()
-    scheduleSave()
-  }
-  const clearFontSize = () => {
-    editor.value?.chain().focus().unsetFontSize().run()
-    scheduleSave()
-  }
+  const setFontSize = (size: string) => { editor.value?.chain().focus().setFontSize(size).run(); scheduleSave() }
+  const clearFontSize = () => { editor.value?.chain().focus().unsetFontSize().run(); scheduleSave() }
   const setFontFamily = (family: string) => {
     if (family === 'Microsoft YaHei') editor.value?.chain().focus().unsetFontFamily().run()
     else editor.value?.chain().focus().setFontFamily(family).run()
     scheduleSave()
   }
-  const setTextColor = (color: string) => {
-    editor.value?.chain().focus().setColor(color).run()
-    scheduleSave()
-  }
-  const setHighlight = (color: string) => {
-    editor.value?.chain().focus().toggleHighlight({ color }).run()
-    scheduleSave()
-  }
-  const clearTextColor = () => {
-    editor.value?.chain().focus().unsetColor().run()
-    scheduleSave()
-  }
-  const clearHighlightColor = () => {
-    editor.value?.chain().focus().unsetHighlight().run()
-    scheduleSave()
-  }
+  const setTextColor = (color: string) => { editor.value?.chain().focus().setColor(color).run(); scheduleSave() }
+  const setHighlight = (color: string) => { editor.value?.chain().focus().toggleHighlight({ color }).run(); scheduleSave() }
+  const clearTextColor = () => { editor.value?.chain().focus().unsetColor().run(); scheduleSave() }
+  const clearHighlightColor = () => { editor.value?.chain().focus().unsetHighlight().run(); scheduleSave() }
 
   const currentFontSize = () => editor.value?.getAttributes('fontSize').fontSize || '14px'
-  const currentFontFamily = () =>
-    editor.value?.getAttributes('textStyle').fontFamily || 'Microsoft YaHei'
+  const currentFontFamily = () => editor.value?.getAttributes('textStyle').fontFamily || 'Microsoft YaHei'
   const currentTextColor = () => editor.value?.getAttributes('textStyle').color || '#e5e5e5'
   const currentHighlightColor = () => editor.value?.getAttributes('highlight').color || '#fef08a'
 
-  // Link confirm
   const confirmLink = (url: string) => {
     if (!editor.value) return
     linkPromptVisible.value = false
-    if (!url) {
-      editor.value.chain().focus().extendMarkRange('link').unsetLink().run()
-      return
-    }
+    if (!url) { editor.value.chain().focus().extendMarkRange('link').unsetLink().run(); return }
     editor.value.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
   }
 
   return {
-    editor,
-    formatBtns,
-    setFontSize,
-    clearFontSize,
-    setFontFamily,
-    setTextColor,
-    setHighlight,
-    clearTextColor,
-    clearHighlightColor,
-    currentFontSize,
-    currentFontFamily,
-    currentTextColor,
-    currentHighlightColor,
-    fmtLink,
-    confirmLink
+    editor, formatBtns, setFontSize, clearFontSize, setFontFamily,
+    setTextColor, setHighlight, clearTextColor, clearHighlightColor,
+    currentFontSize, currentFontFamily, currentTextColor, currentHighlightColor,
+    fmtLink, confirmLink
   }
 }

@@ -39,14 +39,8 @@ function onKeydown(e: KeyboardEvent) {
     <div v-if="visible" class="link-overlay" @click.self="emit('cancel')">
       <div class="link-dialog">
         <div class="link-dialog-title">Insert Link</div>
-        <input
-          ref="inputRef"
-          v-model="url"
-          type="url"
-          class="link-input"
-          placeholder="https://example.com"
-          @keydown="onKeydown"
-        />
+        <input ref="inputRef" v-model="url" type="url" class="link-input" placeholder="https://example.com"
+          @keydown="onKeydown" />
         <div class="link-dialog-actions">
           <button class="link-btn cancel" @click="emit('cancel')">Cancel</button>
           <button class="link-btn confirm" @click="onConfirm">OK</button>
@@ -71,9 +65,9 @@ function onKeydown(e: KeyboardEvent) {
   background: var(--bg-toolbar, #2a2a2a);
   border-radius: 10px;
   padding: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  /* box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); */
   min-width: 320px;
-  border: 1px solid var(--border-strong, #3a3a3a);
+  /* border: 1px solid var(--border-strong, #3a3a3a); */
 }
 
 .link-dialog-title {
