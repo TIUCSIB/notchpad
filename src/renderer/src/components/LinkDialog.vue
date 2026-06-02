@@ -1,5 +1,6 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, watch, nextTick } from 'vue'
+import { Motion, AnimatePresence } from 'motion-v'
 
 const props = defineProps<{
   visible: boolean
@@ -36,17 +37,22 @@ function onKeydown(e: KeyboardEvent) {
 
 <template>
   <Teleport to="body">
-    <div v-if="visible" class="link-overlay" @click.self="emit('cancel')">
-      <div class="link-dialog">
-        <div class="link-dialog-title">Insert Link</div>
-        <input ref="inputRef" v-model="url" type="url" class="link-input" placeholder="https://example.com"
-          @keydown="onKeydown" />
-        <div class="link-dialog-actions">
-          <button class="link-btn cancel" @click="emit('cancel')">Cancel</button>
-          <button class="link-btn confirm" @click="onConfirm">OK</button>
-        </div>
-      </div>
-    </div>
+    <AnimatePresence>
+      <Motion v-if="visible" class="link-overlay" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }"
+        :exit="{ opacity: 0 }" :transition="{ duration: 0.2, ease: 'easeInOut' }" @click.self="emit('cancel')">
+        <Motion class="link-dialog" :initial="{ opacity: 0, y: -10, scale: 0.96 }"
+          :animate="{ opacity: 1, y: 0, scale: 1 }" :exit="{ opacity: 0, y: -10, scale: 0.96 }"
+          :transition="{ type: 'spring', stiffness: 400, damping: 28, mass: 0.6 }" @click.stop>
+          <div class="link-dialog-title">插入链接</div>
+          <input ref="inputRef" v-model="url" type="url" class="link-input" placeholder="https://example.com"
+            @keydown="onKeydown" />
+          <div class="link-dialog-actions">
+            <button class="link-btn cancel" @click="emit('cancel')">取消</button>
+            <button class="link-btn confirm" @click="onConfirm">确定</button>
+          </div>
+        </Motion>
+      </Motion>
+    </AnimatePresence>
   </Teleport>
 </template>
 
@@ -54,27 +60,25 @@ function onKeydown(e: KeyboardEvent) {
 .link-overlay {
   position: fixed;
   inset: 0;
-  background: var(--overlay-bg, rgba(0, 0, 0, 0.6));
+  background: var(--overlay-bg, rgba(0, 0, 0, 0.4));
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
+  border-radius: 0 0 20px 20px;
 }
 
 .link-dialog {
   background: var(--bg-toolbar, #2a2a2a);
   border-radius: 10px;
   padding: 16px;
-  /* box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5); */
   min-width: 320px;
-  /* border: 1px solid var(--border-strong, #3a3a3a); */
 }
 
 .link-dialog-title {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-secondary, #888);
-  margin-bottom: 10px;
   margin-bottom: 10px;
 }
 
@@ -91,8 +95,8 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 .link-input:focus {
-  border-color: #4ade80;
-  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.15);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-dim);
 }
 
 .link-dialog-actions {
@@ -121,11 +125,11 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 .link-btn.confirm {
-  background: #4ade80;
+  background: var(--accent);
   color: #fff;
 }
 
 .link-btn.confirm:hover {
-  background: #15803d;
+  filter: brightness(0.8);
 }
 </style>

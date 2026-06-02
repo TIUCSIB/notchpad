@@ -1,11 +1,12 @@
-import { ref, computed, watch } from 'vue'
+﻿import { ref, computed, watch } from 'vue'
 
 const expandSpring = { type: 'spring' as const, stiffness: 150, damping: 22, mass: 0.8 }
 const collapseSpring = { type: 'spring' as const, stiffness: 200, damping: 30, mass: 0.6 }
 
 export function useNotch(
   pages: { value: any },
-  settingsVisible: { value: boolean }
+  settingsVisible: { value: boolean },
+  linkPromptVisible?: { value: boolean }
 ) {
   const isNotched = ref(true)
   const appReady = ref(false)
@@ -52,7 +53,10 @@ export function useNotch(
   const panelTransition = computed(() => (isNotched.value ? collapseSpring : expandSpring))
 
   watch(isNotched, (notched) => {
-    if (notched && settingsVisible.value) settingsVisible.value = false
+    if (notched) {
+      if (settingsVisible.value) settingsVisible.value = false
+      if (linkPromptVisible?.value) linkPromptVisible.value = false
+    }
     if (animTimer) { clearTimeout(animTimer); animTimer = null }
     if (collapseColorTimer) { clearTimeout(collapseColorTimer); collapseColorTimer = null }
 

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { EditorContent } from '@tiptap/vue-3'
 import TopToolbar from './components/TopToolbar.vue'
@@ -69,7 +69,7 @@ const {
   panelTransition,
   isLightTheme: notchIsLight,
   cleanup: cleanupNotch
-} = useNotch(pages, settingsVisible)
+} = useNotch(pages, settingsVisible, linkPromptVisible)
 watch(
   isLightTheme,
   (v) => {
@@ -143,7 +143,7 @@ onMounted(async () => {
 
   // Pre-warm: force browser to compute full editor layout before first hover
   // This eliminates the lag on first expansion
-  await new Promise<void>(r => requestAnimationFrame(() => requestAnimationFrame(() => r())))
+  await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
 
   window.api.onNotchChange((v: boolean) => {
     isNotched.value = v
