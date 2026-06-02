@@ -16,18 +16,13 @@
   transition: filter 0.25s ease-out;
 }
 
-.panel-motion.notched .panel {
-  opacity: 0;
-  pointer-events: none;
-}
-
 /* White outer halo behind the pill */
 .panel-motion::after {
   content: '';
   position: absolute;
   inset: -6px;
   border-radius: 0 0 18px 18px;
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.06);
   z-index: -1;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -39,9 +34,12 @@
 }
 
 .panel-motion.notched.pill-hovered::after {
-  background: rgba(255, 255, 255, 0.25);
-  
+  background: rgba(255, 255, 255, 0.1);
+}
 
+.panel-motion.notched .panel {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .panel-motion.notched {
@@ -100,6 +98,7 @@
   flex-direction: column;
   padding: 6px 16px 4px 16px;
   overflow: hidden;
+  min-height: 0;
 }
 
 .editor-area.empty {
@@ -118,7 +117,8 @@
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  overflow: visible;
+  overflow: hidden;
+  min-height: 0;
 }
 
 .content-body {
@@ -127,6 +127,7 @@
   overflow-x: hidden;
   padding: 12px 14px;
   border-radius: 12px 12px 0 0;
+  min-height: 0;
 }
 
 .save-status {
