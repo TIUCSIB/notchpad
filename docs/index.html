@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 
 <head>
@@ -1212,6 +1212,10 @@
         margin-bottom: 56px;
       }
 
+      .hero {
+        overflow: hidden;
+      }
+
       .actions {
         flex-direction: column;
         align-items: stretch;
@@ -1225,12 +1229,21 @@
         grid-template-columns: 1fr;
       }
 
+      .demo-cursor {
+        display: none;
+      }
+
       .scene-desk {
         padding: 58px 20px 20px;
       }
 
       .notchpad-surface {
         width: calc(100% - 40px);
+      }
+
+      .notchpad-surface.open {
+        width: calc(100% - 40px);
+        height: min(280px, 60vw);
       }
 
       .notch-capsule {
@@ -1241,14 +1254,45 @@
         display: none;
       }
 
-      .surface-toolbar,
+      .surface-toolbar {
+        flex-direction: row;
+        align-items: center;
+        overflow-x: auto;
+        gap: 6px;
+        padding: 4px 8px;
+      }
+
       .surface-footer {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        align-items: center;
+        overflow-x: auto;
+        gap: 4px;
+        padding: 5px 8px;
       }
 
       .surface-card {
         min-height: 0;
+        padding: 10px 12px 14px;
+      }
+
+      .surface-card h2,
+      .surface-card h3 {
+        font-size: 16px;
+      }
+
+      .surface-card p,
+      .surface-card li {
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .surface-content {
+        padding: 4px 8px 2px;
+      }
+
+      .footer-group {
+        flex-wrap: nowrap;
+        overflow: hidden;
       }
 
       .story-card,
@@ -1261,6 +1305,85 @@
 
       .section {
         margin-top: 92px;
+      }
+
+      .footer {
+        margin-top: 72px;
+        padding: 0 16px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .notchpad-surface.open {
+        width: calc(100% - 24px);
+        height: min(240px, 65vw);
+      }
+
+      .notch-capsule {
+        width: 120px;
+      }
+
+      .scene-desk {
+        padding: 50px 12px 12px;
+      }
+
+      .surface-toolbar {
+        gap: 4px;
+        padding: 3px 6px;
+      }
+
+      .toolbar-btn {
+        width: 22px;
+        height: 22px;
+      }
+
+      .toolbar-btn svg {
+        width: 12px;
+        height: 12px;
+      }
+
+      .page-dot-wrap {
+        transform: scale(0.85);
+      }
+
+      .surface-card {
+        padding: 8px 10px 12px;
+      }
+
+      .surface-card h2,
+      .surface-card h3 {
+        font-size: 14px;
+      }
+
+      .surface-card p,
+      .surface-card li {
+        font-size: 11px;
+        line-height: 1.55;
+      }
+
+      .format-key {
+        min-width: 18px;
+        height: 18px;
+        padding: 0 3px;
+        font-size: 8px;
+      }
+
+      .format-key svg {
+        width: 11px;
+        height: 11px;
+      }
+
+      .surface-footer {
+        gap: 2px;
+        padding: 4px 6px;
+      }
+
+      .story-card,
+      .notes-card,
+      .feature-card,
+      .cta-card {
+        padding: 20px;
+        border-radius: 20px;
       }
     }
   </style>
