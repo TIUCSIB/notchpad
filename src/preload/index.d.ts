@@ -6,6 +6,7 @@ interface API {
   addPage: () => Promise<Page>
   deletePage: (id: number) => Promise<void>
   updatePage: (id: number, title: string, content: string) => Promise<Page>
+  updatePageTitle: (id: number, title: string) => Promise<Page>
   reorderPages: (ids: number[]) => Promise<void>
   enterNotch: () => Promise<void>
   exitNotch: () => Promise<void>

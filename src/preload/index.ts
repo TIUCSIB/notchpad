@@ -7,6 +7,8 @@ const api = {
   deletePage: (id: number): Promise<void> => ipcRenderer.invoke('delete-page', id),
   updatePage: (id: number, title: string, content: string): Promise<Page> =>
     ipcRenderer.invoke('update-page', id, title, content),
+  updatePageTitle: (id: number, title: string): Promise<Page> =>
+    ipcRenderer.invoke('update-page-title', id, title),
   reorderPages: (ids: number[]): Promise<void> => ipcRenderer.invoke('reorder-pages', ids),
   togglePinPage: (id: number): Promise<Page[]> => ipcRenderer.invoke('toggle-pin-page', id),
   enterNotch: (): Promise<void> => ipcRenderer.invoke('enter-notch'),

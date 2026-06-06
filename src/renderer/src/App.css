@@ -11,7 +11,7 @@
   z-index: 2;
   background: var(--bg-main, #000);
   will-change: transform, width, height;
-  overflow: hidden;
+  overflow: visible;
   filter: blur(0px);
   transition: filter 0.25s ease-out;
 }

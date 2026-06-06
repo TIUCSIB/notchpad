@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { EditorContent } from '@tiptap/vue-3'
 import TopToolbar from './components/TopToolbar.vue'
@@ -110,6 +110,14 @@ function handleSettingsUpdate(s: Record<string, string>) {
   if (s._reload) loadPages()
 }
 
+async function handleUpdateTitle(id: number, title: string) {
+  const updated = await window.api.updatePageTitle(id, title)
+  if (updated) {
+    const idx = pages.value.findIndex((p) => p.id === id)
+    if (idx >= 0) pages.value[idx] = updated
+  }
+}
+
 function handleKeydown(e: KeyboardEvent) {
   const ctrl = e.ctrlKey || e.metaKey
   if (!ctrl) return
@@ -183,7 +191,8 @@ onBeforeUnmount(() => {
       <div class="panel">
         <TopToolbar :pages="pages" :current-index="currentIndex" :max-pages="10" :is-notched="isNotched"
           @select="selectPage" @add="addPage" @delete="deletePage" @clear="clearCurrentPage"
-          @settings="settingsVisible = true" @reorder="reorderPages" @toggle-pin="togglePinPage" />
+          @settings="settingsVisible = true" @reorder="reorderPages" @toggle-pin="togglePinPage"
+          @update-title="handleUpdateTitle" />
 
         <div v-show="currentIndex >= 0" class="editor-area">
           <div class="content-card">

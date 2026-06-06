@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron'
+﻿import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron'
 import { queryAll, queryOne, saveDatabase, getDb, getDbPath, relocateDatabase } from './db'
 import { enterNotchMode, exitNotchMode, getIsNotched, setWakeMode } from './notch'
 
@@ -42,6 +42,14 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
   ipcMain.handle('update-page', (_: Electron.IpcMainInvokeEvent, id: number, _title: string, content: string) => {
     getDb()!.run('UPDATE pages SET title = ?, content = ?, updated_at = datetime(?, ?) WHERE id = ?', [
       _title, content, 'now', 'localtime', id
+    ])
+    saveDatabase()
+    return queryOne('SELECT * FROM pages WHERE id = ?', [id])
+  })
+
+  ipcMain.handle('update-page-title', (_: Electron.IpcMainInvokeEvent, id: number, title: string) => {
+    getDb()!.run('UPDATE pages SET title = ?, updated_at = datetime(?, ?) WHERE id = ?', [
+      title, 'now', 'localtime', id
     ])
     saveDatabase()
     return queryOne('SELECT * FROM pages WHERE id = ?', [id])

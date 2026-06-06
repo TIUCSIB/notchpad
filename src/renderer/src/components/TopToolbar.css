@@ -163,6 +163,29 @@
   fill: #fbbf24;
 }
 
+/* Inline title editor */
+.title-edit-input {
+  position: fixed;
+  top: 46px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--accent, #4ade80);
+  border-radius: 6px;
+  background: var(--bg-card, #1a1a1c);
+  color: var(--text-primary, #e5e5e5);
+  font-size: 12px;
+  text-align: center;
+  outline: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  z-index: 200;
+}
+
+.title-edit-input::placeholder {
+  color: var(--text-secondary, #888);
+}
 
 .drag-ghost {
   position: fixed;
