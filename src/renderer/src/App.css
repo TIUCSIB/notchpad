@@ -146,6 +146,15 @@
   gap: 4px;
   font-size: 10px;
   color: var(--text-secondary, #888);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.save-indicator.saving,
+.save-indicator.saved {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .save-indicator.saved {

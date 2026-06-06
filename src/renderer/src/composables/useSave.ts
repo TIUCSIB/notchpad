@@ -1,4 +1,4 @@
-﻿import { ref, type Ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import type { Page } from '../../types'
 
 export function useSave(
@@ -17,15 +17,10 @@ export function useSave(
       const page = idx >= 0 && idx < pages.value.length ? pages.value[idx] : null
       if (!page || !editor.value) return
       const html = editor.value.getHTML()
-      // Skip save if content hasn't changed — avoids interfering with undo history
+      // Skip save if content hasn't changed
       if (html === lastSavedHtml) {
-        if (!silent) {
-          saveStatus.value = 'saved'
-          if (savedStatusTimer) clearTimeout(savedStatusTimer)
-          savedStatusTimer = setTimeout(() => {
-            if (saveStatus.value === 'saved') saveStatus.value = 'idle'
-          }, 2000)
-        }
+        // Clear "saving" indicator without showing "saved"
+        if (saveStatus.value === 'saving') saveStatus.value = 'idle'
         return
       }
       const updated = await window.api.updatePage(page.id, '', html)

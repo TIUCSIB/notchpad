@@ -238,16 +238,13 @@ onBeforeUnmount(() => {
               @set-highlight="setHighlight" @open-link="linkPromptVisible = true" />
           </div>
           <div class="save-status">
-            <AnimatePresence>
-              <Motion v-if="saveStatus === 'saving'" :initial="{ opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }"
-                :exit="{ opacity: 0, y: 4 }" :transition="{ duration: 0.15 }" class="save-indicator saving">
-                <span class="save-dot saving" /> 保存中
-              </Motion>
-              <Motion v-else-if="saveStatus === 'saved'" :initial="{ opacity: 0, y: 4 }" :animate="{ opacity: 1, y: 0 }"
-                :exit="{ opacity: 0, y: 4 }" :transition="{ duration: 0.15 }" class="save-indicator saved">
-                <span class="save-dot saved" /> 已保存
-              </Motion>
-            </AnimatePresence>
+            <div v-show="saveStatus === 'saving'" class="save-indicator saving">
+              <span class="save-dot saving" /> 保存中
+            </div>
+            <div v-show="saveStatus === 'saved'" class="save-indicator saved">
+              <span class="save-dot saved" /> 已保存
+            </div>
+          </div>
           </div>
         </div>
         <div v-show="currentIndex < 0" class="editor-area empty">
