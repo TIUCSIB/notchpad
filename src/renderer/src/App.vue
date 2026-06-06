@@ -246,9 +246,9 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </div>
-      </div>
-      <div v-show="currentIndex < 0" class="editor-area empty">
-        <p class="empty-hint">空白白的~</p>
+        <div v-show="currentIndex < 0" class="editor-area empty">
+          <p class="empty-hint">空白白的~</p>
+        </div>
       </div>
     </Motion>
   </div>
