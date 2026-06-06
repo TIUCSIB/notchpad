@@ -131,25 +131,9 @@
   min-height: 0;
 }
 
-.save-fade-enter-active,
-.save-fade-leave-active {
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-.save-fade-enter-from {
-  opacity: 0;
-  transform: translateY(4px);
-}
-.save-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
-
 .save-status {
   height: 12px;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding-right: 4px;
+  position: relative;
   flex-shrink: 0;
 }
 
@@ -162,6 +146,9 @@
   opacity: 0;
   transform: translateY(4px);
   transition: opacity 0.15s ease, transform 0.15s ease;
+  position: absolute;
+  right: 4px;
+  top: 0;
 }
 
 .save-indicator.saving,
