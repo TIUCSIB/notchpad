@@ -1,4 +1,4 @@
-import { BrowserWindow, screen } from 'electron'
+﻿import { BrowserWindow, screen } from 'electron'
 
 const NOTCH_PILL_WIDTH = 72
 const NOTCH_PILL_HEIGHT = 14
@@ -30,8 +30,8 @@ export function exitNotchMode(mainWindow: BrowserWindow | null): void {
   if (!mainWindow || !isNotched) return
   isNotched = false
   mainWindow.setIgnoreMouseEvents(false)
-    mainWindow.focus()
-    mainWindow.webContents.send('notch-changed', false)
+  mainWindow.focus()
+  mainWindow.webContents.send('notch-changed', false)
 }
 
 export function showInNotch(mainWindow: BrowserWindow | null): void {
