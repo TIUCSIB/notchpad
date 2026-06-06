@@ -154,6 +154,29 @@ function handleKeydown(e: KeyboardEvent) {
         window.api.switchDisplay()
       }
       break
+    case 'tab':
+      e.preventDefault()
+      if (pages.value.length > 0) {
+        if (e.shiftKey) {
+          selectPage((currentIndex.value - 1 + pages.value.length) % pages.value.length)
+        } else {
+          selectPage((currentIndex.value + 1) % pages.value.length)
+        }
+      }
+      break
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+      e.preventDefault()
+      // const pageNum = parseInt(e.key)
+      if (parseInt(e.key) <= pages.value.length) selectPage(parseInt(e.key) - 1)
+      break
   }
 }
 
@@ -209,10 +232,10 @@ onBeforeUnmount(() => {
             <BottomBar :format-btns="formatBtns" :font-size-options="fontSizeOptions" :font-options="fontOptions"
               :color-options="colorOptions" :highlight-colors="highlightColors" :current-font-size="currentFontSize"
               :current-font-family="currentFontFamily" :current-text-color="currentTextColor"
-              :current-highlight-color="currentHighlightColor" @set-font-size="setFontSize"
+              :current-highlight-color="currentHighlightColor" :is-notched="isNotched" @set-font-size="setFontSize"
               @clear-font-size="clearFontSize" @set-font-family="setFontFamily" @set-text-color="setTextColor"
               @clear-text-color="clearTextColor" @clear-highlight-color="clearHighlightColor"
-              :is-notched="isNotched" @set-highlight="setHighlight" @open-link="linkPromptVisible = true" />
+              @set-highlight="setHighlight" @open-link="linkPromptVisible = true" />
           </div>
           <div class="save-status">
             <AnimatePresence>

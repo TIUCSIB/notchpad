@@ -274,6 +274,9 @@ onBeforeUnmount(() => {
                   <div class="shortcut-row"><kbd>Ctrl+W</kbd> <span>最小化</span></div>
                   <div class="shortcut-row"><kbd>Ctrl+Alt+Z</kbd> <span>打开窗口</span></div>
                   <div class="shortcut-row"><kbd>Ctrl+Shift+M</kbd> <span>切换显示器</span></div>
+                  <div class="shortcut-row"><kbd>Ctrl+Tab</kbd> <span>下一页</span></div>
+                  <div class="shortcut-row"><kbd>Ctrl+Shift+Tab</kbd> <span>上一页</span></div>
+                  <div class="shortcut-row"><kbd>Ctrl+1~9</kbd> <span>跳转对应页</span></div>
                 </div>
               </div>
             </div>
