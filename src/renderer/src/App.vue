@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { EditorContent } from '@tiptap/vue-3'
 import TopToolbar from './components/TopToolbar.vue'
@@ -147,6 +147,12 @@ function handleKeydown(e: KeyboardEvent) {
     case 'w':
       e.preventDefault()
       window.api.closeWindow()
+      break
+    case 'm':
+      if (e.shiftKey) {
+        e.preventDefault()
+        window.api.switchDisplay()
+      }
       break
   }
 }

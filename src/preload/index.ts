@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+﻿import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 const api = {
@@ -16,7 +16,9 @@ const api = {
   onNotchChange: (cb: (notched: boolean) => void): void => {
     ipcRenderer.on('notch-changed', (_event: Electron.IpcRendererEvent, v: boolean) => cb(v))
   },
-  offNotchChange: (): void => { ipcRenderer.removeAllListeners('notch-changed') },
+  offNotchChange: (): void => {
+    ipcRenderer.removeAllListeners('notch-changed')
+  },
   getSettings: (): Promise<Record<string, string>> => ipcRenderer.invoke('get-settings'),
   setSetting: (key: string, value: string): Promise<void> =>
     ipcRenderer.invoke('set-setting', key, value),
@@ -25,6 +27,7 @@ const api = {
   chooseDbDir: (): Promise<string | null> => ipcRenderer.invoke('choose-db-dir'),
   relocateDb: (targetDir: string): Promise<{ ok: boolean; path?: string; error?: string }> =>
     ipcRenderer.invoke('relocate-db', targetDir),
+  switchDisplay: (): Promise<void> => ipcRenderer.invoke('switch-display'),
   closeWindow: (): void => {
     ipcRenderer.send('close-window')
   },

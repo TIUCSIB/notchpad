@@ -1,8 +1,8 @@
-﻿import { app, BrowserWindow, screen, Tray, Menu, nativeImage, shell, globalShortcut } from 'electron'
+﻿import { app, BrowserWindow, screen, Tray, Menu, nativeImage, shell, globalShortcut, Display } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import fs from 'fs'
-import { initDatabase, migrateDatabase, queryOne, closeDatabase } from './db'
+import { initDatabase, migrateDatabase, queryOne, closeDatabase, saveDatabase, getDb } from './db'
 import { exitNotchMode, showInNotch, startNotchPolling, stopNotchPolling, pauseUntil, setWakeMode } from './notch'
 import { registerIpcHandlers } from './ipc'
 
@@ -28,11 +28,62 @@ function createTrayIcon(): Electron.NativeImage {
   return nativeImage.createEmpty()
 }
 
+// ======== Display helpers ========
+
+/** Read the saved display ID from the database. Falls back to primary display. */
+function getSavedDisplayId(): number {
+  const row = queryOne("SELECT value FROM settings WHERE key = 'displayId'")
+  if (row) {
+    const id = Number(row.value)
+    if (!isNaN(id)) return id
+  }
+  return screen.getPrimaryDisplay().id
+}
+
+/** Find a display by its ID, or fall back to primary. */
+function findDisplay(displayId: number): Display {
+  return screen.getAllDisplays().find((d) => d.id === displayId) || screen.getPrimaryDisplay()
+}
+
+/** Position the window at the top-center of the given display. */
+function positionOnDisplay(display: Display): void {
+  if (!mainWindow || mainWindow.isDestroyed()) return
+  const { x, width } = display.workArea
+  mainWindow.setBounds({
+    x: Math.round(x + (width - WIN_WIDTH) / 2),
+    y: display.workArea.y,
+    width: WIN_WIDTH,
+    height: WIN_HEIGHT
+  })
+}
+
+/** Cycle to the next display and persist the choice. */
+export function switchToNextDisplay(): void {
+  const displays = screen.getAllDisplays()
+  if (displays.length <= 1) return
+  const currentId = mainWindow && !mainWindow.isDestroyed()
+    ? screen.getDisplayMatching(mainWindow.getBounds()).id
+    : getSavedDisplayId()
+  const currentIdx = displays.findIndex((d) => d.id === currentId)
+  const nextIdx = (currentIdx + 1) % displays.length
+  const nextDisplay = displays[nextIdx]
+  positionOnDisplay(nextDisplay)
+  // Persist
+  const db = getDb()
+  if (db) {
+    db.run("INSERT OR REPLACE INTO settings (key, value) VALUES ('displayId', ?)", [String(nextDisplay.id)])
+    saveDatabase()
+  }
+}
+
+// ======== Window ========
+
 function createWindow(): void {
-  const workArea = screen.getPrimaryDisplay().workArea
+  const display = findDisplay(getSavedDisplayId())
+  const { x, width } = display.workArea
   mainWindow = new BrowserWindow({
-    x: Math.round(workArea.x + (workArea.width - WIN_WIDTH) / 2),
-    y: workArea.y,
+    x: Math.round(x + (width - WIN_WIDTH) / 2),
+    y: display.workArea.y,
     width: WIN_WIDTH,
     height: WIN_HEIGHT,
     frame: false, transparent: true, resizable: false,
@@ -61,7 +112,7 @@ function createWindow(): void {
 }
 
 // Register IPC handlers
-registerIpcHandlers(getMainWindow)
+registerIpcHandlers(getMainWindow, () => switchToNextDisplay)
 
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.notchpad.app')
@@ -84,8 +135,6 @@ app.whenReady().then(async () => {
   if (savedWakeMode) {
     setWakeMode(savedWakeMode.value as string)
   }
-
-  
 
   createWindow()
 

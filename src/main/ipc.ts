@@ -2,10 +2,15 @@
 import { queryAll, queryOne, saveDatabase, getDb, getDbPath, relocateDatabase } from './db'
 import { enterNotchMode, exitNotchMode, getIsNotched, setWakeMode } from './notch'
 
-export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): void {
+export function registerIpcHandlers(
+  getMainWindow: () => BrowserWindow | null,
+  getSwitchDisplay: () => (() => void) | null
+): void {
+
   ipcMain.handle('get-pages', () => {
     return queryAll('SELECT * FROM pages ORDER BY pinned DESC, sort_order ASC, created_at ASC')
   })
+
 
   ipcMain.handle('toggle-pin-page', (_: Electron.IpcMainInvokeEvent, id: number) => {
     const db = getDb()
@@ -62,6 +67,11 @@ export function registerIpcHandlers(getMainWindow: () => BrowserWindow | null): 
   })
 
   ipcMain.on('close-window', () => { getMainWindow()?.close() })
+
+  ipcMain.handle('switch-display', () => {
+    const fn = getSwitchDisplay()
+    if (fn) fn()
+  })
 
   ipcMain.handle('enter-notch', () => { enterNotchMode(getMainWindow()) })
   ipcMain.handle('exit-notch', () => { exitNotchMode(getMainWindow()) })

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import {
   X,
@@ -273,6 +273,7 @@ onBeforeUnmount(() => {
                   <div class="shortcut-row"><kbd>Ctrl+Y</kbd> <span>重做</span></div>
                   <div class="shortcut-row"><kbd>Ctrl+W</kbd> <span>最小化</span></div>
                   <div class="shortcut-row"><kbd>Ctrl+Alt+Z</kbd> <span>打开窗口</span></div>
+                  <div class="shortcut-row"><kbd>Ctrl+Shift+M</kbd> <span>切换显示器</span></div>
                 </div>
               </div>
             </div>
