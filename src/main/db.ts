@@ -7,6 +7,27 @@ let db: Database | null = null
 let dbPath: string | null = null
 let sqlStatic: SqlJsStatic | null = null
 
+// --- Debounced write: batch rapid saves into a single disk write ---
+let dbDirty = false
+let dbWriteTimer: ReturnType<typeof setTimeout> | null = null
+const DB_WRITE_DELAY = 500
+
+function scheduleDbWrite(): void {
+  dbDirty = true
+  if (dbWriteTimer) return
+  dbWriteTimer = setTimeout(() => {
+    dbWriteTimer = null
+    flushDbWrite()
+  }, DB_WRITE_DELAY)
+}
+
+function flushDbWrite(): void {
+  if (!dbDirty || !db || !dbPath) return
+  dbDirty = false
+  const data = db.export()
+  fs.writeFileSync(dbPath, Buffer.from(data))
+}
+
 /** Config file that persists the custom db path across restarts (stored in userData). */
 const configPath = join(app.getPath('userData'), 'db-config.json')
 
@@ -77,19 +98,28 @@ export async function initDatabase(): Promise<Database> {
     db = freshDatabase()
   }
 
-  saveDatabase()
+  // Force an immediate write on init (not debounced)
+  if (db && dbPath) {
+    const data = db.export()
+    fs.writeFileSync(dbPath, Buffer.from(data))
+  }
   return db
 }
 
 export function migrateDatabase(): void {
   try { db!.run('ALTER TABLE pages ADD COLUMN pinned INTEGER DEFAULT 0') } catch (_e) { /* exists */ }
-  saveDatabase()
+  scheduleDbWrite()
 }
 
+/** Mark the database as changed; actual disk write is batched with a short delay. */
 export function saveDatabase(): void {
-  if (!db || !dbPath) return
-  const data = db.export()
-  fs.writeFileSync(dbPath, Buffer.from(data))
+  scheduleDbWrite()
+}
+
+/** Force an immediate synchronous write to disk, bypassing the debounce. */
+export function saveDatabaseImmediate(): void {
+  if (dbWriteTimer) { clearTimeout(dbWriteTimer); dbWriteTimer = null }
+  flushDbWrite()
 }
 
 export function queryAll(sql: string, params: unknown[] = []): Record<string, unknown>[] {
@@ -116,7 +146,7 @@ export function queryOne(sql: string, params: unknown[] = []): Record<string, un
 }
 
 export function closeDatabase(): void {
-  saveDatabase()
+  saveDatabaseImmediate()
   db?.close()
   db = null
 }
@@ -135,7 +165,7 @@ export function relocateDatabase(targetDir: string): string {
     return dest
   }
 
-  saveDatabase() // flush current in-memory state to current file first
+  saveDatabaseImmediate() // flush current in-memory state to current file first
   if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true })
   fs.copyFileSync(dbPath, dest)
 
@@ -145,6 +175,6 @@ export function relocateDatabase(targetDir: string): string {
   dbPath = dest
 
   writeConfig({ dbPath: dest })
-  saveDatabase()
+  saveDatabaseImmediate()
   return dest
 }

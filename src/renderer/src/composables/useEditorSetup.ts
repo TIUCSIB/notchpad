@@ -1,4 +1,4 @@
-﻿import { useEditor } from '@tiptap/vue-3'
+import { useEditor } from '@tiptap/vue-3'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import TaskList from '@tiptap/extension-task-list'
@@ -23,6 +23,47 @@ import {
 } from 'lucide-vue-next'
 import { FontSize } from '../extensions/fontSize'
 import type { FormatBtn } from '../../types'
+
+const IMAGE_MAX_WIDTH = 1920
+const IMAGE_QUALITY = 0.8
+const IMAGE_MAX_BYTES = 5 * 1024 * 1024
+
+/** Read a File as a data URL string. */
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
+}
+
+/** Compress and resize a pasted image using Canvas, returning a base64 data URL. */
+function compressImage(file: File): Promise<string> {
+  return readFileAsDataUrl(file).then((dataUrl) => {
+    return new Promise<string>((resolve, reject) => {
+      if (file.size > IMAGE_MAX_BYTES) {
+        console.warn(`[Notchpad] Image exceeds ${IMAGE_MAX_BYTES / 1024 / 1024}MB, compressing...`)
+      }
+      const img = new window.Image()
+      img.onload = () => {
+        let { width, height } = img
+        if (width > IMAGE_MAX_WIDTH) {
+          height = Math.round((height / width) * IMAGE_MAX_WIDTH)
+          width = IMAGE_MAX_WIDTH
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL('image/jpeg', IMAGE_QUALITY))
+      }
+      img.onerror = () => reject(new Error('Failed to load image'))
+      img.src = dataUrl
+    })
+  })
+}
 
 export const fontOptions = [
   'Microsoft YaHei',
@@ -110,15 +151,15 @@ export function useEditorSetup(
             event.preventDefault()
             const file = item.getAsFile()
             if (!file) continue
-            const reader = new FileReader()
-            reader.onload = () => {
-              editor.value
-                ?.chain()
-                .focus()
-                .setImage({ src: reader.result as string })
-                .run()
-            }
-            reader.readAsDataURL(file)
+            compressImage(file)
+              .then((src) => {
+                editor.value
+                  ?.chain()
+                  .focus()
+                  .setImage({ src })
+                  .run()
+              })
+              .catch((err) => console.error('[Notchpad] Image paste failed:', err))
             return true
           }
         }
