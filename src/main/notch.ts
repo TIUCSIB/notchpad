@@ -1,13 +1,15 @@
-﻿import { BrowserWindow, screen } from 'electron'
+import { BrowserWindow, screen } from 'electron'
 
 const NOTCH_PILL_WIDTH = 72
 const NOTCH_PILL_HEIGHT = 14
 const NOTCH_PILL_TOP = 0
 const NOTCH_COOLDOWN = 350
+const ALWAYS_ON_TOP_REFRESH_INTERVAL = 3000
 
 let isNotched = false
 let notchPollTimer: ReturnType<typeof setInterval> | null = null
 let lastNotchChange = 0
+let lastAlwaysOnTopRefresh = 0
 let wakeMode = 'hover'
 let pillHovering = false
 let shortcutPauseUntil = 0
@@ -52,6 +54,13 @@ export function startNotchPolling(mainWindow: BrowserWindow | null): void {
   if (notchPollTimer) return
   notchPollTimer = setInterval(() => {
     if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.isVisible()) return
+
+    // Periodically re-assert alwaysOnTop to prevent other windows from stealing z-order
+    if (Date.now() - lastAlwaysOnTopRefresh > ALWAYS_ON_TOP_REFRESH_INTERVAL) {
+      mainWindow.setAlwaysOnTop(true, 'screen-saver')
+      lastAlwaysOnTopRefresh = Date.now()
+    }
+
     if (Date.now() - lastNotchChange < NOTCH_COOLDOWN) return
 
     const cursor = screen.getCursorScreenPoint()
