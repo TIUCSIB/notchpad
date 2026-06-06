@@ -131,6 +131,19 @@
   min-height: 0;
 }
 
+.save-fade-enter-active,
+.save-fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.save-fade-enter-from {
+  opacity: 0;
+  transform: translateY(4px);
+}
+.save-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
 .save-status {
   height: 12px;
   display: flex;

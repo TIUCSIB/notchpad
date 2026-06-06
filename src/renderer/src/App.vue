@@ -238,12 +238,14 @@ onBeforeUnmount(() => {
               @set-highlight="setHighlight" @open-link="linkPromptVisible = true" />
           </div>
           <div class="save-status">
-            <div v-show="saveStatus === 'saving'" class="save-indicator saving">
-              <span class="save-dot saving" /> 保存中
-            </div>
-            <div v-show="saveStatus === 'saved'" class="save-indicator saved">
-              <span class="save-dot saved" /> 已保存
-            </div>
+            <Transition name="save-fade" mode="out-in">
+              <div v-if="saveStatus === 'saving'" key="saving" class="save-indicator saving">
+                <span class="save-dot saving" /> 保存中
+              </div>
+              <div v-else-if="saveStatus === 'saved'" key="saved" class="save-indicator saved">
+                <span class="save-dot saved" /> 已保存
+              </div>
+            </Transition>
           </div>
           </div>
         </div>
