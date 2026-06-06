@@ -55,13 +55,15 @@ export function startNotchPolling(mainWindow: BrowserWindow | null): void {
   notchPollTimer = setInterval(() => {
     if (!mainWindow || mainWindow.isDestroyed() || !mainWindow.isVisible()) return
 
+    const now = Date.now()
+
     // Periodically re-assert alwaysOnTop to prevent other windows from stealing z-order
-    if (Date.now() - lastAlwaysOnTopRefresh > ALWAYS_ON_TOP_REFRESH_INTERVAL) {
+    if (now - lastAlwaysOnTopRefresh > ALWAYS_ON_TOP_REFRESH_INTERVAL) {
       mainWindow.setAlwaysOnTop(true, 'screen-saver')
-      lastAlwaysOnTopRefresh = Date.now()
+      lastAlwaysOnTopRefresh = now
     }
 
-    if (Date.now() - lastNotchChange < NOTCH_COOLDOWN) return
+    if (now - lastNotchChange < NOTCH_COOLDOWN) return
 
     const cursor = screen.getCursorScreenPoint()
     const bounds = mainWindow!.getBounds()
@@ -83,16 +85,16 @@ export function startNotchPolling(mainWindow: BrowserWindow | null): void {
         }
       } else {
         if (onPill) {
-          lastNotchChange = Date.now()
+          lastNotchChange = now
           exitNotchMode(mainWindow)
         }
       }
     } else {
-      if (Date.now() < shortcutPauseUntil) return
+      if (now < shortcutPauseUntil) return
       const margin = 40
       if (cursor.x < bounds.x - margin || cursor.x > bounds.x + bounds.width + margin ||
           cursor.y < bounds.y - margin || cursor.y > bounds.y + bounds.height + margin) {
-        lastNotchChange = Date.now()
+        lastNotchChange = now
         enterNotchMode(mainWindow)
       }
     }
