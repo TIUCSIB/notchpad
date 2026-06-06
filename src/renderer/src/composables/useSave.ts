@@ -9,14 +9,30 @@ export function useSave(
   const saveStatus = ref<'idle' | 'saving' | 'saved'>('idle')
   let saveTimer: ReturnType<typeof setTimeout> | null = null
   let savedStatusTimer: ReturnType<typeof setTimeout> | null = null
+  let lastSavedHtml = ''
 
   async function saveCurrentPage(silent = false) {
     try {
       const idx = currentIndex.value
       const page = idx >= 0 && idx < pages.value.length ? pages.value[idx] : null
       if (!page || !editor.value) return
-      const updated = await window.api.updatePage(page.id, '', editor.value.getHTML())
-      if (updated) pages.value[idx] = updated
+      const html = editor.value.getHTML()
+      // Skip save if content hasn't changed — avoids interfering with undo history
+      if (html === lastSavedHtml) {
+        if (!silent) {
+          saveStatus.value = 'saved'
+          if (savedStatusTimer) clearTimeout(savedStatusTimer)
+          savedStatusTimer = setTimeout(() => {
+            if (saveStatus.value === 'saved') saveStatus.value = 'idle'
+          }, 2000)
+        }
+        return
+      }
+      const updated = await window.api.updatePage(page.id, '', html)
+      if (updated) {
+        pages.value[idx] = updated
+        lastSavedHtml = html
+      }
       if (!silent) { saveStatus.value = 'saved' }
       if (savedStatusTimer) clearTimeout(savedStatusTimer)
       savedStatusTimer = setTimeout(() => {
@@ -29,7 +45,7 @@ export function useSave(
 
   function flushSave() {
     if (saveTimer) { clearTimeout(saveTimer); saveTimer = null }
-    saveCurrentPage(true)
+    saveCurrentPage(false)
   }
 
   function scheduleSave() {

@@ -1,4 +1,4 @@
-﻿import { ref, type Ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import type { Page } from '../../types'
 
 export const MAX_PAGES = 10

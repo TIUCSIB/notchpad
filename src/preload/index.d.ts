@@ -18,7 +18,8 @@ interface API {
   getDbPath: () => Promise<string>
   chooseDbDir: () => Promise<string | null>
   relocateDb: (targetDir: string) => Promise<{ ok: boolean; path?: string; error?: string }>
-  switchDisplay: () => Promise<void>\n  closeWindow: () => void
+  switchDisplay: () => Promise<void>
+  closeWindow: () => void
   openExternal: (url: string) => void
   togglePinPage: (id: number) => Promise<Page[]>
 }
