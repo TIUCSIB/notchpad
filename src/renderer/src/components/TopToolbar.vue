@@ -57,30 +57,50 @@ function isPagePinned(pageId: number): boolean {
   return !!props.pages.find((p) => p.id === pageId)?.pinned
 }
 
-// ======== Drag reorder ========
-const {
-  isDragging, cancelDrag,
-  onPointerDown, canDrop, isDragTarget, isDragSource
-} = useDragReorder(
-  () => props.pages,
-  { select: (i: number) => emit('select', i), reorder: (f: number, t: number) => emit('reorder', f, t) },
-  openPinMenu
-)
+/** Extract a short preview from the page for tooltip display. */
+function getPageTitle(page: Page, index: number): string {
+  if (page.title) return page.title
+  if (!page.content) return `第 ${index + 1} 页`
+  const text = page.content.replace(/<[^>]+>/g, '').trim()
+  return text.length > 0 ? text.slice(0, 5) : `第 ${index + 1} 页`
+}
 
-watch(() => props.isNotched, (v) => {
-  if (v) closeContextMenu()
-  if (v) cancelDrag()
-})
+// ======== Drag reorder ========
+const { isDragging, cancelDrag, onPointerDown, canDrop, isDragTarget, isDragSource } =
+  useDragReorder(
+    () => props.pages,
+    {
+      select: (i: number) => emit('select', i),
+      reorder: (f: number, t: number) => emit('reorder', f, t)
+    },
+    openPinMenu
+  )
+
+watch(
+  () => props.isNotched,
+  (v) => {
+    if (v) closeContextMenu()
+    if (v) cancelDrag()
+  }
+)
 </script>
 
 <template>
-  <div class="toolbar" @click="(e) => { if (!(e.target as HTMLElement).closest('.page-dot-wrap') && !(e.target as HTMLElement).closest('.pin-menu')) closeContextMenu() }">
+  <div class="toolbar" @click="
+    (e) => {
+      if (
+        !(e.target as HTMLElement).closest('.page-dot-wrap') &&
+        !(e.target as HTMLElement).closest('.pin-menu')
+      )
+        closeContextMenu()
+    }
+  ">
     <div class="toolbar-group">
       <button v-jelly class="tool-btn danger" @click="emit('delete')">
         <Minus :size="16" :stroke-width="2.5" />
       </button>
       <div class="page-dots" :class="{ 'no-drop': isDragging && !canDrop() }">
-        <div v-for="(page, i) in pages" :key="page.id" class="page-dot-wrap" :class="{
+        <div v-for="(page, i) in pages" :key="page.id" class="page-dot-wrap" :data-title="getPageTitle(page, i)" :class="{
           active: i === currentIndex && !isDragging,
           'drag-source': isDragSource(i),
           'drag-target': isDragTarget(i)
@@ -103,9 +123,12 @@ watch(() => props.isNotched, (v) => {
   </div>
 
   <Teleport to="body">
-    <div v-if="contextMenuVisible" class="pin-menu-overlay" @click="closeContextMenu" @contextmenu.prevent="closeContextMenu">
-      <div class="pin-menu" :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }" @click.stop="handleTogglePin">
-        <Star :size="12" :stroke-width="2.5" :class="isPagePinned(contextMenuPageId!) ? 'menu-star-pinned' : 'menu-star-unpinned'" />
+    <div v-if="contextMenuVisible" class="pin-menu-overlay" @click="closeContextMenu"
+      @contextmenu.prevent="closeContextMenu">
+      <div class="pin-menu" :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
+        @click.stop="handleTogglePin">
+        <Star :size="12" :stroke-width="2.5"
+          :class="isPagePinned(contextMenuPageId!) ? 'menu-star-pinned' : 'menu-star-unpinned'" />
       </div>
     </div>
   </Teleport>
