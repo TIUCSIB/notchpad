@@ -1,6 +1,7 @@
 import { ref, computed, watch } from 'vue'
 
-const SETTINGS_DEFAULTS: Record<string, string> = {
+/** 设置项的默认值。导出给设置面板复用,避免两处硬编码不一致。 */
+export const SETTINGS_DEFAULTS: Record<string, string> = {
   theme: 'dark',
   accentColor: '#4ade80',
   defaultFontSize: '14px',

@@ -5,7 +5,7 @@ directories:
 files:
   - out/**/*
   - package.json
-  - node_modules/{@electron-toolkit/**,electron-updater/**,electron-builder/**}
+  - node_modules/{@electron-toolkit/**,electron-builder/**}
   - node_modules/{@tiptap/**,lucide-vue-next/**,marked/**,motion-v/**,motion-dom/**,motion-utils/**,sql.js/**}
   - node_modules/{framer-motion/**,tslib/**,hey-listen/**}
   - node_modules/{prosemirror-*,@floating-ui/**,@vueuse/**,vue/**}
@@ -47,8 +47,5 @@ linux:
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
-publish:
-  provider: generic
-  url: https://example.com/auto-updates
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/

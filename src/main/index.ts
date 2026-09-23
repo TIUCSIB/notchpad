@@ -1,10 +1,19 @@
-﻿import { app, BrowserWindow, screen, Tray, Menu, nativeImage, shell, globalShortcut, Display } from 'electron'
+﻿import { app, BrowserWindow, screen, Tray, Menu, nativeImage, shell, globalShortcut, Display, protocol } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import fs from 'fs'
 import { initDatabase, migrateDatabase, queryOne, closeDatabase, saveDatabase, getDb } from './db'
 import { exitNotchMode, showInNotch, startNotchPolling, stopNotchPolling, pauseUntil, setWakeMode } from './notch'
 import { registerIpcHandlers } from './ipc'
+import { migrateInlineImages, registerAttachmentProtocol } from './attachments'
+
+// 自定义 scheme 必须在 app ready 之前声明,渲染进程之后才能通过 notchpad:// 加载附件图片
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'notchpad',
+    privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true }
+  }
+])
 
 const WIN_WIDTH = 523
 const WIN_HEIGHT = 364
@@ -121,6 +130,19 @@ app.whenReady().then(async () => {
   await initDatabase()
   migrateDatabase()
 
+  registerAttachmentProtocol()
+
+  // 历史数据里的内联图片提取比较耗时,挪到窗口显示之后再跑,别拖慢启动。
+  // migrateInlineImages 会先给数据库留一份 .before-image-migration.bak 备份。
+  setTimeout(() => {
+    try {
+      const migrated = migrateInlineImages()
+      if (migrated) console.log(`[Notchpad] 内联图片迁移完成: ${migrated} 个页面`)
+    } catch (e) {
+      console.error('[Notchpad] 内联图片迁移失败:', e)
+    }
+  }, 2000)
+
   const shortcutRegistered = globalShortcut.register('CommandOrControl+Alt+Z', () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (!mainWindow.isVisible()) mainWindow.show()
@@ -148,8 +170,9 @@ app.whenReady().then(async () => {
   tray.on('double-click', () => { showInNotch(mainWindow) })
 })
 
-app.on('window-all-closed', () => { app.quit() })
-
+// 这里刻意不监听 window-all-closed:
+// 窗口的 close 事件被拦截成了"隐藏"(见 createWindow),所以该事件本来也不会触发;
+// 而作为一个常驻托盘的应用,即便窗口真的被销毁,也应该继续驻留托盘而不是退出。
 app.on('before-quit', () => {
   globalShortcut.unregisterAll()
   stopNotchPolling()

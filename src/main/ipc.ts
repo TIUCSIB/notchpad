@@ -1,6 +1,7 @@
 ﻿import { app, BrowserWindow, ipcMain, shell, dialog } from 'electron'
 import { queryAll, queryOne, saveDatabase, getDb, getDbPath, relocateDatabase } from './db'
 import { enterNotchMode, exitNotchMode, getIsNotched, setWakeMode } from './notch'
+import { readAttachmentAsDataUrl, saveAttachment } from './attachments'
 
 export function registerIpcHandlers(
   getMainWindow: () => BrowserWindow | null,
@@ -44,9 +45,11 @@ export function registerIpcHandlers(
     saveDatabase()
   })
 
-  ipcMain.handle('update-page', (_: Electron.IpcMainInvokeEvent, id: number, _title: string, content: string) => {
-    getDb()!.run('UPDATE pages SET title = ?, content = ?, updated_at = datetime(?, ?) WHERE id = ?', [
-      _title, content, 'now', 'localtime', id
+  // 只更新正文。标题有独立的 update-page-title 通道 ——
+  // 之前这里会把传入的 title 一起写库,而保存流程传的是空串,导致用户设的标题被静默清空。
+  ipcMain.handle('update-page', (_: Electron.IpcMainInvokeEvent, id: number, content: string) => {
+    getDb()!.run('UPDATE pages SET content = ?, updated_at = datetime(?, ?) WHERE id = ?', [
+      content, 'now', 'localtime', id
     ])
     saveDatabase()
     return queryOne('SELECT * FROM pages WHERE id = ?', [id])
@@ -130,6 +133,26 @@ export function registerIpcHandlers(
     } catch (e) {
       console.error('[Notchpad] relocate-db error:', e)
       return { ok: false, error: String(e) }
+    }
+  })
+
+  // --- 图片附件 ---
+  ipcMain.handle('save-attachment', (_: Electron.IpcMainInvokeEvent, dataUrl: string) => {
+    try {
+      const name = saveAttachment(dataUrl)
+      return name ? { ok: true, name } : { ok: false, error: '无法识别的图片数据' }
+    } catch (e) {
+      console.error('[Notchpad] save-attachment error:', e)
+      return { ok: false, error: String(e) }
+    }
+  })
+
+  ipcMain.handle('read-attachment', (_: Electron.IpcMainInvokeEvent, name: string) => {
+    try {
+      return readAttachmentAsDataUrl(name)
+    } catch (e) {
+      console.error('[Notchpad] read-attachment error:', e)
+      return null
     }
   })
 }

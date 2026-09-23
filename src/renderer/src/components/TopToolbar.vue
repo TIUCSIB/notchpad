@@ -2,16 +2,7 @@
 import { ref, watch, nextTick } from 'vue'
 import { Minus, Plus, Trash2, Settings, Star } from 'lucide-vue-next'
 import { useDragReorder } from '../composables/useDragReorder'
-
-interface Page {
-  id: number
-  title: string
-  content: string
-  sort_order: number
-  pinned: number
-  created_at: string
-  updated_at: string
-}
+import type { Page } from '../../types'
 
 const props = defineProps<{
   pages: Page[]

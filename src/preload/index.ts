@@ -5,8 +5,8 @@ const api = {
   getPages: (): Promise<Page[]> => ipcRenderer.invoke('get-pages'),
   addPage: (): Promise<Page[] | null> => ipcRenderer.invoke('add-page'),
   deletePage: (id: number): Promise<void> => ipcRenderer.invoke('delete-page', id),
-  updatePage: (id: number, title: string, content: string): Promise<Page> =>
-    ipcRenderer.invoke('update-page', id, title, content),
+  updatePage: (id: number, content: string): Promise<Page> =>
+    ipcRenderer.invoke('update-page', id, content),
   updatePageTitle: (id: number, title: string): Promise<Page> =>
     ipcRenderer.invoke('update-page-title', id, title),
   reorderPages: (ids: number[]): Promise<void> => ipcRenderer.invoke('reorder-pages', ids),
@@ -27,6 +27,10 @@ const api = {
   chooseDbDir: (): Promise<string | null> => ipcRenderer.invoke('choose-db-dir'),
   relocateDb: (targetDir: string): Promise<{ ok: boolean; path?: string; error?: string }> =>
     ipcRenderer.invoke('relocate-db', targetDir),
+  saveAttachment: (dataUrl: string): Promise<{ ok: boolean; name?: string; error?: string }> =>
+    ipcRenderer.invoke('save-attachment', dataUrl),
+  readAttachment: (name: string): Promise<string | null> =>
+    ipcRenderer.invoke('read-attachment', name),
   switchDisplay: (): Promise<void> => ipcRenderer.invoke('switch-display'),
   closeWindow: (): void => {
     ipcRenderer.send('close-window')

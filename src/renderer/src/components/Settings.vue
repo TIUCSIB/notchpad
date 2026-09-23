@@ -14,6 +14,7 @@ import {
 } from 'lucide-vue-next'
 import { Motion, AnimatePresence } from 'motion-v'
 import { exportAsJson, exportAsMarkdown, importFromJson } from '../utils/dataConverter'
+import { SETTINGS_DEFAULTS } from '../composables/useSettings'
 
 defineProps<{ visible: boolean }>()
 const emit = defineEmits<{
@@ -21,15 +22,10 @@ const emit = defineEmits<{
   (e: 'updateSettings', settings: Record<string, string>): void
 }>()
 
-const settings = ref<Record<string, string>>({
-  theme: 'dark',
-  accentColor: '#4ade80',
-  defaultFontSize: '14px',
-  autoStart: 'false',
-  wakeMode: 'hover'
-})
+const settings = ref<Record<string, string>>({ ...SETTINGS_DEFAULTS })
 
 const showSaved = ref(false)
+const savedText = ref('已保存')
 let savedTimer: ReturnType<typeof setTimeout> | null = null
 
 const accentOptions = [
@@ -89,7 +85,8 @@ async function save(key: string, value: string) {
   flashSaved()
 }
 
-function flashSaved() {
+function flashSaved(text = '已保存') {
+  savedText.value = text
   showSaved.value = true
   if (savedTimer) clearTimeout(savedTimer)
   savedTimer = setTimeout(() => {
@@ -97,15 +94,17 @@ function flashSaved() {
   }, 1200)
 }
 
+/** 导入 JSON 备份,完成后通知外层重载页面列表 */
+function handleImport() {
+  importFromJson((imported) => {
+    flashSaved(imported > 0 ? `已导入 ${imported} 页` : '没有可导入的内容')
+    emit('updateSettings', { ...settings.value, _reload: '1' })
+  })
+}
+
 async function handleReset() {
   await window.api.resetSettings()
-  settings.value = {
-    theme: 'dark',
-    accentColor: '#4ade80',
-    defaultFontSize: '14px',
-    autoStart: 'false',
-    wakeMode: 'hover'
-  }
+  settings.value = { ...SETTINGS_DEFAULTS }
   emit('updateSettings', { ...settings.value })
   flashSaved()
 }
@@ -246,9 +245,7 @@ onBeforeUnmount(() => {
                   <Upload :size="15" :stroke-width="2.5" />
                   <span>导入数据</span>
                 </div>
-                <button class="action-btn" @click="() => importFromJson(() => flashSaved())">
-                  导入
-                </button>
+                <button class="action-btn" @click="handleImport">导入</button>
               </div>
 
               <div class="setting-divider" />
@@ -282,7 +279,7 @@ onBeforeUnmount(() => {
             </div>
 
             <Transition name="toast">
-              <div v-if="showSaved" class="saved-toast">已保存</div>
+              <div v-if="showSaved" class="saved-toast">{{ savedText }}</div>
             </Transition>
           </div>
         </Motion>

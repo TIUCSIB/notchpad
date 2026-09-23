@@ -31,15 +31,18 @@ const linkPromptVisible = ref(false)
 const linkUrlInput = ref('')
 const settingsVisible = ref(false)
 const tempEditor = ref<any>(null)
-const pagesRef = ref<any[]>([])
-const currentIndexRef = ref(-1)
 
 const {
   saveStatus,
   flushSave,
   scheduleSave,
   cleanup: cleanupSave
-} = useSave(tempEditor, pagesRef, currentIndexRef)
+} = useSave(
+  tempEditor,
+  // 用 getter 直接读真实状态,不再需要 pagesRef / currentIndexRef 两份镜像
+  () => pages.value,
+  () => currentIndex.value
+)
 
 const {
   pages,
@@ -53,13 +56,6 @@ const {
   togglePinPage,
   getIsSwitching
 } = usePages(tempEditor, scheduleSave, flushSave)
-
-watch(pages, (v) => {
-  pagesRef.value = v
-})
-watch(currentIndex, (v) => {
-  currentIndexRef.value = v
-})
 
 const {
   isNotched,
@@ -106,8 +102,10 @@ function handlePillClick() {
   if (appSettings.value.wakeMode === 'click') window.api.exitNotch()
 }
 function handleSettingsUpdate(s: Record<string, string>) {
-  appSettings.value = s
-  if (s._reload) loadPages()
+  // _reload 是设置面板用来要求重载页面的信号,不该混进应用设置里
+  const { _reload, ...rest } = s
+  appSettings.value = rest
+  if (_reload) loadPages()
 }
 
 async function handleUpdateTitle(id: number, title: string) {
@@ -120,7 +118,9 @@ async function handleUpdateTitle(id: number, title: string) {
 
 function handleKeydown(e: KeyboardEvent) {
   const ctrl = e.ctrlKey || e.metaKey
-  if (!ctrl) return
+  // 带 Alt 的组合留给系统与全局快捷键处理(例如 Ctrl+Alt+Z 呼出窗口),
+  // 否则按下呼出键时还会顺带触发一次本地的撤销
+  if (!ctrl || e.altKey) return
   switch (e.key.toLowerCase()) {
     case 'n':
       e.preventDefault()

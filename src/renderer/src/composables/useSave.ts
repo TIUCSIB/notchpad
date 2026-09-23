@@ -1,10 +1,17 @@
 import { ref, type Ref } from 'vue'
 import type { Page } from '../../types'
 
+/**
+ * 自动保存。
+ *
+ * 页面数据用 getter 传入而不是直接传 ref —— useSave 必须先于 usePages 创建
+ * (usePages 反过来要依赖这里的 scheduleSave / flushSave),getter 既能打破这个循环,
+ * 也省掉了调用方在中间抄一份镜像状态再 watch 同步的做法。
+ */
 export function useSave(
   editor: Ref<any>,
-  pages: Ref<Page[]>,
-  currentIndex: Ref<number>
+  getPages: () => Page[],
+  getCurrentIndex: () => number
 ) {
   const saveStatus = ref<'idle' | 'saving' | 'saved'>('idle')
   let saveTimer: ReturnType<typeof setTimeout> | null = null
@@ -13,8 +20,9 @@ export function useSave(
 
   async function saveCurrentPage(silent = false) {
     try {
-      const idx = currentIndex.value
-      const page = idx >= 0 && idx < pages.value.length ? pages.value[idx] : null
+      const idx = getCurrentIndex()
+      const list = getPages()
+      const page = idx >= 0 && idx < list.length ? list[idx] : null
       if (!page || !editor.value) return
       const html = editor.value.getHTML()
       // Skip save if content hasn't changed
@@ -23,9 +31,10 @@ export function useSave(
         if (saveStatus.value === 'saving') saveStatus.value = 'idle'
         return
       }
-      const updated = await window.api.updatePage(page.id, '', html)
+      const updated = await window.api.updatePage(page.id, html)
       if (updated) {
-        pages.value[idx] = updated
+        // 直接改 ref 里的那个数组,页面列表会同步更新
+        list[idx] = updated
         lastSavedHtml = html
       }
       if (!silent) { saveStatus.value = 'saved' }

@@ -152,12 +152,15 @@ export function useEditorSetup(
             const file = item.getAsFile()
             if (!file) continue
             compressImage(file)
-              .then((src) => {
-                editor.value
-                  ?.chain()
-                  .focus()
-                  .setImage({ src })
-                  .run()
+              .then(async (dataUrl) => {
+                // 图片写到磁盘,正文里只留一个引用。
+                // 内联 base64 会让单条记录涨到几 MB,而 sql.js 每次落盘都是整库导出。
+                const res = await window.api.saveAttachment(dataUrl)
+                const src =
+                  res?.ok && res.name
+                    ? `notchpad://attachments/${res.name}`
+                    : dataUrl // 落盘失败就退回内联,至少不丢图
+                editor.value?.chain().focus().setImage({ src }).run()
               })
               .catch((err) => console.error('[Notchpad] Image paste failed:', err))
             return true

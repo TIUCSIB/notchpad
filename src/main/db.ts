@@ -1,5 +1,5 @@
 import { app } from 'electron'
-import { join } from 'path'
+import { dirname, join } from 'path'
 import fs from 'fs'
 import initSqlJs, { Database, SqlJsStatic } from 'sql.js'
 
@@ -167,7 +167,24 @@ export function relocateDatabase(targetDir: string): string {
 
   saveDatabaseImmediate() // flush current in-memory state to current file first
   if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true })
+
+  // 目标目录已有同名库时先改名备份,避免静默覆盖掉人家原有的数据
+  if (fs.existsSync(dest)) {
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+    const backup = `${dest}.${stamp}.bak`
+    fs.renameSync(dest, backup)
+    console.log('[Notchpad] 目标目录已存在 memo.db,已备份为:', backup)
+  }
+
   fs.copyFileSync(dbPath, dest)
+
+  // 附件目录(图片)跟着数据库一起搬,否则迁移后正文里的图片引用会全部失效
+  const oldAttachments = join(dirname(dbPath), 'attachments')
+  const newAttachments = join(targetDir, 'attachments')
+  if (oldAttachments !== newAttachments && fs.existsSync(oldAttachments)) {
+    fs.cpSync(oldAttachments, newAttachments, { recursive: true })
+    console.log('[Notchpad] 已一并迁移附件目录:', oldAttachments, '->', newAttachments)
+  }
 
   db.close()
   const buffer = fs.readFileSync(dest)

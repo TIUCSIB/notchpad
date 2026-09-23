@@ -3,9 +3,9 @@ import { Page } from './index'
 
 interface API {
   getPages: () => Promise<Page[]>
-  addPage: () => Promise<Page>
+  addPage: () => Promise<Page[] | null>
   deletePage: (id: number) => Promise<void>
-  updatePage: (id: number, title: string, content: string) => Promise<Page>
+  updatePage: (id: number, content: string) => Promise<Page>
   updatePageTitle: (id: number, title: string) => Promise<Page>
   reorderPages: (ids: number[]) => Promise<void>
   enterNotch: () => Promise<void>
@@ -18,6 +18,8 @@ interface API {
   getDbPath: () => Promise<string>
   chooseDbDir: () => Promise<string | null>
   relocateDb: (targetDir: string) => Promise<{ ok: boolean; path?: string; error?: string }>
+  saveAttachment: (dataUrl: string) => Promise<{ ok: boolean; name?: string; error?: string }>
+  readAttachment: (name: string) => Promise<string | null>
   switchDisplay: () => Promise<void>
   closeWindow: () => void
   openExternal: (url: string) => void
