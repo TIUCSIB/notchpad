@@ -24,11 +24,19 @@ export function useFontPopups() {
     if (!target.closest('.font-control-wrap') && !target.closest('.font-popup')) closeAll()
   }
 
-  onMounted(() => { document.addEventListener('pointerdown', onDocClick, true) })
-  onBeforeUnmount(() => { document.removeEventListener('pointerdown', onDocClick, true) })
+  onMounted(() => {
+    document.addEventListener('pointerdown', onDocClick, true)
+  })
+  onBeforeUnmount(() => {
+    document.removeEventListener('pointerdown', onDocClick, true)
+  })
 
   return {
-    fontSizePopup, fontFamilyPopup, colorPopup, highlightPopup,
-    closeAll, toggle
+    fontSizePopup,
+    fontFamilyPopup,
+    colorPopup,
+    highlightPopup,
+    closeAll,
+    toggle
   }
 }

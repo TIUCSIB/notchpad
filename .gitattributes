@@ -1,0 +1,10 @@
+# 仓库约定 LF(见 AGENTS.md / .prettierrc),Windows 检出时不再转 CRLF
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.icns binary
+*.woff binary
+*.woff2 binary

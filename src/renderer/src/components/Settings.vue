@@ -126,11 +126,23 @@ onBeforeUnmount(() => {
 <template>
   <Teleport to="body">
     <AnimatePresence>
-      <Motion v-if="visible" class="settings-overlay" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }"
-        :exit="{ opacity: 0 }" :transition="{ duration: 0.25, ease: 'easeInOut' }" @click.self="emit('close')">
-        <Motion class="settings-panel" :initial="{ opacity: 0, y: -12, scale: 0.96 }"
-          :animate="{ opacity: 1, y: 0, scale: 1 }" :exit="{ opacity: 0, y: -12, scale: 0.96 }"
-          :transition="{ duration: 0.25, ease: [0.34, 1.56, 0.64, 1] }" @click.stop>
+      <Motion
+        v-if="visible"
+        class="settings-overlay"
+        :initial="{ opacity: 0 }"
+        :animate="{ opacity: 1 }"
+        :exit="{ opacity: 0 }"
+        :transition="{ duration: 0.25, ease: 'easeInOut' }"
+        @click.self="emit('close')"
+      >
+        <Motion
+          class="settings-panel"
+          :initial="{ opacity: 0, y: -12, scale: 0.96 }"
+          :animate="{ opacity: 1, y: 0, scale: 1 }"
+          :exit="{ opacity: 0, y: -12, scale: 0.96 }"
+          :transition="{ duration: 0.25, ease: [0.34, 1.56, 0.64, 1] }"
+          @click.stop
+        >
           <div class="settings-panel-inner">
             <div class="settings-header">
               <span class="settings-title">设置</span>
@@ -146,12 +158,17 @@ onBeforeUnmount(() => {
                   <span>主题</span>
                 </div>
                 <div class="setting-control">
-                  <button v-for="t in [
-                    { key: 'dark', label: '深色' },
-                    { key: 'light', label: '浅色' },
-                    { key: 'system', label: '系统' }
-                  ]" :key="t.key" class="theme-btn" :class="{ active: settings.theme === t.key }"
-                    @click="save('theme', t.key)">
+                  <button
+                    v-for="t in [
+                      { key: 'dark', label: '深色' },
+                      { key: 'light', label: '浅色' },
+                      { key: 'system', label: '系统' }
+                    ]"
+                    :key="t.key"
+                    class="theme-btn"
+                    :class="{ active: settings.theme === t.key }"
+                    @click="save('theme', t.key)"
+                  >
                     {{ t.label }}
                   </button>
                 </div>
@@ -163,9 +180,14 @@ onBeforeUnmount(() => {
                   <span>强调色</span>
                 </div>
                 <div class="setting-control color-grid">
-                  <button v-for="a in accentOptions" :key="a.color" class="color-dot"
-                    :class="{ active: settings.accentColor === a.color }" :style="{ background: a.color }"
-                    @click="save('accentColor', a.color)" />
+                  <button
+                    v-for="a in accentOptions"
+                    :key="a.color"
+                    class="color-dot"
+                    :class="{ active: settings.accentColor === a.color }"
+                    :style="{ background: a.color }"
+                    @click="save('accentColor', a.color)"
+                  />
                 </div>
               </div>
 
@@ -175,8 +197,11 @@ onBeforeUnmount(() => {
                   <span>默认字号</span>
                 </div>
                 <div class="setting-control">
-                  <select class="native-select" :value="settings.defaultFontSize"
-                    @change="save('defaultFontSize', ($event.target as HTMLSelectElement).value)">
+                  <select
+                    class="native-select"
+                    :value="settings.defaultFontSize"
+                    @change="save('defaultFontSize', ($event.target as HTMLSelectElement).value)"
+                  >
                     <option v-for="s in fontSizeOptions" :key="s" :value="s">{{ s }}</option>
                   </select>
                 </div>
@@ -188,8 +213,11 @@ onBeforeUnmount(() => {
                   <span>开机自启</span>
                 </div>
                 <div class="setting-control">
-                  <button class="toggle-btn" :class="{ active: settings.autoStart === 'true' }"
-                    @click="save('autoStart', settings.autoStart === 'true' ? 'false' : 'true')">
+                  <button
+                    class="toggle-btn"
+                    :class="{ active: settings.autoStart === 'true' }"
+                    @click="save('autoStart', settings.autoStart === 'true' ? 'false' : 'true')"
+                  >
                     <span class="toggle-knob" />
                   </button>
                 </div>
@@ -201,11 +229,16 @@ onBeforeUnmount(() => {
                   <span>唤醒方式</span>
                 </div>
                 <div class="setting-control">
-                  <button v-for="m in [
-                    { key: 'hover', label: '悬浮' },
-                    { key: 'click', label: '点击' }
-                  ]" :key="m.key" class="theme-btn" :class="{ active: settings.wakeMode === m.key }"
-                    @click="save('wakeMode', m.key)">
+                  <button
+                    v-for="m in [
+                      { key: 'hover', label: '悬浮' },
+                      { key: 'click', label: '点击' }
+                    ]"
+                    :key="m.key"
+                    class="theme-btn"
+                    :class="{ active: settings.wakeMode === m.key }"
+                    @click="save('wakeMode', m.key)"
+                  >
                     {{ m.label }}
                   </button>
                 </div>

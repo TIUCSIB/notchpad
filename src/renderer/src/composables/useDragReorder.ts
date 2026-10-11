@@ -104,12 +104,18 @@ export function useDragReorder(
   }
 
   function removeGhost() {
-    if (dragGhost) { dragGhost.remove(); dragGhost = null }
+    if (dragGhost) {
+      dragGhost.remove()
+      dragGhost = null
+    }
   }
 
   function updateDragTarget(x: number, _y: number) {
     const dotsEl = document.querySelector('.page-dots')
-    if (!dotsEl) { dragToIndex.value = null; return }
+    if (!dotsEl) {
+      dragToIndex.value = null
+      return
+    }
 
     const wraps = dotsEl.querySelectorAll('.page-dot-wrap')
     let closest: number | null = null
@@ -118,21 +124,36 @@ export function useDragReorder(
     wraps.forEach((el, i) => {
       const rect = el.getBoundingClientRect()
       const dist = Math.abs(x - (rect.left + rect.width / 2))
-      if (dist < closestDist) { closestDist = dist; closest = i }
+      if (dist < closestDist) {
+        closestDist = dist
+        closest = i
+      }
     })
 
-    if (closest === null || closestDist > 40) { dragToIndex.value = null; return }
+    if (closest === null || closestDist > 40) {
+      dragToIndex.value = null
+      return
+    }
 
     const fromPinned = getPages()[dragFromIndex.value!]?.pinned
     const toPinned = getPages()[closest!]?.pinned
-    if (fromPinned !== toPinned) { dragToIndex.value = null; return }
+    if (fromPinned !== toPinned) {
+      dragToIndex.value = null
+      return
+    }
 
     dragToIndex.value = closest
   }
 
-  function canDrop() { return dragToIndex.value !== null }
-  function isDragTarget(i: number) { return isDragging.value && dragToIndex.value === i && dragFromIndex.value !== i }
-  function isDragSource(i: number) { return isDragging.value && dragFromIndex.value === i }
+  function canDrop() {
+    return dragToIndex.value !== null
+  }
+  function isDragTarget(i: number) {
+    return isDragging.value && dragToIndex.value === i && dragFromIndex.value !== i
+  }
+  function isDragSource(i: number) {
+    return isDragging.value && dragFromIndex.value === i
+  }
 
   onUnmounted(() => {
     document.removeEventListener('pointermove', onGlobalPointerMove)
@@ -142,8 +163,13 @@ export function useDragReorder(
   })
 
   return {
-    isDragging, dragFromIndex, dragToIndex,
-    onPointerDown, cancelDrag,
-    canDrop, isDragTarget, isDragSource
+    isDragging,
+    dragFromIndex,
+    dragToIndex,
+    onPointerDown,
+    cancelDrag,
+    canDrop,
+    isDragTarget,
+    isDragSource
   }
 }

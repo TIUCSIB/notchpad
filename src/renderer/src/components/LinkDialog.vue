@@ -38,14 +38,32 @@ function onKeydown(e: KeyboardEvent) {
 <template>
   <Teleport to="body">
     <AnimatePresence>
-      <Motion v-if="visible" class="link-overlay" :initial="{ opacity: 0 }" :animate="{ opacity: 1 }"
-        :exit="{ opacity: 0 }" :transition="{ duration: 0.2, ease: 'easeInOut' }" @click.self="emit('cancel')">
-        <Motion class="link-dialog" :initial="{ opacity: 0, y: -10, scale: 0.96 }"
-          :animate="{ opacity: 1, y: 0, scale: 1 }" :exit="{ opacity: 0, y: -10, scale: 0.96 }"
-          :transition="{ type: 'spring', stiffness: 400, damping: 28, mass: 0.6 }" @click.stop>
+      <Motion
+        v-if="visible"
+        class="link-overlay"
+        :initial="{ opacity: 0 }"
+        :animate="{ opacity: 1 }"
+        :exit="{ opacity: 0 }"
+        :transition="{ duration: 0.2, ease: 'easeInOut' }"
+        @click.self="emit('cancel')"
+      >
+        <Motion
+          class="link-dialog"
+          :initial="{ opacity: 0, y: -10, scale: 0.96 }"
+          :animate="{ opacity: 1, y: 0, scale: 1 }"
+          :exit="{ opacity: 0, y: -10, scale: 0.96 }"
+          :transition="{ type: 'spring', stiffness: 400, damping: 28, mass: 0.6 }"
+          @click.stop
+        >
           <div class="link-dialog-title">插入链接</div>
-          <input ref="inputRef" v-model="url" type="url" class="link-input" placeholder="https://example.com"
-            @keydown="onKeydown" />
+          <input
+            ref="inputRef"
+            v-model="url"
+            type="url"
+            class="link-input"
+            placeholder="https://example.com"
+            @keydown="onKeydown"
+          />
           <div class="link-dialog-actions">
             <button class="link-btn cancel" @click="emit('cancel')">取消</button>
             <button class="link-btn confirm" @click="onConfirm">确定</button>

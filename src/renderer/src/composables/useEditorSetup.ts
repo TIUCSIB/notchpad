@@ -156,10 +156,7 @@ export function useEditorSetup(
                 // 图片写到磁盘,正文里只留一个引用。
                 // 内联 base64 会让单条记录涨到几 MB,而 sql.js 每次落盘都是整库导出。
                 const res = await window.api.saveAttachment(dataUrl)
-                const src =
-                  res?.ok && res.name
-                    ? `notchpad://attachments/${res.name}`
-                    : dataUrl // 落盘失败就退回内联,至少不丢图
+                const src = res?.ok && res.name ? `notchpad://attachments/${res.name}` : dataUrl // 落盘失败就退回内联,至少不丢图
                 editor.value?.chain().focus().setImage({ src }).run()
               })
               .catch((err) => console.error('[Notchpad] Image paste failed:', err))
@@ -191,46 +188,124 @@ export function useEditorSetup(
   }
 
   const formatBtns: FormatBtn[] = [
-    { title: '加粗', icon: Bold, action: fmtBold, isActive: () => editor.value?.isActive('bold') ?? false },
-    { title: '斜体', icon: Italic, action: fmtItalic, isActive: () => editor.value?.isActive('italic') ?? false },
-    { title: '删除线', icon: Strikethrough, action: fmtStrike, isActive: () => editor.value?.isActive('strike') ?? false },
-    { title: '代码', icon: Code, action: fmtCode, isActive: () => editor.value?.isActive('code') ?? false },
-    { title: '链接', icon: Link, action: fmtLink, isActive: () => editor.value?.isActive('link') ?? false },
-    { title: '引用', icon: Quote, action: fmtQuote, isActive: () => editor.value?.isActive('blockquote') ?? false },
-    { title: '无序列表', icon: List, action: fmtBullet, isActive: () => editor.value?.isActive('bulletList') ?? false },
-    { title: '有序列表', icon: ListOrdered, action: fmtOrdered, isActive: () => editor.value?.isActive('orderedList') ?? false },
-    { title: '任务列表', icon: ListChecks, action: fmtTask, isActive: () => editor.value?.isActive('taskList') ?? false },
+    {
+      title: '加粗',
+      icon: Bold,
+      action: fmtBold,
+      isActive: () => editor.value?.isActive('bold') ?? false
+    },
+    {
+      title: '斜体',
+      icon: Italic,
+      action: fmtItalic,
+      isActive: () => editor.value?.isActive('italic') ?? false
+    },
+    {
+      title: '删除线',
+      icon: Strikethrough,
+      action: fmtStrike,
+      isActive: () => editor.value?.isActive('strike') ?? false
+    },
+    {
+      title: '代码',
+      icon: Code,
+      action: fmtCode,
+      isActive: () => editor.value?.isActive('code') ?? false
+    },
+    {
+      title: '链接',
+      icon: Link,
+      action: fmtLink,
+      isActive: () => editor.value?.isActive('link') ?? false
+    },
+    {
+      title: '引用',
+      icon: Quote,
+      action: fmtQuote,
+      isActive: () => editor.value?.isActive('blockquote') ?? false
+    },
+    {
+      title: '无序列表',
+      icon: List,
+      action: fmtBullet,
+      isActive: () => editor.value?.isActive('bulletList') ?? false
+    },
+    {
+      title: '有序列表',
+      icon: ListOrdered,
+      action: fmtOrdered,
+      isActive: () => editor.value?.isActive('orderedList') ?? false
+    },
+    {
+      title: '任务列表',
+      icon: ListChecks,
+      action: fmtTask,
+      isActive: () => editor.value?.isActive('taskList') ?? false
+    },
     { title: '分割线', icon: Minus, action: fmtHr }
   ]
 
-  const setFontSize = (size: string) => { editor.value?.chain().focus().setFontSize(size).run(); scheduleSave() }
-  const clearFontSize = () => { editor.value?.chain().focus().unsetFontSize().run(); scheduleSave() }
+  const setFontSize = (size: string) => {
+    editor.value?.chain().focus().setFontSize(size).run()
+    scheduleSave()
+  }
+  const clearFontSize = () => {
+    editor.value?.chain().focus().unsetFontSize().run()
+    scheduleSave()
+  }
   const setFontFamily = (family: string) => {
     if (family === 'Microsoft YaHei') editor.value?.chain().focus().unsetFontFamily().run()
     else editor.value?.chain().focus().setFontFamily(family).run()
     scheduleSave()
   }
-  const setTextColor = (color: string) => { editor.value?.chain().focus().setColor(color).run(); scheduleSave() }
-  const setHighlight = (color: string) => { editor.value?.chain().focus().toggleHighlight({ color }).run(); scheduleSave() }
-  const clearTextColor = () => { editor.value?.chain().focus().unsetColor().run(); scheduleSave() }
-  const clearHighlightColor = () => { editor.value?.chain().focus().unsetHighlight().run(); scheduleSave() }
+  const setTextColor = (color: string) => {
+    editor.value?.chain().focus().setColor(color).run()
+    scheduleSave()
+  }
+  const setHighlight = (color: string) => {
+    editor.value?.chain().focus().toggleHighlight({ color }).run()
+    scheduleSave()
+  }
+  const clearTextColor = () => {
+    editor.value?.chain().focus().unsetColor().run()
+    scheduleSave()
+  }
+  const clearHighlightColor = () => {
+    editor.value?.chain().focus().unsetHighlight().run()
+    scheduleSave()
+  }
 
   const currentFontSize = () => editor.value?.getAttributes('fontSize').fontSize || '14px'
-  const currentFontFamily = () => editor.value?.getAttributes('textStyle').fontFamily || 'Microsoft YaHei'
+  const currentFontFamily = () =>
+    editor.value?.getAttributes('textStyle').fontFamily || 'Microsoft YaHei'
   const currentTextColor = () => editor.value?.getAttributes('textStyle').color || '#e5e5e5'
   const currentHighlightColor = () => editor.value?.getAttributes('highlight').color || '#fef08a'
 
   const confirmLink = (url: string) => {
     if (!editor.value) return
     linkPromptVisible.value = false
-    if (!url) { editor.value.chain().focus().extendMarkRange('link').unsetLink().run(); return }
+    if (!url) {
+      editor.value.chain().focus().extendMarkRange('link').unsetLink().run()
+      return
+    }
     editor.value.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
   }
 
   return {
-    editor, formatBtns, setFontSize, clearFontSize, setFontFamily,
-    setTextColor, setHighlight, clearTextColor, clearHighlightColor,
-    currentFontSize, currentFontFamily, currentTextColor, currentHighlightColor,
-    fmtLink, confirmLink
+    editor,
+    formatBtns,
+    setFontSize,
+    clearFontSize,
+    setFontFamily,
+    setTextColor,
+    setHighlight,
+    clearTextColor,
+    clearHighlightColor,
+    currentFontSize,
+    currentFontFamily,
+    currentTextColor,
+    currentHighlightColor,
+    fmtLink,
+    confirmLink
   }
 }

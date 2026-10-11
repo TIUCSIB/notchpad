@@ -27,12 +27,12 @@ export const FontSize = Mark.create({
     return {
       setFontSize:
         (fontSize: string) =>
-          ({ chain }: CommandProps) =>
-            chain().setMark(this.name, { fontSize }).run(),
+        ({ chain }: CommandProps) =>
+          chain().setMark(this.name, { fontSize }).run(),
       unsetFontSize:
         () =>
-          ({ chain }: CommandProps) =>
-            chain().setMark(this.name, { fontSize: null }).removeEmptyTextStyle().run()
+        ({ chain }: CommandProps) =>
+          chain().setMark(this.name, { fontSize: null }).removeEmptyTextStyle().run()
     }
   }
 })

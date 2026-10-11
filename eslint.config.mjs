@@ -34,7 +34,16 @@ export default defineConfig(
           }
         }
       ],
-      '@typescript-eslint/explicit-function-return-type': 'off'
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      // 代码里 `_e` / `_y` 这类下划线前缀命名就是"故意不用"的约定
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_'
+        }
+      ]
     }
   },
   eslintConfigPrettier

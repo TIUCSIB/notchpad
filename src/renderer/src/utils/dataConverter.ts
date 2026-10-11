@@ -17,26 +17,38 @@ export function htmlToMarkdown(html: string): string {
     const children = Array.from(el.childNodes).map(processNode).join('')
 
     switch (tag) {
-      case 'h1': return '# ' + children.trim() + '\n\n'
-      case 'h2': return '## ' + children.trim() + '\n\n'
-      case 'h3': return '### ' + children.trim() + '\n\n'
-      case 'h4': return '#### ' + children.trim() + '\n\n'
-      case 'h5': return '##### ' + children.trim() + '\n\n'
-      case 'h6': return '###### ' + children.trim() + '\n\n'
-      case 'p': return children.trim() + '\n\n'
-      case 'br': return '\n'
+      case 'h1':
+        return '# ' + children.trim() + '\n\n'
+      case 'h2':
+        return '## ' + children.trim() + '\n\n'
+      case 'h3':
+        return '### ' + children.trim() + '\n\n'
+      case 'h4':
+        return '#### ' + children.trim() + '\n\n'
+      case 'h5':
+        return '##### ' + children.trim() + '\n\n'
+      case 'h6':
+        return '###### ' + children.trim() + '\n\n'
+      case 'p':
+        return children.trim() + '\n\n'
+      case 'br':
+        return '\n'
       case 'strong':
-      case 'b': return '**' + children + '**'
+      case 'b':
+        return '**' + children + '**'
       case 'em':
-      case 'i': return '*' + children + '*'
+      case 'i':
+        return '*' + children + '*'
       case 's':
-      case 'del': return '~~' + children + '~~'
+      case 'del':
+        return '~~' + children + '~~'
       case 'code': {
         const parent = el.parentElement
         if (parent && parent.tagName.toLowerCase() === 'pre') return children
         return '`' + children + '`'
       }
-      case 'pre': return '\n```\n' + children + '\n```\n\n'
+      case 'pre':
+        return '\n```\n' + children + '\n```\n\n'
       case 'blockquote': {
         const lines = children.trim().split('\n')
         return lines.map((l) => '> ' + l).join('\n') + '\n\n'
@@ -50,8 +62,10 @@ export function htmlToMarkdown(html: string): string {
         const alt = el.getAttribute('alt') || ''
         return '![' + alt + '](' + src + ')'
       }
-      case 'ul': return children + '\n'
-      case 'ol': return children + '\n'
+      case 'ul':
+        return children + '\n'
+      case 'ol':
+        return children + '\n'
       case 'li': {
         const parentTag = el.parentElement?.tagName.toLowerCase()
         if (parentTag === 'ol') {
@@ -60,7 +74,8 @@ export function htmlToMarkdown(html: string): string {
         }
         return '- ' + children.trim() + '\n'
       }
-      case 'hr': return '\n---\n\n'
+      case 'hr':
+        return '\n---\n\n'
       case 'div':
       case 'span':
       case 'mark':
