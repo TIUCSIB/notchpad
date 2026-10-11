@@ -1,0 +1,3 @@
+# 强制 MSVC 工具链:机器默认的 windows-gnu 曾导致 Tauri 渲染黑屏(spike 时期的坑)
+[toolchain]
+channel = "stable-x86_64-pc-windows-msvc"

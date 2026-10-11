@@ -9,3 +9,7 @@ out
 .env
 .env.*
 .git_old
+
+# Tauri / Rust
+src-tauri/target/
+src-tauri/gen/
