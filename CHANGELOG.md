@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.3.0 (2026-10-11)
+
+### Features
+
+- **新增 Tauri 2 版本**：主进程用 Rust 重写——rusqlite 数据库、附件自定义协议、刘海光标轮询、托盘、全局快捷键、单实例、多显示器、开机自启全部移植；渲染层 Vue + Tiptap **100% 复用**,经 `window.api` 兼容桥零改动接入（`src-tauri/` / `src/renderer/src/api/bridge.ts`）。安装包 103MB → 3.4MB
+- 数据目录与 Electron 版完全对齐（`%APPDATA%/notchpad`）,现有 memo.db 与 attachments 直接沿用,零迁移
+- 构建工具链强制 `x86_64-pc-windows-msvc`（机器默认的 windows-gnu 曾导致 Tauri 渲染黑屏）,配置固化在 `src-tauri/rust-toolchain.toml`
+
+### 实测说明
+
+- 与 Electron 版共享同一渲染层,内存占用相当:空闲私有内存 ~185MB vs ~197MB,重负载后都会到 400-500MB——大头在 Web 渲染引擎本身（Tiptap + 透明窗口 + 动画）,换壳不减这部分;空闲状态经 90 秒采样验证完全稳定,无泄漏
+- Electron 版代码保留在仓库仍可构建,作为回退选项
+
 ## v1.2.0 (2026-10-11)
 
 ### Fixes

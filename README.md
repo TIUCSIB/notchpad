@@ -63,7 +63,7 @@ Electron + Vue 3 + TipTap
 
 ### 💾 数据持久化
 
-使用 SQLite（better-sqlite3 原生绑定）本地存储，每条修改即时落盘，数据保存在 `userData/memo.db`。粘贴的图片以文件形式存放在数据库旁的 `attachments/` 目录，不拖累数据库体积。支持自定义存储位置，可在设置中将数据库连同图片一并迁移到其他目录。
+使用 SQLite（rusqlite 原生绑定）本地存储，每条修改即时落盘，数据保存在 `userData/memo.db`。粘贴的图片以文件形式存放在数据库旁的 `attachments/` 目录，不拖累数据库体积。支持自定义存储位置，可在设置中将数据库连同图片一并迁移到其他目录。
 
 ### 🔵 系统托盘
 
@@ -106,12 +106,12 @@ Electron + Vue 3 + TipTap
 
 | 类别 | 技术 |
 | --- | --- |
-| 框架 | Electron 39 + Vue 3.5 |
-| 构建 | electron-vite + Vite 7 |
+| 框架 | Tauri 2 (Rust 后端) + Vue 3.5 |
+| 构建 | Vite 7 + Tauri 2 CLI |
 | 编辑器 | TipTap 3 (StarterKit + 扩展) |
 | 动画 | motion-v（弹性物理动画） |
 | 图标 | Lucide Vue Next |
-| 数据库 | better-sqlite3 (原生 SQLite) |
+| 数据库 | rusqlite (原生 SQLite) |
 | 语言 | TypeScript |
 | 包管理 | pnpm |
 
@@ -134,17 +134,17 @@ cd notchpad
 # 安装依赖
 pnpm install
 
-# 开发模式
+# 开发模式(Tauri 版,主推)
+pnpm tauri:dev
+
+# 开发模式(Electron 版,作为回退保留)
 pnpm dev
 
-# 构建 Windows 安装包
+# 构建 Tauri 版 Windows 安装包(约 3-4MB)
+pnpm tauri:build
+
+# 构建 Electron 版安装包(回退用)
 pnpm build:win
-
-# 构建 macOS
-pnpm build:mac
-
-# 构建 Linux
-pnpm build:linux
 ```
 
 ---
@@ -152,8 +152,17 @@ pnpm build:linux
 ## 📂 项目结构
 
 ```
+src-tauri/                        # Tauri 2 Rust 后端
+├── src/
+│   ├── main.rs                   # 应用组装(托盘/快捷键/单实例/协议/轮询)
+│   ├── db.rs                     # rusqlite 数据库与命令
+│   ├── attachments.rs            # 图片附件与 notchpad:// 协议
+│   └── notch.rs                  # 刘海状态机与光标轮询
+├── tauri.conf.json               # 窗口/打包/CSP 配置
+└── rust-toolchain.toml           # 强制 MSVC 工具链
+
 src/
-├── main/
+├── main/                         # Electron 版主进程(回退保留)
 │   ├── index.ts                  # Electron 入口
 │   ├── db.ts                     # SQLite 数据库操作
 │   ├── ipc.ts                    # IPC 处理器注册
@@ -168,6 +177,8 @@ src/
         ├── main.ts               # 渲染进程入口
         ├── editor.css            # TipTap 编辑器样式
         ├── types.ts              # 共享类型定义
+        ├── api/
+        │   └── bridge.ts         # window.api 兼容桥(Tauri 后端)
         ├── components/
         │   ├── TopToolbar.vue    # 顶部工具栏
         │   ├── BottomBar.vue     # 底部工具栏
