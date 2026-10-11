@@ -1,4 +1,5 @@
 import { ref, type Ref } from 'vue'
+import type { Editor } from '@tiptap/vue-3'
 import type { Page } from '../../types'
 
 /**
@@ -9,7 +10,7 @@ import type { Page } from '../../types'
  * 也省掉了调用方在中间抄一份镜像状态再 watch 同步的做法。
  */
 export function useSave(
-  editor: Ref<any>,
+  editor: Ref<Editor | undefined>,
   getPages: () => Page[],
   getCurrentIndex: () => number
 ) {
@@ -37,7 +38,9 @@ export function useSave(
         list[idx] = updated
         lastSavedHtml = html
       }
-      if (!silent) { saveStatus.value = 'saved' }
+      if (!silent) {
+        saveStatus.value = 'saved'
+      }
       if (savedStatusTimer) clearTimeout(savedStatusTimer)
       savedStatusTimer = setTimeout(() => {
         if (saveStatus.value === 'saved') saveStatus.value = 'idle'
@@ -48,7 +51,10 @@ export function useSave(
   }
 
   function flushSave() {
-    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null }
+    if (saveTimer) {
+      clearTimeout(saveTimer)
+      saveTimer = null
+    }
     saveCurrentPage(false)
   }
 

@@ -4,12 +4,14 @@ import { Page } from './index'
 interface API {
   getPages: () => Promise<Page[]>
   addPage: () => Promise<Page[] | null>
-  deletePage: (id: number) => Promise<void>
+  deletePage: (id: number) => Promise<boolean>
   updatePage: (id: number, content: string) => Promise<Page>
   updatePageTitle: (id: number, title: string) => Promise<Page>
   reorderPages: (ids: number[]) => Promise<void>
   enterNotch: () => Promise<void>
   exitNotch: () => Promise<void>
+  updatePillSize: (width: number, height: number) => void
+  rendererReady: () => void
   onNotchChange: (cb: (notched: boolean) => void) => void
   offNotchChange: () => void
   getSettings: () => Promise<Record<string, string>>

@@ -22,6 +22,13 @@ function ensureKeyframes() {
   document.head.appendChild(style)
 }
 
+interface JellyListeners {
+  onMouseEnter: () => void
+  onAnimationEnd: () => void
+}
+
+const listenerMap = new WeakMap<HTMLElement, JellyListeners>()
+
 export const vJelly: Directive<HTMLElement> = {
   mounted(el) {
     ensureKeyframes()
@@ -35,14 +42,14 @@ export const vJelly: Directive<HTMLElement> = {
     }
     el.addEventListener('mouseenter', onMouseEnter)
     el.addEventListener('animationend', onAnimationEnd)
-    ;(el as any).__jellyListeners = { onMouseEnter, onAnimationEnd }
+    listenerMap.set(el, { onMouseEnter, onAnimationEnd })
   },
   unmounted(el) {
-    const listeners = (el as any).__jellyListeners
+    const listeners = listenerMap.get(el)
     if (listeners) {
       el.removeEventListener('mouseenter', listeners.onMouseEnter)
       el.removeEventListener('animationend', listeners.onAnimationEnd)
-      delete (el as any).__jellyListeners
+      listenerMap.delete(el)
     }
   }
 }

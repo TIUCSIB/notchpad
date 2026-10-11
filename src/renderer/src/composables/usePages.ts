@@ -1,10 +1,33 @@
 import { ref, type Ref } from 'vue'
+import type { Editor } from '@tiptap/vue-3'
+import { history } from '@tiptap/pm/history'
 import type { Page } from '../../types'
 
 export const MAX_PAGES = 10
 
+// 清空撤销栈用:prosemirror-history 的 apply 约定,事务 meta 携带
+// { historyState } 时会用它整体替换插件状态 —— 这是它给外部留的重置口子。
+// 这里借 history() 插件的 init 取一份全新的空状态(Branch 不可变,可安全复用)。
+const emptyHistoryPlugin = history({ depth: 100, newGroupDelay: 500 })
+// Plugin 的 .key(即 "history$")是 meta 的查找键;类型上未声明,运行时读取
+const HISTORY_META_KEY = (emptyHistoryPlugin as unknown as { key: string }).key
+const emptyHistoryInit = emptyHistoryPlugin.spec.state?.init as (() => unknown) | undefined
+const EMPTY_HISTORY_STATE = emptyHistoryInit?.()
+
+/**
+ * 切页用 setContent 换整篇内容,这个事务会被记进撤销栈 ——
+ * 不清掉的话,在新页面按 Ctrl+Z 会把上一个页面的内容"撤销"出来,
+ * 自动保存随后把它写进当前页面,造成跨页数据错乱。
+ */
+function resetEditorHistory(editor: Editor): void {
+  if (EMPTY_HISTORY_STATE === undefined) return
+  editor.view.dispatch(
+    editor.state.tr.setMeta(HISTORY_META_KEY, { historyState: EMPTY_HISTORY_STATE })
+  )
+}
+
 export function usePages(
-  editor: Ref<any>,
+  editor: Ref<Editor | undefined>,
   scheduleSave: () => void,
   flushSave: () => void
 ) {
@@ -33,14 +56,19 @@ export function usePages(
     currentIndex.value = index
     if (editor.value) {
       editor.value.commands.setContent(pages.value[index].content || '')
+      resetEditorHistory(editor.value)
       editor.value.commands.focus()
     }
     // Use requestAnimationFrame to reset switching flag after DOM update
     if (rafId) cancelAnimationFrame(rafId)
-    rafId = requestAnimationFrame(() => { isSwitching = false })
+    rafId = requestAnimationFrame(() => {
+      isSwitching = false
+    })
   }
 
-  function getIsSwitching() { return isSwitching }
+  function getIsSwitching() {
+    return isSwitching
+  }
 
   async function addPage() {
     if (pages.value.length >= MAX_PAGES) return
@@ -58,7 +86,9 @@ export function usePages(
     if (currentIndex.value < 0) return
     const page = currentPage()
     if (!page) return
-    await window.api.deletePage(page.id)
+    // 用户在确认框点了取消时主进程不会删,本地列表也不能动
+    const deleted = await window.api.deletePage(page.id)
+    if (!deleted) return
     pages.value.splice(currentIndex.value, 1)
     if (pages.value.length > 0) {
       const next = Math.min(currentIndex.value, pages.value.length - 1)
@@ -99,7 +129,7 @@ export function usePages(
       const newIdx = updatedPages.findIndex((p: Page) => p.id === oldPageId)
       if (newIdx >= 0) {
         currentIndex.value = newIdx
-        editor.value?.commands.setContent(updatedPages[newIdx].content || '', false)
+        editor.value?.commands.setContent(updatedPages[newIdx].content || '', { emitUpdate: false })
       }
     } else if (updatedPages.length > 0) {
       selectPage(0)

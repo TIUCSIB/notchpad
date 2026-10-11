@@ -78,7 +78,7 @@ function cancelEditTitle() {
 function onTitleInput(e: Event) {
   const el = e.target as HTMLInputElement
   const val = el.value
-  if (composing) {
+  if (composing.value) {
     // During IME composition: let it flow, state updates but DOM won't flicker
     // because composition text is transient
     editingTitle.value = val
@@ -112,34 +112,57 @@ function getPageTitle(page: Page, index: number): string {
 }
 
 // ======== Drag reorder ========
-const {
-  isDragging, cancelDrag,
-  onPointerDown, canDrop, isDragTarget, isDragSource
-} = useDragReorder(
-  () => props.pages,
-  { select: (i: number) => emit('select', i), reorder: (f: number, t: number) => emit('reorder', f, t) },
-  openPinMenu
-)
+const { isDragging, cancelDrag, onPointerDown, canDrop, isDragTarget, isDragSource } =
+  useDragReorder(
+    () => props.pages,
+    {
+      select: (i: number) => emit('select', i),
+      reorder: (f: number, t: number) => emit('reorder', f, t)
+    },
+    openPinMenu
+  )
 
-watch(() => props.isNotched, (v) => {
-  if (v) closeContextMenu()
-  if (v) cancelDrag()
-  if (v) cancelEditTitle()
-})
+watch(
+  () => props.isNotched,
+  (v) => {
+    if (v) closeContextMenu()
+    if (v) cancelDrag()
+    if (v) cancelEditTitle()
+  }
+)
 </script>
 
 <template>
-  <div class="toolbar" @click="(e) => { if (!(e.target as HTMLElement).closest('.page-dot-wrap') && !(e.target as HTMLElement).closest('.pin-menu')) closeContextMenu() }">
+  <div
+    class="toolbar"
+    @click="
+      (e) => {
+        if (
+          !(e.target as HTMLElement).closest('.page-dot-wrap') &&
+          !(e.target as HTMLElement).closest('.pin-menu')
+        )
+          closeContextMenu()
+      }
+    "
+  >
     <div class="toolbar-group">
       <button v-jelly class="tool-btn danger" @click="emit('delete')">
         <Minus :size="16" :stroke-width="2.5" />
       </button>
       <div class="page-dots" :class="{ 'no-drop': isDragging && !canDrop() }">
-        <div v-for="(page, i) in pages" :key="page.id" class="page-dot-wrap" :data-title="getPageTitle(page, i)" :class="{
-          active: i === currentIndex && !isDragging,
-          'drag-source': isDragSource(i),
-          'drag-target': isDragTarget(i)
-        }" @pointerdown="onPointerDown($event, i)" @dblclick.stop="startEditTitle(page)">
+        <div
+          v-for="(page, i) in pages"
+          :key="page.id"
+          class="page-dot-wrap"
+          :data-title="getPageTitle(page, i)"
+          :class="{
+            active: i === currentIndex && !isDragging,
+            'drag-source': isDragSource(i),
+            'drag-target': isDragTarget(i)
+          }"
+          @pointerdown="onPointerDown($event, i)"
+          @dblclick.stop="startEditTitle(page)"
+        >
           <div class="page-dot" />
           <Star v-if="page.pinned" :size="8" :stroke-width="2" class="pin-star" />
         </div>
@@ -177,9 +200,22 @@ watch(() => props.isNotched, (v) => {
   </Teleport>
 
   <Teleport to="body">
-    <div v-if="contextMenuVisible" class="pin-menu-overlay" @click="closeContextMenu" @contextmenu.prevent="closeContextMenu">
-      <div class="pin-menu" :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }" @click.stop="handleTogglePin">
-        <Star :size="12" :stroke-width="2.5" :class="isPagePinned(contextMenuPageId!) ? 'menu-star-pinned' : 'menu-star-unpinned'" />
+    <div
+      v-if="contextMenuVisible"
+      class="pin-menu-overlay"
+      @click="closeContextMenu"
+      @contextmenu.prevent="closeContextMenu"
+    >
+      <div
+        class="pin-menu"
+        :style="{ left: contextMenuX + 'px', top: contextMenuY + 'px' }"
+        @click.stop="handleTogglePin"
+      >
+        <Star
+          :size="12"
+          :stroke-width="2.5"
+          :class="isPagePinned(contextMenuPageId!) ? 'menu-star-pinned' : 'menu-star-unpinned'"
+        />
       </div>
     </div>
   </Teleport>

@@ -4,7 +4,7 @@ import { electronAPI } from '@electron-toolkit/preload'
 const api = {
   getPages: (): Promise<Page[]> => ipcRenderer.invoke('get-pages'),
   addPage: (): Promise<Page[] | null> => ipcRenderer.invoke('add-page'),
-  deletePage: (id: number): Promise<void> => ipcRenderer.invoke('delete-page', id),
+  deletePage: (id: number): Promise<boolean> => ipcRenderer.invoke('delete-page', id),
   updatePage: (id: number, content: string): Promise<Page> =>
     ipcRenderer.invoke('update-page', id, content),
   updatePageTitle: (id: number, title: string): Promise<Page> =>
@@ -13,6 +13,12 @@ const api = {
   togglePinPage: (id: number): Promise<Page[]> => ipcRenderer.invoke('toggle-pin-page', id),
   enterNotch: (): Promise<void> => ipcRenderer.invoke('enter-notch'),
   exitNotch: (): Promise<void> => ipcRenderer.invoke('exit-notch'),
+  updatePillSize: (width: number, height: number): void => {
+    ipcRenderer.send('update-pill-size', width, height)
+  },
+  rendererReady: (): void => {
+    ipcRenderer.send('renderer-ready')
+  },
   onNotchChange: (cb: (notched: boolean) => void): void => {
     ipcRenderer.on('notch-changed', (_event: Electron.IpcRendererEvent, v: boolean) => cb(v))
   },

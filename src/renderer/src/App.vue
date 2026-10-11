@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, shallowRef, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { EditorContent } from '@tiptap/vue-3'
+import type { Editor } from '@tiptap/vue-3'
 import TopToolbar from './components/TopToolbar.vue'
 import BottomBar from './components/BottomBar.vue'
 import LinkDialog from './components/LinkDialog.vue'
@@ -30,7 +31,8 @@ const {
 const linkPromptVisible = ref(false)
 const linkUrlInput = ref('')
 const settingsVisible = ref(false)
-const tempEditor = ref<any>(null)
+// Editor 内部结构复杂,deep ref 会对它做 UnwrapRef 展开,必须用 shallowRef(Tiptap 官方推荐)
+const tempEditor = shallowRef<Editor | undefined>(undefined)
 
 const {
   saveStatus,
@@ -65,6 +67,7 @@ const {
   panelTransition,
   isLightTheme: notchIsLight,
   appReady,
+  warmUpFirstExpand,
   cleanup: cleanupNotch
 } = useNotch(pages, settingsVisible, linkPromptVisible)
 watch(
@@ -98,6 +101,28 @@ watch(editor, (v) => {
 
 const charCount = computed(() => editor.value?.state.doc.textContent.length ?? 0)
 
+// 各页面共用同一个编辑器实例和滚动容器,切页只换内容不重置 scrollTop,
+// 滚动位置会跨页共享 —— 切页即回到顶部
+const contentBodyEl = ref<HTMLDivElement | null>(null)
+watch(currentIndex, () => {
+  if (contentBodyEl.value) contentBodyEl.value.scrollTop = 0
+})
+
+// 药丸的命中尺寸直接把 useNotch 的目标尺寸(72/84 × 14/18)上报主进程。
+// 不能用 ResizeObserver 实测 —— 面板收起动画的中间帧会被当成药丸尺寸上报,
+// 把主进程的命中区域撑成几百像素宽,表现为"鼠标离开很远面板都收不回去"。
+// 展开态尺寸无意义,不上报,主进程沿用上一次的药丸尺寸。
+watch(
+  [isNotched, pillHovered],
+  () => {
+    if (!isNotched.value) return
+    const width = parseInt(panelAnimate.value.width)
+    const height = parseInt(panelAnimate.value.height)
+    if (width > 0 && height > 0) window.api.updatePillSize(width, height)
+  },
+  { immediate: true }
+)
+
 function handlePillClick() {
   if (appSettings.value.wakeMode === 'click') window.api.exitNotch()
 }
@@ -121,6 +146,9 @@ function handleKeydown(e: KeyboardEvent) {
   // 带 Alt 的组合留给系统与全局快捷键处理(例如 Ctrl+Alt+Z 呼出窗口),
   // 否则按下呼出键时还会顺带触发一次本地的撤销
   if (!ctrl || e.altKey) return
+  const target = e.target as HTMLElement | null
+  const inTextField =
+    target?.tagName === 'INPUT' || target?.tagName === 'TEXTAREA' || !!target?.isContentEditable
   switch (e.key.toLowerCase()) {
     case 'n':
       e.preventDefault()
@@ -131,14 +159,18 @@ function handleKeydown(e: KeyboardEvent) {
       flushSave()
       break
     case 'z':
-      if (!e.shiftKey) {
+      // 编辑器聚焦时 Tiptap 自己的键位会执行 undo,这里再执行一步就退两格;
+      // 焦点在输入框里则交给原生 undo,同时避免抢走焦点
+      if (!e.shiftKey && !inTextField && !editor.value?.isFocused) {
         e.preventDefault()
         editor.value?.chain().focus().undo().run()
       }
       break
     case 'y':
-      e.preventDefault()
-      editor.value?.chain().focus().redo().run()
+      if (!inTextField && !editor.value?.isFocused) {
+        e.preventDefault()
+        editor.value?.chain().focus().redo().run()
+      }
       break
     case 'd':
       e.preventDefault()
@@ -186,12 +218,14 @@ onMounted(async () => {
   await loadPages()
   appReady.value = true
 
-  await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())))
-
   window.api.onNotchChange((v: boolean) => {
     isNotched.value = v
   })
   document.addEventListener('keydown', handleKeydown)
+
+  // 趁窗口还是 opacity 0,把首次展开的冷启动开销静默预热掉;全部就绪后才亮窗
+  await warmUpFirstExpand()
+  window.api.rendererReady()
 })
 
 onBeforeUnmount(() => {
@@ -206,36 +240,68 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="app-root" :style="appStyle">
-    <Motion :initial="{ opacity: 0, scale: 0.3 }" :class="[
-      'panel-motion',
-      {
-        notched: isNotched,
-        animating: isAnimating,
-        'pill-hovered': pillHovered,
-        'click-mode': appSettings.wakeMode === 'click'
-      }
-    ]" :animate="panelAnimate" :transition="panelTransition" :style="{
+    <Motion
+      :initial="{ opacity: 0, scale: 0.3 }"
+      :class="[
+        'panel-motion',
+        {
+          notched: isNotched,
+          animating: isAnimating,
+          'pill-hovered': pillHovered,
+          'click-mode': appSettings.wakeMode === 'click'
+        }
+      ]"
+      :animate="panelAnimate"
+      :transition="panelTransition"
+      :style="{
         pointerEvents: isNotched && appSettings.wakeMode !== 'click' ? 'none' : 'auto'
-      }" @mouseenter="pillHovered = true" @mouseleave="pillHovered = false" @click="handlePillClick">
+      }"
+      @mouseenter="pillHovered = true"
+      @mouseleave="pillHovered = false"
+      @click="handlePillClick"
+    >
       <div class="panel">
-        <TopToolbar :pages="pages" :current-index="currentIndex" :max-pages="10" :is-notched="isNotched"
-          @select="selectPage" @add="addPage" @delete="deletePage" @clear="clearCurrentPage"
-          @settings="settingsVisible = true" @reorder="reorderPages" @toggle-pin="togglePinPage"
-          @update-title="handleUpdateTitle" />
+        <TopToolbar
+          :pages="pages"
+          :current-index="currentIndex"
+          :max-pages="10"
+          :is-notched="isNotched"
+          @select="selectPage"
+          @add="addPage"
+          @delete="deletePage"
+          @clear="clearCurrentPage"
+          @settings="settingsVisible = true"
+          @reorder="reorderPages"
+          @toggle-pin="togglePinPage"
+          @update-title="handleUpdateTitle"
+        />
 
         <div v-show="currentIndex >= 0" class="editor-area">
           <div class="content-card">
-            <div class="content-body">
+            <div ref="contentBodyEl" class="content-body">
               <EditorContent :editor="editor" />
             </div>
             <span class="char-count">{{ charCount }} 字</span>
-            <BottomBar :format-btns="formatBtns" :font-size-options="fontSizeOptions" :font-options="fontOptions"
-              :color-options="colorOptions" :highlight-colors="highlightColors" :current-font-size="currentFontSize"
-              :current-font-family="currentFontFamily" :current-text-color="currentTextColor"
-              :current-highlight-color="currentHighlightColor" :is-notched="isNotched" @set-font-size="setFontSize"
-              @clear-font-size="clearFontSize" @set-font-family="setFontFamily" @set-text-color="setTextColor"
-              @clear-text-color="clearTextColor" @clear-highlight-color="clearHighlightColor"
-              @set-highlight="setHighlight" @open-link="linkPromptVisible = true" />
+            <BottomBar
+              :format-btns="formatBtns"
+              :font-size-options="fontSizeOptions"
+              :font-options="fontOptions"
+              :color-options="colorOptions"
+              :highlight-colors="highlightColors"
+              :current-font-size="currentFontSize"
+              :current-font-family="currentFontFamily"
+              :current-text-color="currentTextColor"
+              :current-highlight-color="currentHighlightColor"
+              :is-notched="isNotched"
+              @set-font-size="setFontSize"
+              @clear-font-size="clearFontSize"
+              @set-font-family="setFontFamily"
+              @set-text-color="setTextColor"
+              @clear-text-color="clearTextColor"
+              @clear-highlight-color="clearHighlightColor"
+              @set-highlight="setHighlight"
+              @open-link="linkPromptVisible = true"
+            />
           </div>
           <div class="save-status">
             <div class="save-indicator" :class="{ saving: saveStatus === 'saving' }">
@@ -253,9 +319,17 @@ onBeforeUnmount(() => {
     </Motion>
   </div>
 
-  <Settings :visible="settingsVisible" @close="settingsVisible = false" @update-settings="handleSettingsUpdate" />
-  <LinkDialog :visible="linkPromptVisible" :initial-url="linkUrlInput" @confirm="confirmLink"
-    @cancel="linkPromptVisible = false" />
+  <Settings
+    :visible="settingsVisible"
+    @close="settingsVisible = false"
+    @update-settings="handleSettingsUpdate"
+  />
+  <LinkDialog
+    :visible="linkPromptVisible"
+    :initial-url="linkUrlInput"
+    @confirm="confirmLink"
+    @cancel="linkPromptVisible = false"
+  />
 </template>
 
 <style src="./App.css" />
