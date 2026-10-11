@@ -6,7 +6,8 @@ files:
   - out/**/*
   - package.json
   - node_modules/{@electron-toolkit/**,electron-builder/**}
-  - node_modules/{@tiptap/**,lucide-vue-next/**,marked/**,motion-v/**,motion-dom/**,motion-utils/**,sql.js/**}
+  - node_modules/{@tiptap/**,lucide-vue-next/**,marked/**,motion-v/**,motion-dom/**,motion-utils/**,better-sqlite3/**}
+  - node_modules/{bindings/**,file-uri-to-path/**}
   - node_modules/{framer-motion/**,tslib/**,hey-listen/**}
   - node_modules/{prosemirror-*,@floating-ui/**,@vueuse/**,vue/**}
   - '!**/.vscode/*'
@@ -15,6 +16,9 @@ files:
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+# 原生模块的 .node 必须解包到 asar 外才能被 require
+asarUnpack:
+  - '**/node_modules/better-sqlite3/**'
 extraResources:
   - from: resources
     to: resources

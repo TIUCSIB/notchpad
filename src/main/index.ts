@@ -1,9 +1,27 @@
-﻿import { app, BrowserWindow, screen, Tray, Menu, nativeImage, shell, globalShortcut, Display, protocol } from 'electron'
+﻿import {
+  app,
+  BrowserWindow,
+  screen,
+  Tray,
+  Menu,
+  nativeImage,
+  shell,
+  globalShortcut,
+  Display,
+  protocol
+} from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import fs from 'fs'
-import { initDatabase, migrateDatabase, queryOne, closeDatabase, saveDatabase, getDb } from './db'
-import { exitNotchMode, showInNotch, startNotchPolling, stopNotchPolling, pauseUntil, setWakeMode } from './notch'
+import { initDatabase, migrateDatabase, queryOne, closeDatabase, getDb } from './db'
+import {
+  exitNotchMode,
+  showInNotch,
+  startNotchPolling,
+  stopNotchPolling,
+  pauseUntil,
+  setWakeMode
+} from './notch'
 import { registerIpcHandlers } from './ipc'
 import { migrateInlineImages, registerAttachmentProtocol } from './attachments'
 
@@ -22,10 +40,14 @@ let isQuitting = false
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
 
-function getMainWindow() { return mainWindow }
+function getMainWindow() {
+  return mainWindow
+}
 
 function createTrayIcon(): Electron.NativeImage {
-  const resDir = app.isPackaged ? join(process.resourcesPath, 'resources') : join(__dirname, '../../resources')
+  const resDir = app.isPackaged
+    ? join(process.resourcesPath, 'resources')
+    : join(__dirname, '../../resources')
   console.log('[Notchpad] Tray icon search dir:', resDir)
   for (const name of ['tray-icon.png', 'icon.png']) {
     const p = join(resDir, name)
@@ -70,9 +92,10 @@ function positionOnDisplay(display: Display): void {
 export function switchToNextDisplay(): void {
   const displays = screen.getAllDisplays()
   if (displays.length <= 1) return
-  const currentId = mainWindow && !mainWindow.isDestroyed()
-    ? screen.getDisplayMatching(mainWindow.getBounds()).id
-    : getSavedDisplayId()
+  const currentId =
+    mainWindow && !mainWindow.isDestroyed()
+      ? screen.getDisplayMatching(mainWindow.getBounds()).id
+      : getSavedDisplayId()
   const currentIdx = displays.findIndex((d) => d.id === currentId)
   const nextIdx = (currentIdx + 1) % displays.length
   const nextDisplay = displays[nextIdx]
@@ -80,8 +103,9 @@ export function switchToNextDisplay(): void {
   // Persist
   const db = getDb()
   if (db) {
-    db.run("INSERT OR REPLACE INTO settings (key, value) VALUES ('displayId', ?)", [String(nextDisplay.id)])
-    saveDatabase()
+    db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES ('displayId', ?)").run(
+      String(nextDisplay.id)
+    )
   }
 }
 
@@ -95,15 +119,35 @@ function createWindow(): void {
     y: display.workArea.y,
     width: WIN_WIDTH,
     height: WIN_HEIGHT,
-    frame: false, transparent: true, resizable: false,
-    alwaysOnTop: true, skipTaskbar: true, hasShadow: false, show: false,
-    webPreferences: { preload: join(__dirname, '../preload/index.js'), sandbox: false, devTools: is.dev }
+    frame: false,
+    transparent: true,
+    resizable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    hasShadow: false,
+    show: false,
+    webPreferences: {
+      preload: join(__dirname, '../preload/index.js'),
+      sandbox: false,
+      devTools: is.dev
+    }
   })
 
-  mainWindow.on('ready-to-show', () => { showInNotch(mainWindow); startNotchPolling(mainWindow) })
-  mainWindow.on('close', (e) => { if (!isQuitting) { e.preventDefault(); mainWindow?.hide() } })
+  mainWindow.on('ready-to-show', () => {
+    showInNotch(mainWindow)
+    startNotchPolling(mainWindow)
+  })
+  mainWindow.on('close', (e) => {
+    if (!isQuitting) {
+      e.preventDefault()
+      mainWindow?.hide()
+    }
+  })
   mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
-  mainWindow.webContents.on('will-navigate', (e, url) => { e.preventDefault(); shell.openExternal(url) })
+  mainWindow.webContents.on('will-navigate', (e, url) => {
+    e.preventDefault()
+    shell.openExternal(url)
+  })
 
   if (is.dev) {
     mainWindow.webContents.on('before-input-event', (_event, input) => {
@@ -111,7 +155,10 @@ function createWindow(): void {
     })
   }
 
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: 'deny' } })
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url)
+    return { action: 'deny' }
+  })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
@@ -125,7 +172,9 @@ registerIpcHandlers(getMainWindow, () => switchToNextDisplay)
 
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.notchpad.app')
-  app.on('browser-window-created', (_, window) => { optimizer.watchWindowShortcuts(window) })
+  app.on('browser-window-created', (_, window) => {
+    optimizer.watchWindowShortcuts(window)
+  })
 
   await initDatabase()
   migrateDatabase()
@@ -151,7 +200,8 @@ app.whenReady().then(async () => {
       pauseUntil(Date.now() + 1500)
     }
   })
-  if (!shortcutRegistered) console.warn('[Notchpad] Global shortcut Ctrl+Alt+Z already registered by another instance')
+  if (!shortcutRegistered)
+    console.warn('[Notchpad] Global shortcut Ctrl+Alt+Z already registered by another instance')
 
   const savedWakeMode = queryOne("SELECT value FROM settings WHERE key = 'wakeMode'")
   if (savedWakeMode) {
@@ -162,12 +212,22 @@ app.whenReady().then(async () => {
 
   tray = new Tray(createTrayIcon())
   tray.setToolTip('Notchpad')
-  tray.setContextMenu(Menu.buildFromTemplate([
-    { label: '显示窗口', click: () => showInNotch(mainWindow) },
-    { type: 'separator' },
-    { label: '退出', click: () => { isQuitting = true; app.quit() } }
-  ]))
-  tray.on('double-click', () => { showInNotch(mainWindow) })
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      { label: '显示窗口', click: () => showInNotch(mainWindow) },
+      { type: 'separator' },
+      {
+        label: '退出',
+        click: () => {
+          isQuitting = true
+          app.quit()
+        }
+      }
+    ])
+  )
+  tray.on('double-click', () => {
+    showInNotch(mainWindow)
+  })
 })
 
 // 这里刻意不监听 window-all-closed:

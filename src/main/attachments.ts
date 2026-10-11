@@ -2,7 +2,7 @@
  * 图片附件存储
  *
  * 背景:图片原本以 base64 data URL 内联在正文 HTML 里,
- * 一张 5MB 的截图会让单条记录膨胀到约 6.7MB,而 sql.js 每次落盘都是整库导出,
+ * 一张 5MB 的截图会让单条记录膨胀到约 6.7MB,旧存储方案(sql.js)每次落盘都是整库导出,
  * 于是"每 500ms 全量重写几 MB"。
  *
  * 现在改成:图片写到磁盘,正文里只存一个 notchpad://attachments/<文件名> 引用。
@@ -15,7 +15,7 @@ import { dirname, extname, isAbsolute, join, relative } from 'path'
 import { pathToFileURL } from 'url'
 import fs from 'fs'
 import crypto from 'crypto'
-import { getDb, getDbPath, queryAll, saveDatabaseImmediate } from './db'
+import { getDb, getDbPath, queryAll } from './db'
 
 export const ATTACHMENT_SCHEME = 'notchpad'
 export const ATTACHMENT_HOST = 'attachments'
@@ -156,18 +156,18 @@ export function migrateInlineImages(): number {
   }
 
   let migrated = 0
+  const setSql = db.prepare('UPDATE pages SET content = ? WHERE id = ?')
   for (const row of rows) {
     const id = row.id as number
     const content = String(row.content ?? '')
     const replaced = extractInlineImages(content)
     if (replaced !== content) {
-      db.run('UPDATE pages SET content = ? WHERE id = ?', [replaced, id])
+      setSql.run(replaced, id)
       migrated++
     }
   }
 
   if (migrated) {
-    saveDatabaseImmediate()
     console.log(`[Notchpad] 已将 ${migrated} 个页面的内联图片提取为附件文件`)
   }
   return migrated
