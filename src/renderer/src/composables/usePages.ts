@@ -57,7 +57,9 @@ export function usePages(
     if (editor.value) {
       editor.value.commands.setContent(pages.value[index].content || '')
       resetEditorHistory(editor.value)
-      editor.value.commands.focus()
+      // focus() 不带参数会把光标放到文档末尾,ProseMirror 随之滚动到最后一行 ——
+      // 切页后光标应落在开头,滚动位置自然就在顶部
+      editor.value.commands.focus('start')
     }
     // Use requestAnimationFrame to reset switching flag after DOM update
     if (rafId) cancelAnimationFrame(rafId)
