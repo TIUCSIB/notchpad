@@ -29,10 +29,13 @@ function resetEditorHistory(editor: Editor): void {
 export function usePages(
   editor: Ref<Editor | undefined>,
   scheduleSave: () => void,
-  flushSave: () => void
+  flushSave: () => void,
+  getScrollEl: () => HTMLElement | null
 ) {
   const pages = ref<Page[]>([]) as Ref<Page[]>
   const currentIndex = ref(-1)
+  // 每页记住自己上次的滚动位置:离开时存,切回来恢复;没访问过的页从顶部开始
+  const scrollPositions = new Map<number, number>()
   let isSwitching = false
   let rafId = 0
 
@@ -51,6 +54,10 @@ export function usePages(
   function selectPage(index: number) {
     if (index < 0 || index >= pages.value.length) return
     if (index === currentIndex.value) return
+    // 离开前把滚动位置记到即将离开的页面上
+    const leaving = currentPage()
+    const scrollEl = getScrollEl()
+    if (scrollEl && leaving) scrollPositions.set(leaving.id, scrollEl.scrollTop)
     flushSave()
     isSwitching = true
     currentIndex.value = index
@@ -58,13 +65,17 @@ export function usePages(
       editor.value.commands.setContent(pages.value[index].content || '')
       resetEditorHistory(editor.value)
       // focus() 不带参数会把光标放到文档末尾,ProseMirror 随之滚动到最后一行 ——
-      // 切页后光标应落在开头,滚动位置自然就在顶部
+      // 先统一落到开头,随后再恢复目标页记忆的滚动位置
       editor.value.commands.focus('start')
     }
+    // 恢复目标页的滚动位置;没记录过(首次切到)就在顶部
+    const target = pages.value[index]
     // Use requestAnimationFrame to reset switching flag after DOM update
     if (rafId) cancelAnimationFrame(rafId)
     rafId = requestAnimationFrame(() => {
       isSwitching = false
+      const el = getScrollEl()
+      if (el) el.scrollTop = scrollPositions.get(target.id) ?? 0
     })
   }
 
@@ -91,6 +102,7 @@ export function usePages(
     // 用户在确认框点了取消时主进程不会删,本地列表也不能动
     const deleted = await window.api.deletePage(page.id)
     if (!deleted) return
+    scrollPositions.delete(page.id)
     pages.value.splice(currentIndex.value, 1)
     if (pages.value.length > 0) {
       const next = Math.min(currentIndex.value, pages.value.length - 1)

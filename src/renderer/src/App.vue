@@ -33,6 +33,8 @@ const linkUrlInput = ref('')
 const settingsVisible = ref(false)
 // Editor 内部结构复杂,deep ref 会对它做 UnwrapRef 展开,必须用 shallowRef(Tiptap 官方推荐)
 const tempEditor = shallowRef<Editor | undefined>(undefined)
+// 各页面共用同一个滚动容器(.content-body),按页面 id 记忆/恢复滚动位置
+const contentBodyEl = ref<HTMLDivElement | null>(null)
 
 const {
   saveStatus,
@@ -57,7 +59,7 @@ const {
   reorderPages,
   togglePinPage,
   getIsSwitching
-} = usePages(tempEditor, scheduleSave, flushSave)
+} = usePages(tempEditor, scheduleSave, flushSave, () => contentBodyEl.value)
 
 const {
   isNotched,
@@ -100,13 +102,6 @@ watch(editor, (v) => {
 })
 
 const charCount = computed(() => editor.value?.state.doc.textContent.length ?? 0)
-
-// 各页面共用同一个编辑器实例和滚动容器,切页只换内容不重置 scrollTop,
-// 滚动位置会跨页共享 —— 切页即回到顶部
-const contentBodyEl = ref<HTMLDivElement | null>(null)
-watch(currentIndex, () => {
-  if (contentBodyEl.value) contentBodyEl.value.scrollTop = 0
-})
 
 // 药丸的命中尺寸直接把 useNotch 的目标尺寸(72/84 × 14/18)上报主进程。
 // 不能用 ResizeObserver 实测 —— 面板收起动画的中间帧会被当成药丸尺寸上报,

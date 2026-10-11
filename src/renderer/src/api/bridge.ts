@@ -43,13 +43,9 @@ const api = {
   resetSettings: (): Promise<void> => invoke('reset_settings'),
   getDbPath: (): Promise<string> => invoke('get_db_path'),
   chooseDbDir: (): Promise<string | null> => invoke('choose_db_dir'),
-  relocateDb: (
-    targetDir: string
-  ): Promise<{ ok: boolean; path?: string; error?: string }> =>
+  relocateDb: (targetDir: string): Promise<{ ok: boolean; path?: string; error?: string }> =>
     invoke('relocate_db', { targetDir }),
-  saveAttachment: (
-    dataUrl: string
-  ): Promise<{ ok: boolean; name?: string; error?: string }> =>
+  saveAttachment: (dataUrl: string): Promise<{ ok: boolean; name?: string; error?: string }> =>
     invoke('save_attachment', { dataUrl }),
   readAttachment: (name: string): Promise<string | null> => invoke('read_attachment', { name }),
   switchDisplay: (): Promise<void> => invoke('switch_display'),
@@ -62,5 +58,4 @@ const api = {
 }
 
 export type Api = typeof api
-
 ;(window as unknown as { api: Api }).api = api
