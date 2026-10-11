@@ -6,11 +6,11 @@
 
 **一款刘海风格的桌面便签应用**
 
-Electron + Vue 3 + TipTap
+Tauri 2 + Rust + Vue 3 + TipTap
 
 [![Release](https://img.shields.io/github/v/release/TIUCSIB/notchpad)](https://github.com/TIUCSIB/notchpad/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Electron](https://img.shields.io/badge/Electron-39-47848f.svg)](https://www.electronjs.org/)
+[![Tauri](https://img.shields.io/badge/Tauri-2-24C8D8.svg)](https://tauri.app/)
 [![Vue](https://img.shields.io/badge/Vue-3.5-42b883.svg)](https://vuejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6.svg)](https://www.typescriptlang.org/)
 
@@ -134,17 +134,11 @@ cd notchpad
 # 安装依赖
 pnpm install
 
-# 开发模式(Tauri 版,主推)
+# 开发模式
 pnpm tauri:dev
 
-# 开发模式(Electron 版,作为回退保留)
-pnpm dev
-
-# 构建 Tauri 版 Windows 安装包(约 3-4MB)
+# 构建 Windows 安装包(约 3-4MB)
 pnpm tauri:build
-
-# 构建 Electron 版安装包(回退用)
-pnpm build:win
 ```
 
 ---
@@ -162,14 +156,6 @@ src-tauri/                        # Tauri 2 Rust 后端
 └── rust-toolchain.toml           # 强制 MSVC 工具链
 
 src/
-├── main/                         # Electron 版主进程(回退保留)
-│   ├── index.ts                  # Electron 入口
-│   ├── db.ts                     # SQLite 数据库操作
-│   ├── ipc.ts                    # IPC 处理器注册
-│   └── notch.ts                  # 刘海轮询与模式切换
-├── preload/
-│   ├── index.ts                  # 预加载脚本
-│   └── index.d.ts                # API 类型声明
 └── renderer/
     └── src/
         ├── App.vue               # 主组件
