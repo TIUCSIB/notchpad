@@ -4,10 +4,11 @@
 
 # Notchpad
 
-**一款刚海风格的桌面便签应用**
+**一款刘海风格的桌面便签应用**
 
 Electron + Vue 3 + TipTap
 
+[![Release](https://img.shields.io/github/v/release/TIUCSIB/notchpad)](https://github.com/TIUCSIB/notchpad/releases)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Electron](https://img.shields.io/badge/Electron-39-47848f.svg)](https://www.electronjs.org/)
 [![Vue](https://img.shields.io/badge/Vue-3.5-42b883.svg)](https://vuejs.org/)
@@ -23,9 +24,9 @@ Electron + Vue 3 + TipTap
 
 ## ✨ 功能亮点
 
-### 🌧️ 灵动刚海交互
+### 🌧️ 灵动刘海交互
 
-应用启动后自动收起为屏幕顶部中央的小药丸（顶部齐平、底部圆润的刚海造型），悬浮或点击即可展开完整编辑区域。收回时带有弹性弹簧动画，流畅自然。
+应用启动后自动收起为屏幕顶部中央的小药丸（顶部齐平、底部圆润的刘海造型），悬浮或点击即可展开完整编辑区域。收回时带有弹性弹簧动画，流畅自然。
 
 支持两种唤醒方式：
 - 悬浮唤醒：鼠标经过药丸时自动展开
@@ -54,7 +55,7 @@ Electron + Vue 3 + TipTap
 
 ### 🔅 多显示器支持
 
-窗口可在多个显示器之间切换，选择自动持久化。单显示器时快捷键静宛忽略。
+窗口可在多个显示器之间切换，选择自动持久化。单显示器时该快捷键将被忽略。
 
 ### 🔑 全局快捷键
 
@@ -62,7 +63,7 @@ Electron + Vue 3 + TipTap
 
 ### 💾 数据持久化
 
-使用 SQLite（sql.js）本地存储，数据保存在 `userData/memo.db`。支持自定义存储位置，可在设置中将数据库迁移到其他目录。
+使用 SQLite（better-sqlite3 原生绑定）本地存储，每条修改即时落盘，数据保存在 `userData/memo.db`。粘贴的图片以文件形式存放在数据库旁的 `attachments/` 目录，不拖累数据库体积。支持自定义存储位置，可在设置中将数据库连同图片一并迁移到其他目录。
 
 ### 🔵 系统托盘
 
@@ -110,7 +111,7 @@ Electron + Vue 3 + TipTap
 | 编辑器 | TipTap 3 (StarterKit + 扩展) |
 | 动画 | motion-v（弹性物理动画） |
 | 图标 | Lucide Vue Next |
-| 数据库 | sql.js (SQLite WASM) |
+| 数据库 | better-sqlite3 (原生 SQLite) |
 | 语言 | TypeScript |
 | 包管理 | pnpm |
 
@@ -156,7 +157,7 @@ src/
 │   ├── index.ts                  # Electron 入口
 │   ├── db.ts                     # SQLite 数据库操作
 │   ├── ipc.ts                    # IPC 处理器注册
-│   └── notch.ts                  # 刚海轮询与模式切换
+│   └── notch.ts                  # 刘海轮询与模式切换
 ├── preload/
 │   ├── index.ts                  # 预加载脚本
 │   └── index.d.ts                # API 类型声明
@@ -173,7 +174,7 @@ src/
         │   ├── LinkDialog.vue    # 链接弹窗
         │   └── Settings.vue      # 设置面板
         ├── composables/
-        │   ├── useNotch.ts       # 刚海动画状态
+        │   ├── useNotch.ts       # 刘海动画状态
         │   ├── usePages.ts       # 页面 CRUD
         │   ├── useSave.ts        # 自动保存
         │   ├── useSettings.ts    # 设置加载

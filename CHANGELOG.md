@@ -1,5 +1,38 @@
 # Changelog
 
+## v1.2.0 (2026-10-11)
+
+### Fixes
+
+- **刘海药丸的命中区域不再依赖主进程写死的 72×14 常量**：渲染层把药丸的目标尺寸（72/84 × 14/18,源自 `useNotch` 的 `panelAnimate`,悬浮放大、样式调整都会跟着变）经新增的 `update-pill-size` 通道上报（`App.vue` / `preload` / `ipc.ts` / `notch.ts`）。此前药丸悬浮放大到 84×18 时主进程的判定区域仍是 72×14,click 唤醒模式下光标落在外圈会把窗口重新设为鼠标穿透,药丸视觉上卡在放大态。注意上报的是**目标尺寸**而不是 ResizeObserver 实测——实测会采到收起动画的中间帧,把主进程命中区域撑成几百像素宽,表现为"鼠标离开很远面板都收不回去"（第一版实现踩过这个坑）；展开态不上报,主进程沿用上一次药丸尺寸
+- **`TopToolbar.vue` 标题超长钳制从未生效**：`onTitleInput` 里把 `composing` ref 直接当布尔值用（恒为真），正常输入路径永远提前 return，超过 `TITLE_MAX_LENGTH` 不会被截断。改为 `composing.value`
+- `update-page` / `update-page-title` / `reorder-pages` / `delete-page` 补上数据库未初始化时的空值防护，去掉 `getDb()!` 非空断言；`delete-page` 返回是否删除成功，渲染层据此同步本地列表（`ipc.ts` / `usePages.ts`）
+- **修复 `pnpm-workspace.yaml` 的 `allowBuilds` 留着 pnpm 生成的占位文本**（`electron: set this to true or false` 被原样当配置值），导致白名单失效：全新安装后 electron 二进制不会被下载、esbuild 构建脚本被拦。现在 `electron` / `esbuild` 显式允许、`electron-winstaller` 显式忽略（`pnpm-workspace.yaml`）
+- `togglePinPage` 里的 `setContent(content, false)` 是 Tiptap 2 的旧签名，改为 Tiptap 3 的 `{ emitUpdate: false }`（`usePages.ts`，此前被 `any` 类型掩盖）
+- **撤销不再跨页、不再一步退两格**：切页的 `setContent` 事务原本会进撤销栈，在新页面按 `Ctrl+Z` 会把上一个页面的内容"撤"出来，自动保存随后将其写进当前页面造成数据错乱；现在切页时按 prosemirror-history 的 meta 约定整体替换为全新空栈（`usePages.ts`）。同时全局 `Ctrl+Z` / `Ctrl+Y` 与 Tiptap 内置键位此前会各执行一次（一步退两格），现在编辑器聚焦时交给 Tiptap、焦点在输入框时交给原生 undo，各自只执行一次（`App.vue`）
+- **滚动位置不再跨页共享**：所有页面共用同一个滚动容器，切页只换内容不重置 `scrollTop`；现在切页即回到顶部（`App.vue`）
+
+### Changes
+
+- **冷启动亮窗改为事件驱动 + 首展开预热**：窗口以 opacity 0 显示，渲染层画完第一帧经新增的 `renderer-ready` 通道上报后才亮出，替代写死的 100ms 等待——机器快不白等、机器慢不白闪，渲染层异常时 2s 兜底强制显示；托盘恢复等热路径（渲染层早已画好）不再走隐形等待，直接亮出（`notch.ts` / `ipc.ts` / `preload` / `App.vue`）。亮窗前渲染层还会趁看不见用零时长动画把"展开→收起"完整彩排一遍（`useNotch.warmUpFirstExpand`），全尺寸布局、首次绘制、GPU 瓦片与动画管线都在隐形期备好——"第一次悬浮展开顿一下、后续都顺"的冷启动开销由此消除
+- **展开/收起动画的 blur 质感保留**：曾因"首次悬浮展开顿一下"移除过（GPU 模糊 shader 首次编译的一次性卡顿），后由启动预热在隐形期消化该成本,按用户反馈恢复质感（`App.css`）
+- **收起判定边距从 40px 收紧到 10px**：光标离开窗口边缘 10px 即收回面板,不再出现"明明已经离开很远却迟迟不收"（`notch.ts`;只留极小滞回防边缘抖动,收回后仍需触碰药丸才会展开,不存在边缘抖动引发的收展循环）
+- **存储层从 sql.js 迁移到 better-sqlite3**（`db.ts` 重写）：同步原生 SQLite,每条写入即时落盘,移除"整库驻内存 + 500ms 防抖全量导出重写文件"的模型,`saveDatabase` / `saveDatabaseImmediate` 随之删除,调用方不再关心刷盘。文件格式不变,现有 `memo.db` 直接打开,无需数据迁移。`pnpm-workspace.yaml` 放行其构建脚本,`electron-builder.yml` 白名单换为 better-sqlite3(+`bindings` / `file-uri-to-path`)并新增 `asarUnpack`;移除 sql.js 依赖。编辑器侧 600ms 的自动保存防抖不变（合并的只是 IPC,不再合并磁盘写）
+- 编辑器 ref 从 `any` 改为 `Editor | undefined` 正式类型，`useSave` / `usePages` / `useNotch` 签名同步收紧；`App.vue` 的 `tempEditor` 改用 `shallowRef`（`Editor` 会被 deep ref 的 `UnwrapRef` 炸出巨型类型，Tiptap 官方也推荐 shallow）
+- `jelly.ts` 的监听器挂载从 `(el as any).__jellyListeners` 改为模块级 `WeakMap`，去掉三处 `any`
+- `eslint.config.mjs` 给 `no-unused-vars` 加 `^_` 忽略规则，与代码里 `_e` / `_y` 的既有命名意图一致
+- 新增 `.gitattributes`（`* text=auto eol=lf` + 常见二进制类型），落实 AGENTS.md 的 LF 约定；工作区按 prettier 规范做了一次全量格式对齐（`eslint --fix`，纯格式无逻辑变化），`pnpm lint` 从 12 error / 3174 warning 清零
+- README 修正错别字：「刚海」→「刘海」、「静宛忽略」→「将被忽略」
+- `package.json` 用 Prettier 统一格式（此前是异常的大缩进）
+
+### 验证状态
+
+- ✅ `pnpm typecheck`（tsc + vue-tsc）通过
+- ✅ `pnpm lint` 通过：0 error / 0 warning
+- ✅ `pnpm build` 通过（含 typecheck + electron-vite 三端构建）
+- ✅ dev 实测：better-sqlite3 在 Electron 39 下正常加载,现有 memo.db（约 30MB）直接打开无损坏告警,页面正常读写
+- ⏳ 仍需人工验证：悬浮 / 点击唤醒的手感（命中区域现在按实测尺寸判定，边角行为可能有细微变化）、IME 输入法下编辑标题的行为、设置里的数据迁移 / 导入导出（better-sqlite3 后首次覆盖)
+
 ## v1.0.6 (2026-09-23)
 
 ### Fixes
