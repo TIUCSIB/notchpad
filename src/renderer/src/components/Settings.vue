@@ -10,7 +10,8 @@ import {
   Upload,
   RotateCcw,
   MousePointerClick,
-  FolderOpen
+  FolderOpen,
+  Eraser
 } from 'lucide-vue-next'
 import { Motion, AnimatePresence } from 'motion-v'
 import { exportAsJson, exportAsMarkdown, importFromJson } from '../utils/dataConverter'
@@ -44,6 +45,35 @@ const fontSizeOptions = ['12px', '14px', '16px', '18px', '20px', '24px', '28px',
 const dbPath = ref('')
 const dbRelocating = ref(false)
 const dbRelocateMsg = ref('')
+
+// Attachment cleanup
+const cleaningAttachments = ref(false)
+
+function formatFreed(bytes?: number): string {
+  if (!bytes) return ''
+  return bytes >= 1024 * 1024
+    ? `(释放 ${(bytes / 1024 / 1024).toFixed(1)} MB)`
+    : `(释放 ${Math.max(1, Math.round(bytes / 1024))} KB)`
+}
+
+/** 清理未被任何页面引用的附件文件(孤儿文件) */
+async function cleanOrphanAttachments() {
+  cleaningAttachments.value = true
+  try {
+    const res = await window.api.cleanAttachments()
+    if (res?.ok) {
+      flashSaved(
+        res.deleted
+          ? `已清理 ${res.deleted} 个未引用附件${formatFreed(res.freed)}`
+          : '没有需要清理的附件'
+      )
+    } else {
+      flashSaved('清理失败: ' + (res?.error || '未知错误'))
+    }
+  } finally {
+    cleaningAttachments.value = false
+  }
+}
 
 async function loadSettings() {
   const saved = await window.api.getSettings()
@@ -281,6 +311,22 @@ onBeforeUnmount(() => {
                   <span>导入数据</span>
                 </div>
                 <button class="action-btn" @click="handleImport">导入</button>
+              </div>
+
+              <div class="setting-divider" />
+
+              <div class="setting-row">
+                <div class="setting-label">
+                  <Eraser :size="15" :stroke-width="2.5" />
+                  <span>附件清理</span>
+                </div>
+                <button
+                  class="action-btn"
+                  :disabled="cleaningAttachments"
+                  @click="cleanOrphanAttachments"
+                >
+                  {{ cleaningAttachments ? '清理中...' : '清理未引用附件' }}
+                </button>
               </div>
 
               <div class="setting-divider" />

@@ -127,6 +127,7 @@ fn main() {
       db::relocate_db,
       attachments::save_attachment,
       attachments::read_attachment,
+      attachments::clean_attachments,
       notch::enter_notch,
       notch::exit_notch,
       notch::update_pill_size,

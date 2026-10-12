@@ -4,6 +4,7 @@
 
 use base64::Engine as _;
 use sha1::{Digest, Sha1};
+use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -145,7 +146,6 @@ pub fn handle_protocol(
 }
 
 // ======== 内联图片一次性迁移(Electron 版 migrateInlineImages 的移植) ========
-
 fn extract_inline_images(html: &str, db_path: &Path) -> String {
   let re = regex::Regex::new(r#"(?i)(<img[^>]+src=")(data:image/[a-z0-9.+-]+;base64,)([^"]+)(""#)
     .expect("内置正则必定合法");
@@ -201,4 +201,89 @@ pub fn migrate_inline_images(state: &crate::db::App) -> usize {
     eprintln!("[Notchpad] 已将 {migrated} 个页面的内联图片提取为附件文件");
   }
   migrated
+}
+
+/// 清理未被任何页面引用的附件文件,返回删除的文件数。
+/// 只删应用命名规则的文件(16 位十六进制哈希 + 已知扩展名);
+/// 跳过最近 10 分钟写入的文件,避免误删"刚粘贴、正文还没落库"的图片。
+pub fn clean_attachments_impl(db_path: &Path) -> u32 {
+  // 收集全部页面正文里引用的附件名(两种 URL 形式都覆盖:
+  // attachments/<name> 同时匹配 notchpad:// 与 http://notchpad.localhost)
+  let conn = match rusqlite::Connection::open_with_flags(
+    db_path,
+    rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+  ) {
+    Ok(c) => c,
+    Err(_) => return 0,
+  };
+  let Ok(mut stmt) = conn.prepare("SELECT content FROM pages") else {
+    return 0;
+  };
+  let re = regex::Regex::new(r"(?i)attachments/([0-9a-f]{16}\.(?:png|jpe?g|webp|gif|bmp|bin))")
+    .expect("内置正则必定合法");
+  let mut referenced: HashSet<String> = HashSet::new();
+  if let Ok(rows) = stmt.query_map([], |r| r.get::<_, String>(0)) {
+    for content in rows.flatten() {
+      for cap in re.captures_iter(&content) {
+        referenced.insert(cap[1].to_lowercase());
+      }
+    }
+  }
+  drop(stmt);
+  drop(conn);
+
+  let dir = attachments_dir(db_path);
+  let Ok(entries) = fs::read_dir(&dir) else {
+    return 0;
+  };
+
+  let name_re = regex::Regex::new(r"(?i)^[0-9a-f]{16}\.(?:png|jpe?g|webp|gif|bmp|bin)$")
+    .expect("内置正则必定合法");
+  let cutoff = std::time::SystemTime::now() - std::time::Duration::from_secs(600);
+  let mut deleted = 0u32;
+  for entry in entries.flatten() {
+    let Ok(ft) = entry.file_type() else { continue };
+    if ft.is_dir() {
+      continue;
+    }
+    let file_name = entry.file_name();
+    let Some(name) = file_name.to_str() else { continue };
+    if name_re.captures(name).is_none() || referenced.contains(&name.to_lowercase()) {
+      continue;
+    }
+    let Ok(meta) = entry.metadata() else { continue };
+    if meta.modified().is_ok_and(|m| m > cutoff) {
+      continue;
+    }
+    if fs::remove_file(entry.path()).is_ok() {
+      deleted += 1;
+    }
+  }
+  deleted
+}
+
+#[tauri::command(async)]
+pub fn clean_attachments(state: tauri::State<'_, crate::db::App>) -> serde_json::Value {
+  let db_path = crate::db::lock_db_path(&state).clone().unwrap_or_default();
+  if db_path.as_os_str().is_empty() {
+    return serde_json::json!({ "ok": false, "error": "数据库未初始化" });
+  }
+
+  let dir = attachments_dir(&db_path);
+  let size_before = dir_size(&dir);
+  let deleted = clean_attachments_impl(&db_path);
+  let freed = size_before.saturating_sub(dir_size(&dir));
+  serde_json::json!({ "ok": true, "deleted": deleted, "freed": freed })
+}
+
+fn dir_size(dir: &Path) -> u64 {
+  let Ok(entries) = fs::read_dir(dir) else {
+    return 0;
+  };
+  entries
+    .flatten()
+    .filter_map(|e| e.metadata().ok())
+    .filter(|m| m.is_file())
+    .map(|m| m.len())
+    .sum()
 }

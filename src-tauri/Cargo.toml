@@ -31,3 +31,6 @@ dirs = "7.0.0"
 codegen-units = 1
 lto = true
 strip = true
+
+[dev-dependencies]
+filetime = "0.2"

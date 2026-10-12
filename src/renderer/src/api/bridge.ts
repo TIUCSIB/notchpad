@@ -51,6 +51,12 @@ const api = {
   ): Promise<{ ok: boolean; name?: string; url?: string; error?: string }> =>
     invoke('save_attachment', { dataUrl }),
   readAttachment: (name: string): Promise<string | null> => invoke('read_attachment', { name }),
+  cleanAttachments: (): Promise<{
+    ok: boolean
+    deleted?: number
+    freed?: number
+    error?: string
+  }> => invoke('clean_attachments'),
   switchDisplay: (): Promise<void> => invoke('switch_display'),
   closeWindow: (): void => {
     void invoke('close_window')
