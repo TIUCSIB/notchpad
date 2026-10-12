@@ -2257,7 +2257,7 @@ dependencies = [
 
 [[package]]
 name = "notchpad"
-version = "1.3.2"
+version = "1.4.0"
 dependencies = [
  "base64 0.22.1",
  "dirs 7.0.0",

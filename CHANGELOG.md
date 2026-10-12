@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.4.0 (2026-10-12)
+
+### Features
+
+- **移除 Electron 版,全面转向 Tauri**:删除 `src/main` / `src/preload` / electron-vite / electron-builder / `build/` / `resources/` 及相关脚本与配置,`better-sqlite3` 依赖随之下架(后端已是 rusqlite);`pnpm dev` 现在就是 `tauri dev`,打包走 `pnpm tauri:build`。`window.api` 的全局类型声明随 preload 一并移除,迁入渲染层 `api/bridge.ts`
+- **图片附件在 Tauri Windows 版全面修复**:此前粘贴/导入写入的 `notchpad://` 引用、CSP 允许的源、自定义协议的实际形式(`http://notchpad.localhost`)三方不一致,图片全碎且一次性迁移标志导致永不自愈。现在 `save_attachment` 由后端按平台返回完整 URL(`attachments.rs` 的 `attachment_url`),渲染层粘贴/导入统一使用;导出备份的正则兼容两种引用形式,自包含备份恢复有效;两份 CSP(`tauri.conf.json` + `index.html`)的 img-src 对齐
+- **自动保存基线跨页共享导致可能丢字**:`useSave` 的 `lastSavedHtml` 是全局单例,新页面编辑出的 HTML 恰好等于上一页的基线时会误判"未变化"跳过保存,重启后内容回退;改为按页用自身已保存内容(`page.content`)作基线
+- **迁移数据库失败不再"变砖"**:`relocate_inner` 原先先关库再拷贝,任一步失败后 `db` 留在 None,后续所有命令 panic;现在全程不关库(持有 db 锁期间无并发写入,拷贝是一致的),失败时原连接原封不动。所有 `lock().unwrap()` 换成 Mutex 中毒可恢复的写法(`db.rs` 的 `lock_db` / `lock_db_path`)
+- **渲染层异常时 4s 兜底亮窗**(对齐 Electron 版行为):`renderer_ready` 迟迟不来就强制显示窗口,不再永远隐形
+- **导入备份超出上限时如实提示**跳过的页数(`dataConverter.ts` / `Settings.vue`)
+
+### Fixes
+
+- 置顶页面 / 导出备份前先 flush 自动保存防抖:置顶会按数据库内容重置编辑器,导出读的是数据库,防抖窗口内未落库的编辑此前会被覆盖或漏出(`useSave.flushSave` 返回 promise,`usePages.togglePinPage` 先 await)
+- 设置面板回传的设置按 `SETTINGS_DEFAULTS` 白名单过滤,`displayName` / `tauriUrlMigrated` 等后端内部键不再混入应用设置(`App.vue`)
+
 ## v1.3.2 (2026-10-11)
 
 ### Features
