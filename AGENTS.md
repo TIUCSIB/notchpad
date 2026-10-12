@@ -1,22 +1,23 @@
 # Repository Guidelines
 
-NotchPad is an Electron-based desktop note-taking application built with Vue 3, TypeScript, and Tiptap. It uses `electron-vite` for builds and `pnpm` as its package manager.
+NotchPad is a Tauri 2 desktop note-taking application built with Vue 3, TypeScript, and Tiptap. The backend is Rust (`src-tauri`), the frontend is built with Vite, and `pnpm` is the package manager.
 
 ## Project Structure
 
 ```
 src/
-  main/           # Electron main process (index.ts, ipc.ts, db.ts, notch.ts)
-  preload/        # Preload scripts bridging main and renderer
-  renderer/       # Vue 3 frontend
+  renderer/       # The only frontend; talks to Rust via the window.api bridge
     src/
+      api/        # bridge.ts: Tauri invoke bridge exposed as window.api
       components/ # Vue components (BottomBar, TopToolbar, Settings, LinkDialog)
       composables/ # Reusable logic (usePages, useSave, useEditorSetup, etc.)
       directives/ # Custom Vue directives
       extensions/ # Tiptap editor extensions
       utils/      # Helpers (dataConverter.ts)
-build/            # Electron-builder assets (icons, entitlements)
-resources/        # Tray icons and logos
+src-tauri/        # Tauri 2 backend (Rust)
+  src/            # main.rs, db.rs (rusqlite), notch.rs, attachments.rs
+  tauri.conf.json # Window, custom protocol and CSP configuration
+out/renderer/     # Built frontend consumed by Tauri (frontendDist)
 docs/             # Project documentation site
 ```
 
@@ -24,15 +25,12 @@ docs/             # Project documentation site
 
 | Command | Description |
 |---------|-------------|
-| `pnpm dev` | Start the app in development mode with hot reload |
-| `pnpm build` | Run typecheck then build via electron-vite |
-| `pnpm build:win` | Build and package for Windows |
-| `pnpm build:mac` | Build and package for macOS |
-| `pnpm build:linux` | Build and package for Linux |
-| `pnpm start` | Preview the built application |
+| `pnpm dev` / `pnpm tauri:dev` | Run the app in development mode with hot reload |
+| `pnpm build` | Typecheck then build the renderer bundle |
+| `pnpm tauri:build` | Build and package the desktop installer (NSIS) |
 | `pnpm lint` | Run ESLint with caching |
 | `pnpm format` | Auto-format code with Prettier |
-| `pnpm typecheck` | Run TypeScript and Vue type checking |
+| `pnpm typecheck` | Run Vue/TS type checking |
 
 ## Coding Style
 
@@ -57,4 +55,4 @@ This project does not currently include a test suite. If tests are added in the 
 
 ## Architecture Notes
 
-The app follows the standard Electron three-process model: main process manages windows, database (sql.js), and IPC; preload scripts expose a safe API to the renderer; the renderer runs a Vue 3 + Tiptap rich-text editor. State is managed through Vue composables rather than a global store.
+Tauri 2 app: the Rust process owns the database (rusqlite with bundled SQLite), image attachments on disk, the notch/pill state machine (Win32 cursor polling), tray, and global shortcuts. The Vue renderer is backend-agnostic and only calls `window.api`, implemented by `src/renderer/src/api/bridge.ts` on top of Tauri `invoke`. Attachment URLs use `http://notchpad.localhost` on Windows (custom protocol form) and `notchpad://` elsewhere — always build them through the backend (`attachment_url` / `save_attachment`), never hardcode a scheme in the renderer. State is managed through Vue composables rather than a global store.
