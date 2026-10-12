@@ -107,8 +107,13 @@ function downloadBlob(data: string, mime: string, filename: string) {
   URL.revokeObjectURL(url)
 }
 
-/** 正文里引用附件文件的 URL */
-const ATTACHMENT_URL_RE = /notchpad:\/\/attachments\/([A-Za-z0-9._-]+)/g
+/**
+ * 正文里引用附件文件的 URL。历史数据可能同时存在两种形式:
+ * Electron 版写 notchpad://,Windows 下的 Tauri 版走 http://notchpad.localhost,
+ * 导出还原时两种都要能匹配。url 部分捕获附件文件名。
+ */
+const ATTACHMENT_URL_RE =
+  /(?:notchpad:\/\/|http:\/\/notchpad\.localhost\/)attachments\/([A-Za-z0-9._-]+)/g
 /** 正文里内联的 base64 图片 */
 const INLINE_IMG_RE = /(<img[^>]+src=")(data:image\/[a-z0-9.+-]+;base64,[^"]+)(")/gi
 
@@ -141,35 +146,41 @@ async function extractInlineImages(html: string): Promise<string> {
   for (const m of matches) {
     const dataUrl = m[2]
     const res = await window.api.saveAttachment(dataUrl)
-    if (res?.ok && res.name) {
-      out = out.split(dataUrl).join(`notchpad://attachments/${res.name}`)
+    if (res?.ok && (res.url || res.name)) {
+      // url 由后端按平台拼好;旧后端只回 name 时退回 notchpad:// 形式
+      out = out.split(dataUrl).join(res.url ?? `notchpad://attachments/${res.name}`)
     }
   }
   return out
 }
 
-export function exportAsJson() {
-  return window.api.getPages().then(async (pages) => {
-    const out: Record<string, unknown>[] = []
-    for (const p of pages) {
-      out.push({ ...p, content: await inlineAttachments(String(p.content ?? '')) })
-    }
-    downloadBlob(JSON.stringify(out, null, 2), 'application/json', timestampFilename('.json'))
-  })
+// 导出读的是数据库,先 flush 把防抖窗口内未落库的编辑写掉,再取页面列表
+export function exportAsJson(flush?: () => Promise<void>) {
+  return (flush ? flush() : Promise.resolve()).then(() =>
+    window.api.getPages().then(async (pages) => {
+      const out: Record<string, unknown>[] = []
+      for (const p of pages) {
+        out.push({ ...p, content: await inlineAttachments(String(p.content ?? '')) })
+      }
+      downloadBlob(JSON.stringify(out, null, 2), 'application/json', timestampFilename('.json'))
+    })
+  )
 }
 
-export function exportAsMarkdown() {
-  return window.api.getPages().then(async (pages) => {
-    let md = '# Notchpad\n\n> Exported on ' + new Date().toLocaleDateString() + '\n\n---\n\n'
-    for (let i = 0; i < pages.length; i++) {
-      const page = pages[i]
-      if (!page.content) continue
-      md += '## Page ' + (i + 1) + '\n\n'
-      md += htmlToMarkdown(await inlineAttachments(String(page.content)))
-      md += '\n---\n\n'
-    }
-    downloadBlob(md, 'text/markdown', timestampFilename('.md'))
-  })
+export function exportAsMarkdown(flush?: () => Promise<void>) {
+  return (flush ? flush() : Promise.resolve()).then(() =>
+    window.api.getPages().then(async (pages) => {
+      let md = '# Notchpad\n\n> Exported on ' + new Date().toLocaleDateString() + '\n\n---\n\n'
+      for (let i = 0; i < pages.length; i++) {
+        const page = pages[i]
+        if (!page.content) continue
+        md += '## Page ' + (i + 1) + '\n\n'
+        md += htmlToMarkdown(await inlineAttachments(String(page.content)))
+        md += '\n---\n\n'
+      }
+      downloadBlob(md, 'text/markdown', timestampFilename('.md'))
+    })
+  )
 }
 
 /**
@@ -177,9 +188,9 @@ export function exportAsMarkdown() {
  * - 受 MAX_PAGES 上限约束,超出部分会被截断
  * - 标题走 updatePageTitle、正文走 updatePage(两条通道各司其职)
  * - addPage 直接返回最新列表,省掉每次循环额外的 getPages 往返
- * onDone 回传实际导入的页数。
+ * onDone 回传实际导入的页数和因超出上限被跳过的页数。
  */
-export async function importFromJson(onDone: (imported: number) => void) {
+export async function importFromJson(onDone: (imported: number, skipped: number) => void) {
   const input = document.createElement('input')
   input.type = 'file'
   input.accept = '.json'
@@ -190,13 +201,14 @@ export async function importFromJson(onDone: (imported: number) => void) {
       const text = await file.text()
       const parsed = JSON.parse(text)
       if (!Array.isArray(parsed)) {
-        onDone(0)
+        onDone(0, 0)
         return
       }
 
       const existing = await window.api.getPages()
       const room = Math.max(0, MAX_PAGES - existing.length)
       const list = parsed.slice(0, room)
+      const skipped = Math.max(0, parsed.length - room)
 
       for (const p of list) {
         const all = await window.api.addPage()
@@ -210,10 +222,10 @@ export async function importFromJson(onDone: (imported: number) => void) {
         }
       }
 
-      onDone(list.length)
+      onDone(list.length, skipped)
     } catch (err) {
       console.error('[Notchpad] 导入失败:', err)
-      onDone(0)
+      onDone(0, 0)
     }
   }
   input.click()

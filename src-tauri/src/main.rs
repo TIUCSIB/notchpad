@@ -88,6 +88,20 @@ fn main() {
 
       notch::spawn_polling(app.handle().clone());
 
+      // 渲染层异常时兜底亮窗(对齐 Electron 版的强制显示):
+      // renderer_ready 迟迟不来就把窗口亮出来,避免永远隐形
+      let fallback = app.handle().clone();
+      std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(4));
+        let state = fallback.state::<db::App>();
+        if !state.notch.painted() {
+          if let Some(window) = fallback.get_webview_window("main") {
+            let _ = window.show();
+            let _ = window.set_focus();
+          }
+        }
+      });
+
       // 内联图片迁移比较耗时,延迟到窗口显示之后再跑(与 Electron 版一致)
       let handle = app.handle().clone();
       std::thread::spawn(move || {

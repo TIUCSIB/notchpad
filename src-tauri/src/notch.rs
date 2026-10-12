@@ -49,6 +49,11 @@ impl Notch {
     self.is_notched.load(Ordering::Relaxed)
   }
 
+  /// 渲染层是否已画过第一帧(兜底亮窗定时器据此判断)
+  pub fn painted(&self) -> bool {
+    self.painted.load(Ordering::Relaxed)
+  }
+
   pub fn set_wake_mode(&self, mode: &str) {
     *self.wake_mode.lock().unwrap() = mode.to_string();
     self.pill_hovering.store(false, Ordering::Relaxed);
@@ -246,7 +251,7 @@ pub fn switch_display(app: tauri::AppHandle) {
   position_top_center(&window, next);
   // 持久化选择,下次启动定位到同一显示器
   let state = app.state::<crate::db::App>();
-  let guard = state.db.lock().unwrap();
+  let guard = crate::db::lock_db(&state);
   if let Some(conn) = guard.as_ref() {
     let name = next.name().map(|s| s.to_string()).unwrap_or_default();
     crate::db::set_setting_kv(conn, "displayName", &name);

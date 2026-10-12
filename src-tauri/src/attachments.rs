@@ -30,6 +30,17 @@ pub fn attachments_dir(db_path: &Path) -> PathBuf {
     .join("attachments")
 }
 
+/// 正文里引用附件用的完整 URL。Windows 下 Tauri 自定义协议实际经
+/// http://notchpad.localhost 提供,其余平台直接用 notchpad:// scheme;
+/// 粘贴、导入迁移、内联图片迁移必须都从这里拿,不能各自硬编码。
+pub fn attachment_url(name: &str) -> String {
+  if cfg!(windows) {
+    format!("http://notchpad.localhost/attachments/{name}")
+  } else {
+    format!("notchpad://attachments/{name}")
+  }
+}
+
 /// 只接受纯文件名,挡掉目录穿越(与 Electron 版 resolveAttachment 一致)
 fn valid_name(name: &str) -> bool {
   !name.is_empty() && !name.contains('/') && !name.contains('\\') && !name.contains("..")
@@ -91,16 +102,19 @@ fn read_data_url(name: &str, db_path: &Path) -> Result<String, String> {
 
 #[tauri::command(async)]
 pub fn save_attachment(state: tauri::State<'_, crate::db::App>, data_url: String) -> serde_json::Value {
-  let db_path = state.db_path.lock().unwrap().clone().unwrap_or_default();
+  let db_path = crate::db::lock_db_path(&state).clone().unwrap_or_default();
   match save_data_url(&data_url, &db_path) {
-    Ok(name) => serde_json::json!({ "ok": true, "name": name }),
+    Ok(name) => {
+      // url 由后端按平台拼好,渲染层直接用,避免各处硬编码 scheme 出现不一致
+      serde_json::json!({ "ok": true, "name": name, "url": attachment_url(&name) })
+    }
     Err(e) => serde_json::json!({ "ok": false, "error": e }),
   }
 }
 
 #[tauri::command(async)]
 pub fn read_attachment(state: tauri::State<'_, crate::db::App>, name: String) -> Option<String> {
-  let db_path = state.db_path.lock().unwrap().clone().unwrap_or_default();
+  let db_path = crate::db::lock_db_path(&state).clone().unwrap_or_default();
   read_data_url(&name, &db_path).ok()
 }
 
@@ -117,7 +131,7 @@ pub fn handle_protocol(
     .split('?')
     .next()
     .unwrap_or("");
-  let db_path = state.db_path.lock().unwrap().clone().unwrap_or_default();
+  let db_path = crate::db::lock_db_path(state).clone().unwrap_or_default();
   match read_file_bytes(name, &db_path) {
     Ok((bytes, mime)) => tauri::http::Response::builder()
       .header("Content-Type", mime)
@@ -138,7 +152,7 @@ fn extract_inline_images(html: &str, db_path: &Path) -> String {
   re.replace_all(html, |caps: &regex::Captures| {
     let data_url = format!("{}{}", &caps[2], &caps[3]);
     match save_data_url(&data_url, db_path) {
-      Ok(name) => format!("{}http://notchpad.localhost/attachments/{}{}", &caps[1], name, &caps[4]),
+      Ok(name) => format!("{}{}{}", &caps[1], attachment_url(&name), &caps[4]),
       Err(e) => {
         eprintln!("[Notchpad] 提取内联图片失败: {e}");
         caps[0].to_string()
@@ -149,12 +163,12 @@ fn extract_inline_images(html: &str, db_path: &Path) -> String {
 }
 
 pub fn migrate_inline_images(state: &crate::db::App) -> usize {
-  let db_path = state.db_path.lock().unwrap().clone().unwrap_or_default();
+  let db_path = crate::db::lock_db_path(state).clone().unwrap_or_default();
   if db_path.as_os_str().is_empty() {
     return 0;
   }
   let migrated = {
-    let guard = state.db.lock().unwrap();
+    let guard = crate::db::lock_db(state);
     let Some(conn) = guard.as_ref() else { return 0 };
     let Ok(mut stmt) = conn.prepare("SELECT id, content FROM pages WHERE content LIKE '%data:image%'") else { return 0 };
     let rows: Vec<(i64, String)> = stmt

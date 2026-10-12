@@ -167,11 +167,21 @@ fn list_pages(conn: &Connection) -> Vec<Page> {
 
 // ======== Tauri commands ========
 
+/// 锁中毒不致命:持锁线程 panic 时数据本身仍一致,恢复使用而不是让
+/// 后续所有命令跟着 panic
+pub fn lock_db(state: &App) -> std::sync::MutexGuard<'_, Option<Connection>> {
+  state.db.lock().unwrap_or_else(|p| p.into_inner())
+}
+
+pub fn lock_db_path(state: &App) -> std::sync::MutexGuard<'_, Option<PathBuf>> {
+  state.db_path.lock().unwrap_or_else(|p| p.into_inner())
+}
+
 fn with_conn<R>(
   state: &App,
   f: impl FnOnce(&Connection) -> R,
 ) -> R {
-  let guard = state.db.lock().unwrap();
+  let guard = lock_db(state);
   let conn = guard.as_ref().expect("数据库未初始化");
   f(conn)
 }
@@ -199,7 +209,7 @@ pub fn add_page(state: State<'_, App>) -> Vec<Page> {
 
 #[tauri::command(async)]
 pub fn delete_page(state: State<'_, App>, id: i64) -> bool {
-  let guard = state.db.lock().unwrap();
+  let guard = lock_db(&state);
   match guard.as_ref() {
     Some(conn) => conn.execute("DELETE FROM pages WHERE id = ?1", [id]).is_ok(),
     None => false,
@@ -334,10 +344,7 @@ pub fn reset_settings(app: tauri::AppHandle, state: State<'_, App>) {
 
 #[tauri::command(async)]
 pub fn get_db_path(state: State<'_, App>) -> String {
-  state
-    .db_path
-    .lock()
-    .unwrap()
+  lock_db_path(&state)
     .as_ref()
     .map(|p| p.to_string_lossy().into_owned())
     .unwrap_or_default()
@@ -367,8 +374,8 @@ pub fn relocate_db(
 }
 
 fn relocate_inner(app: &tauri::AppHandle, state: &App, target_dir: &Path) -> Result<String, String> {
-  let mut db_guard = state.db.lock().unwrap();
-  let mut path_guard = state.db_path.lock().unwrap();
+  let mut db_guard = lock_db(state);
+  let mut path_guard = lock_db_path(state);
   if db_guard.as_ref().is_none() || path_guard.as_ref().is_none() {
     return Err("数据库未初始化".into());
   }
@@ -389,8 +396,9 @@ fn relocate_inner(app: &tauri::AppHandle, state: &App, target_dir: &Path) -> Res
     fs::rename(&dest, &backup).map_err(|e| e.to_string())?;
   }
 
-  // 先关库再拷贝,保证文件一致;附件目录跟随迁移
-  drop(db_guard.take());
+  // db 锁持有期间没有并发写入,直接拷贝文件是一致的。
+  // 全程不先关旧连接:任何一步失败,原连接原封不动,应用照常可用
+  // (此前先 take() 关库,拷贝失败会让 db 留在 None,后续所有命令 panic)
   let old_attachments = current.parent().map(|p| p.join("attachments"));
   fs::copy(&current, &dest).map_err(|e| e.to_string())?;
   if let Some(old) = old_attachments {
@@ -400,6 +408,7 @@ fn relocate_inner(app: &tauri::AppHandle, state: &App, target_dir: &Path) -> Res
     }
   }
 
+  // open_connection 成功后才赋值,赋值会顺带 drop 旧连接
   let conn = open_connection(&dest);
   *db_guard = Some(conn);
   *path_guard = Some(dest.clone());

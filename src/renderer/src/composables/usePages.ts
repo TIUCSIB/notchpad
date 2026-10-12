@@ -29,7 +29,7 @@ function resetEditorHistory(editor: Editor): void {
 export function usePages(
   editor: Ref<Editor | undefined>,
   scheduleSave: () => void,
-  flushSave: () => void,
+  flushSave: () => void | Promise<void>,
   getScrollEl: () => HTMLElement | null
 ) {
   const pages = ref<Page[]>([]) as Ref<Page[]>
@@ -99,7 +99,7 @@ export function usePages(
     if (currentIndex.value < 0) return
     const page = currentPage()
     if (!page) return
-    // 用户在确认框点了取消时主进程不会删,本地列表也不能动
+    // 返回 false(删除失败)时本地列表不动
     const deleted = await window.api.deletePage(page.id)
     if (!deleted) return
     scrollPositions.delete(page.id)
@@ -136,6 +136,8 @@ export function usePages(
   }
 
   async function togglePinPage(id: number) {
+    // 置顶会按数据库内容重置编辑器,先把防抖窗口内未落库的编辑写掉
+    await flushSave()
     const oldPageId = currentPage()?.id
     const updatedPages = await window.api.togglePinPage(id)
     pages.value = updatedPages

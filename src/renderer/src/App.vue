@@ -8,7 +8,7 @@ import LinkDialog from './components/LinkDialog.vue'
 import Settings from './components/Settings.vue'
 import { Motion } from 'motion-v'
 import { useNotch } from './composables/useNotch'
-import { useSettings } from './composables/useSettings'
+import { useSettings, SETTINGS_DEFAULTS } from './composables/useSettings'
 import { useSave } from './composables/useSave'
 import { usePages } from './composables/usePages'
 import {
@@ -122,9 +122,12 @@ function handlePillClick() {
   if (appSettings.value.wakeMode === 'click') window.api.exitNotch()
 }
 function handleSettingsUpdate(s: Record<string, string>) {
-  // _reload 是设置面板用来要求重载页面的信号,不该混进应用设置里
+  // _reload 是设置面板用来要求重载页面的信号;其余只保留应用认识的设置键,
+  // 过滤掉 displayName / tauriUrlMigrated 这类后端内部键
   const { _reload, ...rest } = s
-  appSettings.value = rest
+  appSettings.value = Object.fromEntries(
+    Object.entries(SETTINGS_DEFAULTS).map(([k, d]) => [k, rest[k] ?? d])
+  )
   if (_reload) loadPages()
 }
 
@@ -316,6 +319,7 @@ onBeforeUnmount(() => {
 
   <Settings
     :visible="settingsVisible"
+    :flush-save="flushSave"
     @close="settingsVisible = false"
     @update-settings="handleSettingsUpdate"
   />

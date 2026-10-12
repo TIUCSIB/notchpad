@@ -16,7 +16,7 @@ import { Motion, AnimatePresence } from 'motion-v'
 import { exportAsJson, exportAsMarkdown, importFromJson } from '../utils/dataConverter'
 import { SETTINGS_DEFAULTS } from '../composables/useSettings'
 
-defineProps<{ visible: boolean }>()
+defineProps<{ visible: boolean; flushSave: () => Promise<void> }>()
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'updateSettings', settings: Record<string, string>): void
@@ -96,8 +96,10 @@ function flashSaved(text = '已保存') {
 
 /** 导入 JSON 备份,完成后通知外层重载页面列表 */
 function handleImport() {
-  importFromJson((imported) => {
-    flashSaved(imported > 0 ? `已导入 ${imported} 页` : '没有可导入的内容')
+  importFromJson((imported, skipped) => {
+    const parts = [imported > 0 ? `已导入 ${imported} 页` : '没有可导入的内容']
+    if (skipped > 0) parts.push(`另有 ${skipped} 页超出 10 页上限被跳过`)
+    flashSaved(parts.join(','))
     emit('updateSettings', { ...settings.value, _reload: '1' })
   })
 }
@@ -268,8 +270,8 @@ onBeforeUnmount(() => {
                   <span>导出数据</span>
                 </div>
                 <div class="setting-control">
-                  <button class="action-btn" @click="exportAsJson">JSON</button>
-                  <button class="action-btn" @click="exportAsMarkdown">Markdown</button>
+                  <button class="action-btn" @click="exportAsJson(flushSave)">JSON</button>
+                  <button class="action-btn" @click="exportAsMarkdown(flushSave)">Markdown</button>
                 </div>
               </div>
 

@@ -17,7 +17,6 @@ export function useSave(
   const saveStatus = ref<'idle' | 'saving' | 'saved'>('idle')
   let saveTimer: ReturnType<typeof setTimeout> | null = null
   let savedStatusTimer: ReturnType<typeof setTimeout> | null = null
-  let lastSavedHtml = ''
 
   async function saveCurrentPage(silent = false) {
     try {
@@ -26,17 +25,19 @@ export function useSave(
       const page = idx >= 0 && idx < list.length ? list[idx] : null
       if (!page || !editor.value) return
       const html = editor.value.getHTML()
-      // Skip save if content hasn't changed
-      if (html === lastSavedHtml) {
+      // 跳过条件用该页自己已保存的内容(list[idx] 每次保存成功都会被 updated
+      // 原位替换)作基线。不能用全局单例:跨页共享时,新页面编辑出的 HTML
+      // 恰好等于上一页的基线会误判"未变化"而跳过保存,重启后内容回退
+      if (html === page.content) {
         // Clear "saving" indicator without showing "saved"
         if (saveStatus.value === 'saving') saveStatus.value = 'idle'
         return
       }
       const updated = await window.api.updatePage(page.id, html)
       if (updated) {
-        // 直接改 ref 里的那个数组,页面列表会同步更新
+        // 直接改 ref 里的那个数组,页面列表会同步更新;
+        // updated.content 即该页新的已保存基线
         list[idx] = updated
-        lastSavedHtml = html
       }
       if (!silent) {
         saveStatus.value = 'saved'
@@ -50,12 +51,14 @@ export function useSave(
     }
   }
 
-  function flushSave() {
+  // 返回保存 promise:置顶/导出这类会读取数据库内容的操作要先等它落库,
+  // 否则防抖窗口内未保存的编辑会被覆盖或漏出
+  function flushSave(): Promise<void> {
     if (saveTimer) {
       clearTimeout(saveTimer)
       saveTimer = null
     }
-    saveCurrentPage(false)
+    return saveCurrentPage(false)
   }
 
   function scheduleSave() {

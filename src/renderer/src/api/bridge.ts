@@ -45,7 +45,10 @@ const api = {
   chooseDbDir: (): Promise<string | null> => invoke('choose_db_dir'),
   relocateDb: (targetDir: string): Promise<{ ok: boolean; path?: string; error?: string }> =>
     invoke('relocate_db', { targetDir }),
-  saveAttachment: (dataUrl: string): Promise<{ ok: boolean; name?: string; error?: string }> =>
+  // url 由后端按平台拼好(Windows 走 http://notchpad.localhost,其余 notchpad://)
+  saveAttachment: (
+    dataUrl: string
+  ): Promise<{ ok: boolean; name?: string; url?: string; error?: string }> =>
     invoke('save_attachment', { dataUrl }),
   readAttachment: (name: string): Promise<string | null> => invoke('read_attachment', { name }),
   switchDisplay: (): Promise<void> => invoke('switch_display'),
@@ -59,3 +62,10 @@ const api = {
 
 export type Api = typeof api
 ;(window as unknown as { api: Api }).api = api
+
+// window.api 的全局类型声明(原先在已删除的 Electron preload/index.d.ts 里)
+declare global {
+  interface Window {
+    api: Api
+  }
+}
