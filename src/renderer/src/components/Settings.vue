@@ -239,19 +239,6 @@ function pillSourceActive(key: 'clock' | 'quote' | 'weather' | 'custom') {
   return (settings.value.pillSources ?? '').includes(key)
 }
 
-/** hitokoto 分类多选(存逗号分隔的单字母) */
-function toggleQuoteCategory(key: string) {
-  const cur = new Set(
-    (settings.value.quoteCategories ?? '')
-      .split(',')
-      .map((x) => x.trim())
-      .filter(Boolean)
-  )
-  if (cur.has(key)) cur.delete(key)
-  else cur.add(key)
-  save('quoteCategories', Array.from(cur).join(','))
-}
-
 function flashSaved(text = '已保存') {
   savedText.value = text
   showSaved.value = true
@@ -539,24 +526,23 @@ onBeforeUnmount(() => {
                     <div class="setting-label">
                       <span class="quote-cat-hint">分类</span>
                     </div>
-                    <div class="setting-control quote-cats">
-                      <button
-                        v-for="c in [
-                          { key: 'a', label: '动画' },
-                          { key: 'b', label: '漫画' },
-                          { key: 'c', label: '游戏' },
-                          { key: 'd', label: '文学' },
-                          { key: 'e', label: '原创' },
-                          { key: 'i', label: '诗词' },
-                          { key: 'k', label: '哲学' }
-                        ]"
-                        :key="c.key"
-                        class="theme-btn"
-                        :class="{ active: (settings.quoteCategories || '').includes(c.key) }"
-                        @click="toggleQuoteCategory(c.key)"
+                    <div class="setting-control">
+                      <select
+                        class="native-select"
+                        :value="settings.quoteCategories || ''"
+                        @change="
+                          save('quoteCategories', ($event.target as HTMLSelectElement).value)
+                        "
                       >
-                        {{ c.label }}
-                      </button>
+                        <option value="">默认(全部)</option>
+                        <option value="a">动画</option>
+                        <option value="b">漫画</option>
+                        <option value="c">游戏</option>
+                        <option value="d">文学</option>
+                        <option value="e">原创</option>
+                        <option value="i">诗词</option>
+                        <option value="k">哲学</option>
+                      </select>
                     </div>
                   </div>
                 </template>
@@ -564,8 +550,7 @@ onBeforeUnmount(() => {
                 <template v-if="pillSourceActive('weather')">
                   <div class="setting-row">
                     <div class="setting-label">
-                      <CloudSun :size="15" :stroke-width="2.5" />
-                      <span>和风 Key</span>
+                      <span class="quote-cat-hint">和风 Key</span>
                     </div>
                     <div class="setting-control">
                       <input

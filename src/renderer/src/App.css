@@ -294,19 +294,26 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 10.5px;
+  font-weight: 700;
   line-height: 1;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.92);
   pointer-events: none;
   z-index: 3;
   user-select: none;
 }
 
+/* 走马灯:新内容从右滑入,旧内容向左滑出 */
 .pill-fade-enter-active,
 .pill-fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: transform 0.35s ease, opacity 0.35s ease;
 }
 
-.pill-fade-enter-from,
+.pill-fade-enter-from {
+  transform: translate(calc(-50% + 24px), -50%);
+  opacity: 0;
+}
+
 .pill-fade-leave-to {
+  transform: translate(calc(-50% - 24px), -50%);
   opacity: 0;
 }
