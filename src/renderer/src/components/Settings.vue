@@ -227,7 +227,7 @@ async function save(key: string, value: string) {
 }
 
 /** 药丸显示来源开关(多选,存逗号分隔;全关 = off) */
-function togglePillSource(key: 'clock' | 'quote' | 'custom') {
+function togglePillSource(key: 'clock' | 'quote' | 'weather' | 'custom') {
   const cur = new Set((settings.value.pillSources ?? 'off').split(',').map((x) => x.trim()))
   cur.delete('off')
   if (cur.has(key)) cur.delete(key)
@@ -452,8 +452,6 @@ onBeforeUnmount(() => {
               </div>
 
               <div v-if="activeTab === 'easter'" class="settings-tabpane">
-                <div class="setting-divider" />
-
                 <div class="setting-row">
                   <div class="setting-label">
                     <Clock :size="15" :stroke-width="2.5" />
@@ -464,6 +462,7 @@ onBeforeUnmount(() => {
                       v-for="src in [
                         { key: 'clock', label: '时钟' },
                         { key: 'quote', label: '一言' },
+                        { key: 'weather', label: '天气' },
                         { key: 'custom', label: '自定义' }
                       ]"
                       :key="src.key"

@@ -122,6 +122,12 @@ watch(
   { immediate: true }
 )
 
+// 弹层(设置/搜索/链接)打开期间暂停"离开窗口即收起":
+// 原生下拉/菜单可能延伸出窗口边界,光标移到选项上会被误判为离开
+watch([settingsVisible, searchVisible, linkPromptVisible], ([s, f, l]) => {
+  window.api.setCollapsePause(Boolean(s || f || l))
+})
+
 // 收起刘海(窗口缩成药丸)时立即藏掉撤销 toast,避免它孤零零浮在 5 秒倒计时里
 watch(isNotched, (notched) => {
   if (notched && undoToastVisible.value) {

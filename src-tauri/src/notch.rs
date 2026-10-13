@@ -54,6 +54,14 @@ impl Notch {
     self.painted.load(Ordering::Relaxed)
   }
 
+  /// 弹层交互期间暂停"离开即收起"(原生下拉/菜单可能延伸出窗口边界,
+  /// 光标落在窗口外会把面板误收);paused=true 置为永不过期
+  pub fn set_collapse_pause(&self, paused: bool) {
+    self
+      .pause_until_ms
+      .store(if paused { i64::MAX } else { 0 }, Ordering::Relaxed);
+  }
+
   pub fn set_wake_mode(&self, mode: &str) {
     *self.wake_mode.lock().unwrap() = mode.to_string();
     self.pill_hovering.store(false, Ordering::Relaxed);
@@ -271,6 +279,12 @@ pub fn open_external(app: tauri::AppHandle, url: String) {
     use tauri_plugin_opener::OpenerExt as _;
     let _ = app.opener().open_url(url, None::<&str>);
   }
+}
+
+#[tauri::command]
+pub fn set_collapse_pause(app: tauri::AppHandle, paused: bool) {
+  let state = app.state::<crate::db::App>();
+  state.notch.set_collapse_pause(paused);
 }
 
 #[tauri::command]

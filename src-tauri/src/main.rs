@@ -142,6 +142,7 @@ fn main() {
       attachments::attachment_stats,
       notch::enter_notch,
       notch::exit_notch,
+      notch::set_collapse_pause,
       notch::update_pill_size,
       notch::renderer_ready,
       notch::switch_display,

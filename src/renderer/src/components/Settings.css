@@ -406,9 +406,16 @@
 .settings-tabs {
   display: flex;
   gap: 4px;
-  padding: 0 2px 6px;
+  padding: 4px 2px 6px;
   border-bottom: 1px solid var(--divider, #2a2a2c);
   margin-bottom: 10px;
+  /* 固定在滚动容器顶部,内容滚动时 Tab 栏不动 */
+  position: sticky;
+  top: -8px;
+  z-index: 2;
+  background: var(--bg-card, #0f1014);
+  /* 与面板顶部圆角一致,滚动时盖住内容也不露直角 */
+  border-radius: 12px 12px 0 0;
 }
 
 .settings-tab {
