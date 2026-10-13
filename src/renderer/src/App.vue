@@ -338,14 +338,19 @@ onBeforeUnmount(() => {
         :key="pillText"
         class="pill-content"
       >
-        <!-- 仅一言(可能超宽)走持续横滚;时钟/天气/自定义短文字居中静止 -->
+        <!-- 一言长句持续横滚;时钟两行排版;其余短文字居中静止 -->
         <div v-if="pillSource === 'quote' && pillText.length > 12" class="pill-marquee">
           <span class="pill-marquee-track rolling">
             <span class="pill-marquee-seg">{{ pillText }}</span>
             <span class="pill-marquee-seg" aria-hidden="true">{{ pillText }}</span>
           </span>
         </div>
-        <span v-else class="pill-static">{{ pillText }}</span>
+        <span
+          v-else
+          class="pill-static"
+          :class="{ 'two-line': pillText.includes('\n') }"
+          >{{ pillText }}</span
+        >
       </div>
       <div class="panel">
         <TopToolbar

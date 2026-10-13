@@ -11,14 +11,15 @@ const ROTATE_MS = 5000
 
 const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
 
-/** 月/日 周X 时:分 —— 药丸宽度内一行放下 */
+/** 第一行 月/日 周X,第二行 时:分(药丸两行排版) */
 function formatClock(d: Date): string {
   const mo = d.getMonth() + 1
   const day = d.getDate()
   const week = WEEKDAYS[d.getDay()]
   const hh = String(d.getHours()).padStart(2, '0')
   const mm = String(d.getMinutes()).padStart(2, '0')
-  return `${mo}/${day} ${week} ${hh}:${mm}`
+  return `${mo}/${day} ${week}
+${hh}:${mm}`
 }
 
 /**

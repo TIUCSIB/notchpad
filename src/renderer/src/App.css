@@ -324,6 +324,13 @@
   font-weight: 700;
   line-height: 20px;
   color: rgba(255, 255, 255, 0.92);
+  white-space: pre-line;
+}
+
+/* 两行排版(时钟:日期星期 + 时间) */
+.pill-static.two-line {
+  font-size: 8.5px;
+  line-height: 10px;
 }
 
 .pill-marquee-track {
