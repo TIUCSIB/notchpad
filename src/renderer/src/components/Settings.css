@@ -8,7 +8,8 @@
   align-items: flex-start;
   justify-content: center;
   padding-top: 20px;
-  border-radius: 0 0 12px 12px;
+  /* 与展开态窗口底部圆角一致 */
+  border-radius: 0 0 20px 20px;
 }
 
 .settings-panel {

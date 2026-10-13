@@ -84,10 +84,16 @@ export function usePillFeeds(
     }
   }
 
+  /** 和风 API Host:新账号使用控制台分配的专属 Host,公共域名对新 Key 无效 */
+  function weatherHost(): string {
+    const custom = (settingsRef.value.weatherApiHost ?? '').trim().replace(/^https?:\/\//, '')
+    return custom || 'devapi.qweather.com'
+  }
+
   async function resolveCityId(name: string, key: string): Promise<string | null> {
     try {
       const res = await fetch(
-        `https://geoapi.qweather.com/v2/city/lookup?location=${encodeURIComponent(name)}&key=${key}`
+        `https://${weatherHost()}/geo/v2/city/lookup?location=${encodeURIComponent(name)}&key=${key}`
       )
       const j = await res.json()
       return j?.location?.[0]?.id ?? null
@@ -104,7 +110,7 @@ export function usePillFeeds(
       const locId = await resolveCityId(city, key)
       if (!locId) return
       const res = await fetch(
-        `https://devapi.qweather.com/v7/weather/now?location=${locId}&key=${key}`
+        `https://${weatherHost()}/v7/weather/now?location=${locId}&key=${key}`
       )
       const j = await res.json()
       if (j?.now?.temp != null && j?.now?.text) {

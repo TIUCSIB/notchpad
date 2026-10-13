@@ -20,6 +20,8 @@ export const SETTINGS_DEFAULTS: Record<string, string> = {
   quoteCategories: '',
   /** 和风天气 API Key(开发者控制台创建) */
   weatherApiKey: '',
+  /** 和风 API Host:新账号用控制台分配的专属 Host(如 xxx.re.qweatherapi.com),留空走公共域名 */
+  weatherApiHost: '',
   /** 天气城市名(如:北京),由和风 GeoAPI 解析 */
   weatherCity: '',
   /** 天气更新:30min / hour / 3hour / day / never */

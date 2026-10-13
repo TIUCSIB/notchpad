@@ -14,7 +14,7 @@
   overflow: visible;
   filter: blur(0px);
   /* 底部为主的柔和投影,给贴边胶囊一点厚度;展开态由 .panel-motion 覆写减弱 */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.18);
   transition: filter 0.25s ease-out;
 }
 
@@ -48,7 +48,7 @@
 
 /* 展开态是贴边全窗面板,只留极淡的底部投影 */
 .panel-motion:not(.notched) {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: none;
 }
 
 .panel-motion.notched {
@@ -91,7 +91,7 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  height: 100%;
+  height: calc(100% - 6px);
   display: flex;
   flex-direction: column;
   overflow: hidden;

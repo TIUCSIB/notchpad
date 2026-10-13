@@ -566,6 +566,22 @@ onBeforeUnmount(() => {
                   </div>
                   <div class="setting-row">
                     <div class="setting-label">
+                      <span class="quote-cat-hint">API Host</span>
+                    </div>
+                    <div class="setting-control">
+                      <input
+                        class="pill-custom-input"
+                        type="text"
+                        :value="settings.weatherApiHost || ''"
+                        placeholder="留空走公共域名;新账号填控制台分配的 Host"
+                        @change="
+                          save('weatherApiHost', ($event.target as HTMLInputElement).value.trim())
+                        "
+                      />
+                    </div>
+                  </div>
+                  <div class="setting-row">
+                    <div class="setting-label">
                       <span class="quote-cat-hint">城市</span>
                     </div>
                     <div class="setting-control">
