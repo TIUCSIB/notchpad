@@ -299,8 +299,11 @@
   position: absolute;
   left: 8px;
   right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   pointer-events: none;
   z-index: 3;
@@ -310,18 +313,37 @@
 .pill-marquee {
   width: 100%;
   overflow: hidden;
+  line-height: 20px;
+}
+
+/* 短文字(≤12 字)不滚,直接居中 */
+.pill-static {
+  display: block;
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 20px;
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .pill-marquee-track {
   display: inline-flex;
   white-space: nowrap;
+}
+
+/* 轨道比容器宽(超宽长句)才启动滚动;短轨道静止居中 */
+.pill-marquee-track {
+  animation: none;
+}
+
+.pill-marquee-track.rolling {
   animation: pill-marquee-scroll 8s linear infinite;
 }
 
 .pill-marquee-seg {
   font-size: 10.5px;
   font-weight: 700;
-  line-height: 1;
+  line-height: 20px;
   color: rgba(255, 255, 255, 0.92);
   padding-right: 24px;
 }

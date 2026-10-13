@@ -112,7 +112,11 @@ const {
 
 // 药丸显示内容(时钟/一言/天气/自定义文字,按设置轮播);一言与天气由 feeds 调度拉取
 const { quoteText: pillQuote, weatherText: pillWeather } = usePillFeeds(appSettings, isNotched)
-const { displayText: pillText } = usePillContent(appSettings, pillQuote, pillWeather)
+const { displayText: pillText, currentSource: pillSource } = usePillContent(
+  appSettings,
+  pillQuote,
+  pillWeather
+)
 
 watch(
   isLightTheme,
@@ -334,12 +338,14 @@ onBeforeUnmount(() => {
         :key="pillText"
         class="pill-content"
       >
-        <div class="pill-marquee">
-          <span class="pill-marquee-track">
+        <!-- 仅一言(可能超宽)走持续横滚;时钟/天气/自定义短文字居中静止 -->
+        <div v-if="pillSource === 'quote' && pillText.length > 12" class="pill-marquee">
+          <span class="pill-marquee-track rolling">
             <span class="pill-marquee-seg">{{ pillText }}</span>
             <span class="pill-marquee-seg" aria-hidden="true">{{ pillText }}</span>
           </span>
         </div>
+        <span v-else class="pill-static">{{ pillText }}</span>
       </div>
       <div class="panel">
         <TopToolbar

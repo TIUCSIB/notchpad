@@ -9,10 +9,16 @@ export type PillSource = 'off' | 'clock' | 'quote' | 'weather' | 'custom'
 
 const ROTATE_MS = 5000
 
+const WEEKDAYS = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+
+/** 月/日 周X 时:分 —— 药丸宽度内一行放下 */
 function formatClock(d: Date): string {
+  const mo = d.getMonth() + 1
+  const day = d.getDate()
+  const week = WEEKDAYS[d.getDay()]
   const hh = String(d.getHours()).padStart(2, '0')
   const mm = String(d.getMinutes()).padStart(2, '0')
-  return `${hh}:${mm}`
+  return `${mo}/${day} ${week} ${hh}:${mm}`
 }
 
 /**
@@ -86,5 +92,12 @@ export function usePillContent(
     return customText.value
   })
 
-  return { displayText }
+  /** 当前轮到的来源(clock/quote/weather/custom) */
+  const currentSource = computed<PillSource | null>(() => {
+    const list = activeSources.value
+    if (!list.length) return null
+    return list[rotateIndex.value % list.length]
+  })
+
+  return { displayText, currentSource }
 }
