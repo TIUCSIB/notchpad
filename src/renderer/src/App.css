@@ -302,18 +302,19 @@
   user-select: none;
 }
 
-/* 走马灯:新内容从右滑入,旧内容向左滑出 */
-.pill-fade-enter-active,
-.pill-fade-leave-active {
-  transition: transform 0.35s ease, opacity 0.35s ease;
+/* 走马灯:元素随内容变化重建,CSS 动画自动重播(不依赖 Transition 组件,
+   避免 motion-v 渲染管线对嵌套 Transition 的干扰) */
+@keyframes pill-slide-in {
+  from {
+    transform: translate(calc(-50% + 20px), -50%);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
 }
 
-.pill-fade-enter-from {
-  transform: translate(calc(-50% + 24px), -50%);
-  opacity: 0;
-}
-
-.pill-fade-leave-to {
-  transform: translate(calc(-50% - 24px), -50%);
-  opacity: 0;
+.pill-content {
+  animation: pill-slide-in 0.35s ease both;
 }
