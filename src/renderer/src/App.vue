@@ -334,7 +334,12 @@ onBeforeUnmount(() => {
         :key="pillText"
         class="pill-content"
       >
-        {{ pillText }}
+        <div class="pill-marquee">
+          <span class="pill-marquee-track">
+            <span class="pill-marquee-seg">{{ pillText }}</span>
+            <span class="pill-marquee-seg" aria-hidden="true">{{ pillText }}</span>
+          </span>
+        </div>
       </div>
       <div class="panel">
         <TopToolbar

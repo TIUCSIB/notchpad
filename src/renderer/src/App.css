@@ -284,37 +284,44 @@
 }
 
 /* --- 药丸显示内容(时钟/一言/自定义文字) --- */
+/* 走马灯:文字在药丸内持续横向滚动(双拷贝无缝循环);
+   文字比药丸窄时滚动半程往复,视觉为缓慢漂移 */
+@keyframes pill-marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 .pill-content {
   position: absolute;
-  left: 50%;
+  left: 8px;
+  right: 8px;
   top: 50%;
-  transform: translate(-50%, -50%);
-  max-width: calc(100% - 16px);
+  transform: translateY(-50%);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 10.5px;
-  font-weight: 700;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.92);
   pointer-events: none;
   z-index: 3;
   user-select: none;
 }
 
-/* 走马灯:元素随内容变化重建,CSS 动画自动重播(不依赖 Transition 组件,
-   避免 motion-v 渲染管线对嵌套 Transition 的干扰) */
-@keyframes pill-slide-in {
-  from {
-    transform: translate(calc(-50% + 20px), -50%);
-    opacity: 0;
-  }
-  to {
-    transform: translate(-50%, -50%);
-    opacity: 1;
-  }
+.pill-marquee {
+  width: 100%;
+  overflow: hidden;
 }
 
-.pill-content {
-  animation: pill-slide-in 0.35s ease both;
+.pill-marquee-track {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: pill-marquee-scroll 8s linear infinite;
+}
+
+.pill-marquee-seg {
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.92);
+  padding-right: 24px;
 }
