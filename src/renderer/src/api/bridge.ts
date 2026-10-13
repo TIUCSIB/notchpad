@@ -33,8 +33,7 @@ const api = {
   reorderPages: (ids: number[]): Promise<void> => invoke('reorder_pages', { ids }),
   togglePinPage: (id: number): Promise<Page[]> => invoke('toggle_pin_page', { id }),
   enterNotch: (): Promise<void> => invoke('enter_notch'),
-  setCollapsePause: (paused: boolean): Promise<void> =>
-    invoke('set_collapse_pause', { paused }),
+  setCollapsePause: (paused: boolean): Promise<void> => invoke('set_collapse_pause', { paused }),
   exitNotch: (): Promise<void> => invoke('exit_notch'),
   updatePillSize: (width: number, height: number): void => {
     void invoke('update_pill_size', { width, height })

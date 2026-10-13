@@ -1,6 +1,6 @@
 [package]
 name = "notchpad"
-version = "1.4.4"
+version = "1.4.5"
 description = "一款刘海风格的桌面笔记应用"
 edition = "2021"
 

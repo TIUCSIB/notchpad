@@ -329,12 +329,12 @@ onBeforeUnmount(() => {
       @mouseleave="pillHovered = false"
       @click="handlePillClick"
     >
+      <Transition name="pill-fade">
+        <div v-if="isNotched && pillText && !isAnimating && !pillHovered" class="pill-content">
+          {{ pillText }}
+        </div>
+      </Transition>
       <div class="panel">
-        <Transition name="pill-fade">
-          <div v-if="isNotched && pillText && !isAnimating && !pillHovered" class="pill-content">
-            {{ pillText }}
-          </div>
-        </Transition>
         <TopToolbar
           :pages="pages"
           :current-index="currentIndex"

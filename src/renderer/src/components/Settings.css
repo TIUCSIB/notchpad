@@ -477,15 +477,16 @@
 .quote-cats {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 6px;
+  justify-content: flex-end;
 }
 
 .quote-cats .theme-btn {
-  padding: 3px 8px;
-  font-size: 10.5px;
+  padding: 5px 10px;
+  font-size: 12px;
 }
 
 .quote-cat-hint {
-  font-size: 11px;
-  color: var(--text-secondary, #888);
+  font-size: 13px;
+  color: var(--label-color, #aaa);
 }
