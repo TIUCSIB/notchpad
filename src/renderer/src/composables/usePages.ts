@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue'
+import { ref, shallowRef, type Ref } from 'vue'
 import type { Editor } from '@tiptap/vue-3'
 import { history } from '@tiptap/pm/history'
 import type { Page } from '../../types'
@@ -36,6 +36,8 @@ export function usePages(
   const currentIndex = ref(-1)
   // 每页记住自己上次的滚动位置:离开时存,切回来恢复;没访问过的页从顶部开始
   const scrollPositions = new Map<number, number>()
+  // 最近一次删除的页(id + 标题快照),供撤销 toast 显示;10 分钟后端会清暂存
+  const lastDeleted = shallowRef<{ id: number; title: string } | null>(null)
   let isSwitching = false
   let rafId = 0
 
@@ -102,6 +104,7 @@ export function usePages(
     // 返回 false(删除失败)时本地列表不动
     const deleted = await window.api.deletePage(page.id)
     if (!deleted) return
+    lastDeleted.value = { id: page.id, title: getPageTitle(page) }
     scrollPositions.delete(page.id)
     pages.value.splice(currentIndex.value, 1)
     if (pages.value.length > 0) {
@@ -112,6 +115,24 @@ export function usePages(
       currentIndex.value = -1
       editor.value?.commands.setContent('')
     }
+  }
+
+  /** 撤销最近一次删除:后端把暂存页移回,本地重建视图 */
+  async function undoDelete() {
+    const deleted = lastDeleted.value
+    if (!deleted) return
+    lastDeleted.value = null
+    const restored = await window.api.restoreDeletedPage(deleted.id)
+    if (!restored) return
+    pages.value = await window.api.getPages()
+    const idx = pages.value.findIndex((p: Page) => p.id === restored.id)
+    if (idx >= 0) selectPage(idx)
+  }
+
+  function getPageTitle(page: Page): string {
+    if (page.title) return page.title
+    const text = (page.content || '').replace(/<[^>]+>/g, '').trim()
+    return text ? `「${text.slice(0, 8)}」` : '空白页'
   }
 
   async function clearCurrentPage() {
@@ -159,10 +180,12 @@ export function usePages(
     pages,
     currentIndex,
     currentPage,
+    lastDeleted,
     loadPages,
     selectPage,
     addPage,
     deletePage,
+    undoDelete,
     clearCurrentPage,
     reorderPages,
     togglePinPage,

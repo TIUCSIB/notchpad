@@ -51,15 +51,37 @@ const {
 const {
   pages,
   currentIndex,
+  lastDeleted,
   loadPages,
   selectPage,
   addPage,
   deletePage,
+  undoDelete,
   clearCurrentPage,
   reorderPages,
   togglePinPage,
   getIsSwitching
 } = usePages(tempEditor, scheduleSave, flushSave, () => contentBodyEl.value)
+
+// 删除撤销 toast:出现后 5 秒自动消失
+const undoToastVisible = ref(false)
+let undoToastTimer: ReturnType<typeof setTimeout> | null = null
+watch(lastDeleted, (v) => {
+  if (!v) {
+    undoToastVisible.value = false
+    return
+  }
+  undoToastVisible.value = true
+  if (undoToastTimer) clearTimeout(undoToastTimer)
+  undoToastTimer = setTimeout(() => {
+    undoToastVisible.value = false
+  }, 5000)
+})
+
+async function handleUndoDelete() {
+  undoToastVisible.value = false
+  await undoDelete()
+}
 
 const {
   isNotched,
@@ -215,6 +237,7 @@ onMounted(async () => {
   initSettingsListeners()
   await loadPages()
   appReady.value = true
+  window.api.purgeExpiredDeleted()
 
   window.api.onNotchChange((v: boolean) => {
     isNotched.value = v
@@ -329,6 +352,13 @@ onBeforeUnmount(() => {
     @confirm="confirmLink"
     @cancel="linkPromptVisible = false"
   />
+
+  <Transition name="undo-toast">
+    <div v-if="undoToastVisible && lastDeleted" class="undo-toast">
+      <span class="undo-text">已删除「{{ lastDeleted.title }}」</span>
+      <button class="undo-btn" @click="handleUndoDelete">撤销</button>
+    </div>
+  </Transition>
 </template>
 
 <style src="./App.css" />

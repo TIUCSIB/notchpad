@@ -196,3 +196,51 @@
   pointer-events: none;
   z-index: 1;
 }
+
+/* --- 删除撤销 toast --- */
+.undo-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-radius: 8px;
+  background: var(--bg-bar, #1a1a1a);
+  border: 1px solid var(--border, #2a2a2c);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  z-index: 60;
+}
+
+.undo-text {
+  font-size: 11px;
+  color: var(--text-secondary, #888);
+  white-space: nowrap;
+}
+
+.undo-btn {
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.undo-btn:hover {
+  filter: brightness(0.85);
+}
+
+.undo-toast-enter-active,
+.undo-toast-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.undo-toast-enter-from,
+.undo-toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(6px);
+}

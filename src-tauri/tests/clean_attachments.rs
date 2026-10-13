@@ -22,9 +22,9 @@ fn cleans_unreferenced_keeps_referenced_and_recent() {
   fs::write(dir.join("4444444444444444.jpg"), b"recent").unwrap();
   fs::write(dir.join("notes.txt"), b"not an attachment").unwrap();
 
-  // 3333 的 mtime 拨到 11 分钟前;4444 保持现在(10 分钟豁免窗口内)
+  // 3333 的 mtime 拨到 3 分钟前(2 分钟豁免窗口外);4444 保持现在
   let old = filetime::FileTime::from_system_time(
-    std::time::SystemTime::now() - std::time::Duration::from_secs(660),
+    std::time::SystemTime::now() - std::time::Duration::from_secs(180),
   );
   filetime::set_file_mtime(dir.join("3333333333333333.jpg"), old).unwrap();
 

@@ -84,6 +84,23 @@ fn create_tables(conn: &Connection) -> rusqlite::Result<()> {
   )
 }
 
+/// 软删除暂存表:删除的页面先移进来,撤销窗口(约 10 分钟)过后由渲染层
+/// 通知真正清除。老库升级时按需建表
+fn ensure_deleted_table(conn: &Connection) {
+  let _ = conn.execute_batch(
+    "CREATE TABLE IF NOT EXISTS deleted_pages (
+      id INTEGER PRIMARY KEY,
+      title TEXT NOT NULL DEFAULT '',
+      content TEXT NOT NULL DEFAULT '',
+      sort_order INTEGER DEFAULT 0,
+      pinned INTEGER DEFAULT 0,
+      created_at TEXT,
+      updated_at TEXT,
+      deleted_at TEXT DEFAULT (datetime('now','localtime'))
+    );",
+  );
+}
+
 fn open_connection(path: &Path) -> Connection {
   match Connection::open(path) {
     Ok(conn) => match conn.query_row("PRAGMA quick_check", [], |row| row.get::<_, String>(0)) {
@@ -113,6 +130,13 @@ pub fn init(app: &tauri::AppHandle) -> App {
   let conn = open_connection(&db_path);
   let _ = conn.execute("ALTER TABLE pages ADD COLUMN pinned INTEGER DEFAULT 0", []);
   migrate_attachment_urls(&conn);
+  ensure_deleted_table(&conn);
+  let _ = conn.execute(
+    "DELETE FROM deleted_pages WHERE deleted_at < datetime('now', '-10 minutes')",
+    [],
+  );
+  // 每日备份在启动线程同步做:库刚打开、几乎无写入,复制是安全的
+  daily_backup(&db_path);
   App {
     db: Mutex::new(Some(conn)),
     db_path: Mutex::new(Some(db_path)),
@@ -210,9 +234,56 @@ pub fn add_page(state: State<'_, App>) -> Vec<Page> {
 #[tauri::command(async)]
 pub fn delete_page(state: State<'_, App>, id: i64) -> bool {
   let guard = lock_db(&state);
-  match guard.as_ref() {
-    Some(conn) => conn.execute("DELETE FROM pages WHERE id = ?1", [id]).is_ok(),
-    None => false,
+  let Some(conn) = guard.as_ref() else { return false };
+  ensure_deleted_table(conn);
+  // 软删除:整行先移入 deleted_pages 撤销窗口内可恢复,再从 pages 删掉
+  let moved = conn
+    .execute(
+      "INSERT OR REPLACE INTO deleted_pages
+         (id, title, content, sort_order, pinned, created_at, updated_at)
+       SELECT id, title, content, sort_order, pinned, created_at, updated_at
+         FROM pages WHERE id = ?1",
+      [id],
+    )
+    .is_ok();
+  if !moved {
+    return false;
+  }
+  conn.execute("DELETE FROM pages WHERE id = ?1", [id]).is_ok()
+}
+
+/// 撤销删除:把暂存的页面移回 pages。成功返回页面内容(渲染层用它重建视图)
+#[tauri::command(async)]
+pub fn restore_deleted_page(state: State<'_, App>, id: i64) -> Option<Page> {
+  let guard = lock_db(&state);
+  let conn = guard.as_ref()?;
+  ensure_deleted_table(conn);
+  let restored = conn
+    .execute(
+      "INSERT OR REPLACE INTO pages
+         (id, title, content, sort_order, pinned, created_at, updated_at)
+       SELECT id, title, content, sort_order, pinned, created_at, updated_at
+         FROM deleted_pages WHERE id = ?1",
+      [id],
+    )
+    .is_ok();
+  if !restored {
+    return None;
+  }
+  let _ = conn.execute("DELETE FROM deleted_pages WHERE id = ?1", [id]);
+  page_by_id(conn, id)
+}
+
+/// 清掉撤销窗口已过(超过 10 分钟)的软删除暂存,启动和删除时顺带执行
+#[tauri::command(async)]
+pub fn purge_expired_deleted(state: State<'_, App>) {
+  let guard = lock_db(&state);
+  if let Some(conn) = guard.as_ref() {
+    ensure_deleted_table(conn);
+    let _ = conn.execute(
+      "DELETE FROM deleted_pages WHERE deleted_at < datetime('now', '-10 minutes')",
+      [],
+    );
   }
 }
 
@@ -423,6 +494,67 @@ fn chrono_like_stamp() -> String {
     .unwrap_or_default()
     .as_secs()
     .to_string()
+}
+
+/// 每日自动备份:启动时把数据库复制到同级 backups/ 目录,保留最近 7 份。
+/// 同一天多次启动只保留一份(文件名按日期),是误删/误清后的最后悔药。
+pub fn daily_backup(db_path: &Path) {
+  let Some(dir) = db_path.parent() else { return };
+  let backup_dir = dir.join("backups");
+  if fs::create_dir_all(&backup_dir).is_err() {
+    return;
+  }
+  let today = chrono_like_stamp_date();
+  let target = backup_dir.join(format!("memo.{today}.db"));
+  if target.exists() {
+    return;
+  }
+  if fs::copy(db_path, &target).is_err() {
+    return;
+  }
+  // 只保留最近 7 份
+  let mut backups: Vec<PathBuf> = fs::read_dir(&backup_dir)
+    .map(|entries| {
+      entries
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| {
+          p.file_name()
+            .and_then(|n| n.to_str())
+            .is_some_and(|n| n.starts_with("memo.") && n.ends_with(".db"))
+        })
+        .collect()
+    })
+    .unwrap_or_default();
+  backups.sort();
+  while backups.len() > 7 {
+    let oldest = backups.remove(0);
+    let _ = fs::remove_file(oldest);
+  }
+}
+
+/// 本地日期 YYYYMMDD(备份文件名用,本地时区)
+fn chrono_like_stamp_date() -> String {
+  let secs = std::time::SystemTime::now()
+    .duration_since(std::time::UNIX_EPOCH)
+    .unwrap_or_default()
+    .as_secs() as i64;
+  // 东八区偏移按本地时间换算:直接用 libc localtime 的替代——手算偏移不可靠,
+  // 改用 chrono 的最小实现:通过环境 TZ 不可行,这里用 UTC+8(产品主要面向中文用户)
+  let local = secs + 8 * 3600;
+  let days = local.div_euclid(86_400);
+  // 自 1970-01-01 起的天数转 y/m/d(公历算法)
+  let z = days + 719_468;
+  let era = z.div_euclid(146_097);
+  let doe = z.rem_euclid(146_097);
+  let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146_096) / 365;
+  let y = yoe + era * 400;
+  let d = doe - (365 * yoe + yoe / 4 - yoe / 100);
+  let mp = (5 * d + 2) / 153;
+  let day = d - (153 * mp + 2) / 5 + 1;
+  let month = if mp < 10 { mp + 3 } else { mp - 9 };
+  let year = if month <= 2 { y + 1 } else { y };
+  format!("{year:04}{month:02}{day:02}")
 }
 
 fn copy_dir_recursive(from: &Path, to: &Path) -> std::io::Result<()> {

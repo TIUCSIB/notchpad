@@ -239,7 +239,9 @@ pub fn clean_attachments_impl(db_path: &Path) -> u32 {
 
   let name_re = regex::Regex::new(r"(?i)^[0-9a-f]{16}\.(?:png|jpe?g|webp|gif|bmp|bin)$")
     .expect("内置正则必定合法");
-  let cutoff = std::time::SystemTime::now() - std::time::Duration::from_secs(600);
+  // 豁免窗口 2 分钟:自动保存防抖 600ms,加上调用前会 flush,足以避开
+  // "刚粘贴、正文还没落库"的间隙
+  let cutoff = std::time::SystemTime::now() - std::time::Duration::from_secs(120);
   let mut deleted = 0u32;
   for entry in entries.flatten() {
     let Ok(ft) = entry.file_type() else { continue };
@@ -276,14 +278,34 @@ pub fn clean_attachments(state: tauri::State<'_, crate::db::App>) -> serde_json:
   serde_json::json!({ "ok": true, "deleted": deleted, "freed": freed })
 }
 
-fn dir_size(dir: &Path) -> u64 {
+/// 附件目录概况:文件数与总字节数,设置页展示用
+#[tauri::command(async)]
+pub fn attachment_stats(state: tauri::State<'_, crate::db::App>) -> serde_json::Value {
+  let db_path = crate::db::lock_db_path(&state).clone().unwrap_or_default();
+  if db_path.as_os_str().is_empty() {
+    return serde_json::json!({ "ok": false, "error": "数据库未初始化" });
+  }
+  let dir = attachments_dir(&db_path);
+  let (files, bytes) = dir_stats(&dir);
+  serde_json::json!({ "ok": true, "files": files, "bytes": bytes })
+}
+
+fn dir_stats(dir: &Path) -> (u32, u64) {
   let Ok(entries) = fs::read_dir(dir) else {
-    return 0;
+    return (0, 0);
   };
-  entries
-    .flatten()
-    .filter_map(|e| e.metadata().ok())
-    .filter(|m| m.is_file())
-    .map(|m| m.len())
-    .sum()
+  let mut files = 0u32;
+  let mut bytes = 0u64;
+  for entry in entries.flatten() {
+    let Ok(meta) = entry.metadata() else { continue };
+    if meta.is_file() {
+      files += 1;
+      bytes += meta.len();
+    }
+  }
+  (files, bytes)
+}
+
+fn dir_size(dir: &Path) -> u64 {
+  dir_stats(dir).1
 }

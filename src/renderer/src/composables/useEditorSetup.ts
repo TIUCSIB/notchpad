@@ -26,9 +26,12 @@ import type { FormatBtn } from '../../types'
 
 const IMAGE_MAX_WIDTH = 1920
 const IMAGE_QUALITY = 0.8
-const IMAGE_MAX_BYTES = 5 * 1024 * 1024
 
-/** Read a File as a data URL string. */
+/**
+ * 读 File 为 data URL。压缩前需要知道 MIME;
+ * GIF 直接原样存(压缩会毁掉动画),带透明通道的 PNG 也原样存
+ * (canvas.toDataURL('image/jpeg') 会把透明区填成黑底)。
+ */
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -38,15 +41,39 @@ function readFileAsDataUrl(file: File): Promise<string> {
   })
 }
 
-/** Compress and resize a pasted image using Canvas, returning a base64 data URL. */
-function compressImage(file: File): Promise<string> {
+function hasAlphaChannel(img: HTMLImageElement): boolean {
+  const canvas = document.createElement('canvas')
+  const w = (canvas.width = Math.min(img.naturalWidth || 1, 64))
+  const h = (canvas.height = Math.min(img.naturalHeight || 1, 64))
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  if (!ctx) return false
+  ctx.drawImage(img, 0, 0, w, h)
+  const data = ctx.getImageData(0, 0, w, h).data
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] < 255) return true
+  }
+  return false
+}
+
+/**
+ * 粘贴图片处理:GIF / 透明 PNG / 小图原样存,
+ * 其余(照片类)缩到最大宽度 1920 并转 JPEG 压体积。
+ */
+function processImage(file: File): Promise<string> {
   return readFileAsDataUrl(file).then((dataUrl) => {
-    return new Promise<string>((resolve, reject) => {
-      if (file.size > IMAGE_MAX_BYTES) {
-        console.warn(`[Notchpad] Image exceeds ${IMAGE_MAX_BYTES / 1024 / 1024}MB, compressing...`)
-      }
+    // GIF 原样:canvas 重绘会丢动画帧
+    if (file.type === 'image/gif') return dataUrl
+    // 小图不值得压,原样保留格式与清晰度
+    if (file.size <= 256 * 1024) return dataUrl
+
+    return new Promise<string>((resolve) => {
       const img = new window.Image()
       img.onload = () => {
+        if (file.type === 'image/png' && hasAlphaChannel(img)) {
+          // 透明 PNG 转 JPEG 会黑底,原样保留
+          resolve(dataUrl)
+          return
+        }
         let { width, height } = img
         if (width > IMAGE_MAX_WIDTH) {
           height = Math.round((height / width) * IMAGE_MAX_WIDTH)
@@ -59,7 +86,7 @@ function compressImage(file: File): Promise<string> {
         ctx.drawImage(img, 0, 0, width, height)
         resolve(canvas.toDataURL('image/jpeg', IMAGE_QUALITY))
       }
-      img.onerror = () => reject(new Error('Failed to load image'))
+      img.onerror = () => resolve(dataUrl) // 加载失败就原样存,至少不丢图
       img.src = dataUrl
     })
   })
@@ -151,7 +178,7 @@ export function useEditorSetup(
             event.preventDefault()
             const file = item.getAsFile()
             if (!file) continue
-            compressImage(file)
+            processImage(file)
               .then(async (dataUrl) => {
                 // 图片写到磁盘,正文里只留一个引用。
                 // 内联 base64 会让单条记录涨到几 MB,而 sql.js 每次落盘都是整库导出。

@@ -15,6 +15,8 @@ const api = {
   getPages: (): Promise<Page[]> => invoke('get_pages'),
   addPage: (): Promise<Page[] | null> => invoke('add_page'),
   deletePage: (id: number): Promise<boolean> => invoke('delete_page', { id }),
+  restoreDeletedPage: (id: number): Promise<Page | null> => invoke('restore_deleted_page', { id }),
+  purgeExpiredDeleted: (): Promise<void> => invoke('purge_expired_deleted'),
   updatePage: (id: number, content: string): Promise<Page> =>
     invoke('update_page', { id, content }),
   updatePageTitle: (id: number, title: string): Promise<Page> =>
@@ -51,6 +53,8 @@ const api = {
   ): Promise<{ ok: boolean; name?: string; url?: string; error?: string }> =>
     invoke('save_attachment', { dataUrl }),
   readAttachment: (name: string): Promise<string | null> => invoke('read_attachment', { name }),
+  attachmentStats: (): Promise<{ ok: boolean; files?: number; bytes?: number; error?: string }> =>
+    invoke('attachment_stats'),
   cleanAttachments: (): Promise<{
     ok: boolean
     deleted?: number

@@ -17,7 +17,7 @@ import { Motion, AnimatePresence } from 'motion-v'
 import { exportAsJson, exportAsMarkdown, importFromJson } from '../utils/dataConverter'
 import { SETTINGS_DEFAULTS } from '../composables/useSettings'
 
-defineProps<{ visible: boolean; flushSave: () => Promise<void> }>()
+const props = defineProps<{ visible: boolean; flushSave: () => Promise<void> }>()
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'updateSettings', settings: Record<string, string>): void
@@ -48,6 +48,7 @@ const dbRelocateMsg = ref('')
 
 // Attachment cleanup
 const cleaningAttachments = ref(false)
+const attachStats = ref<{ files: number; bytes: number } | null>(null)
 
 function formatFreed(bytes?: number): string {
   if (!bytes) return ''
@@ -56,10 +57,22 @@ function formatFreed(bytes?: number): string {
     : `(释放 ${Math.max(1, Math.round(bytes / 1024))} KB)`
 }
 
-/** 清理未被任何页面引用的附件文件(孤儿文件) */
+function formatBytes(bytes: number): string {
+  return bytes >= 1024 * 1024
+    ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`
+}
+
+async function refreshAttachStats() {
+  const res = await window.api.attachmentStats()
+  if (res?.ok) attachStats.value = { files: res.files ?? 0, bytes: res.bytes ?? 0 }
+}
+
+/** 清理未被任何页面引用的附件文件(孤儿文件)。先 flush 保证引用最新 */
 async function cleanOrphanAttachments() {
   cleaningAttachments.value = true
   try {
+    await props.flushSave()
     const res = await window.api.cleanAttachments()
     if (res?.ok) {
       flashSaved(
@@ -67,6 +80,7 @@ async function cleanOrphanAttachments() {
           ? `已清理 ${res.deleted} 个未引用附件${formatFreed(res.freed)}`
           : '没有需要清理的附件'
       )
+      await refreshAttachStats()
     } else {
       flashSaved('清理失败: ' + (res?.error || '未知错误'))
     }
@@ -148,6 +162,7 @@ function onClose() {
 onMounted(() => {
   loadSettings()
   loadDbPath()
+  refreshAttachStats()
 })
 
 onBeforeUnmount(() => {
@@ -320,13 +335,22 @@ onBeforeUnmount(() => {
                   <Eraser :size="15" :stroke-width="2.5" />
                   <span>附件清理</span>
                 </div>
-                <button
-                  class="action-btn"
-                  :disabled="cleaningAttachments"
-                  @click="cleanOrphanAttachments"
-                >
-                  {{ cleaningAttachments ? '清理中...' : '清理未引用附件' }}
-                </button>
+                <div class="setting-control db-path-control">
+                  <span class="db-path-text">
+                    {{
+                      attachStats
+                        ? `${attachStats.files} 个文件 / ${formatBytes(attachStats.bytes)}`
+                        : ' '
+                    }}
+                  </span>
+                  <button
+                    class="action-btn"
+                    :disabled="cleaningAttachments"
+                    @click="cleanOrphanAttachments"
+                  >
+                    {{ cleaningAttachments ? '清理中...' : '清理未引用附件' }}
+                  </button>
+                </div>
               </div>
 
               <div class="setting-divider" />
