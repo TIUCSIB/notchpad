@@ -38,7 +38,7 @@ export function usePages(
   const currentIndex = ref(-1)
   // 每页记住自己上次的滚动位置:离开时存,切回来恢复;没访问过的页从顶部开始
   const scrollPositions = new Map<number, number>()
-  // 最近一次删除的页(id + 标题快照),供撤销 toast 显示;10 分钟后端会清暂存
+  // 最近一次删除的页(id + 标题快照),供撤销 toast 显示;后端暂存 24 小时后自动清除
   const lastDeleted = shallowRef<{ id: number; title: string } | null>(null)
   let isSwitching = false
   let rafId = 0

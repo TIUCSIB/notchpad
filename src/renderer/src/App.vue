@@ -76,7 +76,7 @@ const {
   () => parseInt(appSettings.value.maxPages || '10', 10)
 )
 
-// 删除撤销 toast:出现后 5 秒自动消失
+// 删除撤销 toast:出现后 5 秒自动消失;收起刘海时立即隐藏(见 isNotched watch)
 const undoToastVisible = ref(false)
 let undoToastTimer: ReturnType<typeof setTimeout> | null = null
 watch(lastDeleted, (v) => {
@@ -114,6 +114,14 @@ watch(
   },
   { immediate: true }
 )
+
+// 收起刘海(窗口缩成药丸)时立即藏掉撤销 toast,避免它孤零零浮在 5 秒倒计时里
+watch(isNotched, (notched) => {
+  if (notched && undoToastVisible.value) {
+    if (undoToastTimer) clearTimeout(undoToastTimer)
+    undoToastVisible.value = false
+  }
+})
 
 const {
   editor,

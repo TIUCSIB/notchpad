@@ -84,7 +84,7 @@ fn create_tables(conn: &Connection) -> rusqlite::Result<()> {
   )
 }
 
-/// 软删除暂存表:删除的页面先移进来,撤销窗口(约 10 分钟)过后由渲染层
+/// 软删除暂存表:删除的页面先移进来,撤销窗口(约 24 小时)过后由渲染层
 /// 通知真正清除。老库升级时按需建表
 fn ensure_deleted_table(conn: &Connection) {
   let _ = conn.execute_batch(
@@ -132,7 +132,7 @@ pub fn init(app: &tauri::AppHandle) -> App {
   migrate_attachment_urls(&conn);
   ensure_deleted_table(&conn);
   let _ = conn.execute(
-    "DELETE FROM deleted_pages WHERE deleted_at < datetime('now', '-10 minutes')",
+    "DELETE FROM deleted_pages WHERE deleted_at < datetime('now', '-24 hours')",
     [],
   );
   // 每日备份在启动线程同步做:库刚打开、几乎无写入,复制是安全的
@@ -274,14 +274,14 @@ pub fn restore_deleted_page(state: State<'_, App>, id: i64) -> Option<Page> {
   page_by_id(conn, id)
 }
 
-/// 清掉撤销窗口已过(超过 10 分钟)的软删除暂存,启动和删除时顺带执行
+/// 清掉撤销窗口已过(超过 24 小时)的软删除暂存,启动和删除时顺带执行
 #[tauri::command(async)]
 pub fn purge_expired_deleted(state: State<'_, App>) {
   let guard = lock_db(&state);
   if let Some(conn) = guard.as_ref() {
     ensure_deleted_table(conn);
     let _ = conn.execute(
-      "DELETE FROM deleted_pages WHERE deleted_at < datetime('now', '-10 minutes')",
+      "DELETE FROM deleted_pages WHERE deleted_at < datetime('now', '-24 hours')",
       [],
     );
   }
