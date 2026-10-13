@@ -253,6 +253,39 @@ pub fn delete_page(state: State<'_, App>, id: i64) -> bool {
 }
 
 /// 撤销删除:把暂存的页面移回 pages。成功返回页面内容(渲染层用它重建视图)
+/// 撤销窗口内暂存的已删页面(回收站列表用),按删除时间倒序
+#[derive(Serialize, Clone)]
+pub struct DeletedPage {
+  pub id: i64,
+  pub title: String,
+  pub content: String,
+  pub deleted_at: String,
+}
+
+#[tauri::command(async)]
+pub fn list_deleted_pages(state: State<'_, App>) -> Vec<DeletedPage> {
+  let guard = lock_db(&state);
+  let Some(conn) = guard.as_ref() else { return Vec::new() };
+  ensure_deleted_table(conn);
+  let Ok(mut stmt) = conn.prepare(
+    "SELECT id, title, content, deleted_at FROM deleted_pages ORDER BY deleted_at DESC, id DESC",
+  ) else {
+    return Vec::new();
+  };
+  let rows = stmt.query_map([], |row| {
+    Ok(DeletedPage {
+      id: row.get(0)?,
+      title: row.get(1)?,
+      content: row.get(2)?,
+      deleted_at: row.get(3)?,
+    })
+  });
+  match rows {
+    Ok(iter) => iter.filter_map(|r| r.ok()).collect(),
+    Err(_) => Vec::new(),
+  }
+}
+
 #[tauri::command(async)]
 pub fn restore_deleted_page(state: State<'_, App>, id: i64) -> Option<Page> {
   let guard = lock_db(&state);

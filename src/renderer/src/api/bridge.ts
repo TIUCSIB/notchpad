@@ -11,11 +11,20 @@ import type { Page } from '../../types'
 
 let notchUnlisten: (() => void) | null = null
 
+/** 回收站条目(后端 list_deleted_pages 返回) */
+export interface DeletedPageSummary {
+  id: number
+  title: string
+  content: string
+  deleted_at: string
+}
+
 const api = {
   getPages: (): Promise<Page[]> => invoke('get_pages'),
   addPage: (): Promise<Page[] | null> => invoke('add_page'),
   deletePage: (id: number): Promise<boolean> => invoke('delete_page', { id }),
   restoreDeletedPage: (id: number): Promise<Page | null> => invoke('restore_deleted_page', { id }),
+  listDeletedPages: (): Promise<DeletedPageSummary[]> => invoke('list_deleted_pages'),
   purgeExpiredDeleted: (): Promise<void> => invoke('purge_expired_deleted'),
   updatePage: (id: number, content: string): Promise<Page> =>
     invoke('update_page', { id, content }),

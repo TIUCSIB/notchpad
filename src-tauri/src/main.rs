@@ -124,6 +124,7 @@ fn main() {
       db::add_page,
       db::delete_page,
       db::restore_deleted_page,
+      db::list_deleted_pages,
       db::purge_expired_deleted,
       db::update_page,
       db::update_page_title,

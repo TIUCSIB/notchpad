@@ -353,3 +353,115 @@
   font-size: 11px;
   color: var(--accent, #4ade80);
 }
+
+/* --- 回收站 --- */
+.trash-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 2px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.trash-empty {
+  font-size: 11px;
+  color: var(--text-secondary, #888);
+  text-align: center;
+  padding: 8px 0;
+}
+
+.trash-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: var(--hover-bg, #3a3a3a);
+}
+
+.trash-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.trash-item-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary, #e5e5e5);
+}
+
+.trash-item-meta {
+  font-size: 10px;
+  color: var(--text-secondary, #888);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- 设置分区 Tab --- */
+.settings-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 2px 6px;
+  border-bottom: 1px solid var(--divider, #2a2a2c);
+  margin-bottom: 10px;
+}
+
+.settings-tab {
+  flex: 1;
+  position: relative;
+  border: none;
+  background: none;
+  color: var(--text-secondary, #888);
+  font-size: 11.5px;
+  padding: 6px 0 8px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.settings-tab:hover {
+  color: var(--text-primary, #e5e5e5);
+}
+
+/* 选中态:强调色文字 + 底部强调色短下划线,不用背景块 */
+.settings-tab.active {
+  color: var(--accent, #4ade80);
+  font-weight: 600;
+}
+
+.settings-tab.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent, #4ade80);
+}
+
+.settings-tabpane {
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- 药丸自定义文字输入 --- */
+.pill-custom-input {
+  width: 180px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-strong, #3a3a3c);
+  border-radius: 6px;
+  background: var(--input-bg, #1e1e1e);
+  color: var(--text-primary, #e5e5e5);
+  font-size: 11px;
+  outline: none;
+}
+
+.pill-custom-input:focus {
+  border-color: var(--accent, #4ade80);
+}

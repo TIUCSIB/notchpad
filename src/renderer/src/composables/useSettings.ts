@@ -7,7 +7,11 @@ export const SETTINGS_DEFAULTS: Record<string, string> = {
   defaultFontSize: '14px',
   autoStart: 'false',
   wakeMode: 'hover',
-  maxPages: '10'
+  maxPages: '10',
+  /** 药丸显示内容,逗号分隔的来源:clock / quote / custom;off 或空 = 不显示 */
+  pillSources: 'off',
+  /** 自定义文字(仅 pillSources 含 custom 时显示) */
+  pillCustomText: ''
 }
 
 export function useSettings() {

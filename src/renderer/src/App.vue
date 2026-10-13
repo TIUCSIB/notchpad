@@ -9,6 +9,7 @@ import Settings from './components/Settings.vue'
 import SearchPanel from './components/SearchPanel.vue'
 import { Motion } from 'motion-v'
 import { useNotch } from './composables/useNotch'
+import { usePillContent } from './composables/usePillContent'
 import { useSettings, SETTINGS_DEFAULTS } from './composables/useSettings'
 import { useSave } from './composables/useSave'
 import { usePages } from './composables/usePages'
@@ -107,6 +108,10 @@ const {
   warmUpFirstExpand,
   cleanup: cleanupNotch
 } = useNotch(pages, settingsVisible, linkPromptVisible)
+
+// 药丸显示内容(时钟/一言/自定义文字,按设置轮播)
+const { displayText: pillText } = usePillContent(appSettings)
+
 watch(
   isLightTheme,
   (v) => {
@@ -317,6 +322,14 @@ onBeforeUnmount(() => {
       @click="handlePillClick"
     >
       <div class="panel">
+        <Transition name="pill-fade">
+          <div
+            v-if="isNotched && pillText && !isAnimating && !pillHovered"
+            class="pill-content"
+          >
+            {{ pillText }}
+          </div>
+        </Transition>
         <TopToolbar
           :pages="pages"
           :current-index="currentIndex"

@@ -1,7 +1,6 @@
 ﻿<script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import {
-  X,
   Monitor,
   Palette,
   Type,
@@ -13,13 +12,17 @@ import {
   FolderOpen,
   Eraser,
   Files,
-  RefreshCw
+  RefreshCw,
+  Trash2,
+  Clock,
+  TextCursorInput
 } from 'lucide-vue-next'
 import { Motion, AnimatePresence } from 'motion-v'
 import { exportAsJson, exportAsMarkdown, importFromJson } from '../utils/dataConverter'
 import { SETTINGS_DEFAULTS } from '../composables/useSettings'
 import { check } from '@tauri-apps/plugin-updater'
 import { relaunch } from '@tauri-apps/plugin-process'
+import type { DeletedPageSummary } from '../api/bridge'
 
 const props = defineProps<{ visible: boolean; flushSave: () => Promise<void> }>()
 const emit = defineEmits<{
@@ -53,6 +56,53 @@ const dbRelocateMsg = ref('')
 // Attachment cleanup
 const cleaningAttachments = ref(false)
 const attachStats = ref<{ files: number; bytes: number } | null>(null)
+
+// 回收站:24 小时内删除的页面,可一键恢复
+const trashItems = ref<DeletedPageSummary[]>([])
+const restoringId = ref<number | null>(null)
+const trashOpen = ref(false)
+// 设置面板分区:通用 / 数据 / 关于
+const activeTab = ref<'general' | 'data' | 'shortcuts' | 'about'>('general')
+
+/** 标题快照:与 usePages.getPageTitle 同规则(标题/正文前 8 字/空白页) */
+function trashTitle(item: DeletedPageSummary): string {
+  if (item.title) return item.title
+  const text = (item.content || '')
+    .replace(/<img[^>]*>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .trim()
+  return text ? `「${text.slice(0, 8)}」` : '空白页'
+}
+
+function trashExcerpt(item: DeletedPageSummary): string {
+  const text = (item.content || '')
+    .replace(/<img[^>]*>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return text ? text.slice(0, 40) : '(空页面)'
+}
+
+async function refreshTrash() {
+  trashItems.value = await window.api.listDeletedPages()
+}
+
+async function restoreFromTrash(id: number) {
+  restoringId.value = id
+  try {
+    const ok = await window.api.restoreDeletedPage(id)
+    flashSaved(ok ? '已恢复,页面列表已刷新' : '恢复失败')
+    await refreshTrash()
+    if (ok) emit('updateSettings', { ...settings.value, _reload: '1' })
+  } finally {
+    restoringId.value = null
+  }
+}
+
+function toggleTrash() {
+  trashOpen.value = !trashOpen.value
+  if (trashOpen.value) refreshTrash()
+}
 
 // Update check
 const checkingUpdate = ref(false)
@@ -163,9 +213,27 @@ async function chooseDbDir() {
 
 async function save(key: string, value: string) {
   settings.value[key] = value
-  await window.api.setSetting(key, value)
+  // 先同步到外层再落库:即使写库失败,界面状态也已更新(重试由用户发起)
   emit('updateSettings', { ...settings.value })
+  try {
+    await window.api.setSetting(key, value)
+  } catch (e) {
+    console.error('[Notchpad] setSetting failed:', key, e)
+  }
   flashSaved()
+}
+
+/** 药丸显示来源开关(多选,存逗号分隔;全关 = off) */
+function togglePillSource(key: 'clock' | 'quote' | 'custom') {
+  const cur = new Set((settings.value.pillSources ?? 'off').split(',').map((x) => x.trim()))
+  cur.delete('off')
+  if (cur.has(key)) cur.delete(key)
+  else cur.add(key)
+  save('pillSources', cur.size ? Array.from(cur).join(',') : 'off')
+}
+
+function pillSourceActive(key: 'clock' | 'quote' | 'custom') {
+  return (settings.value.pillSources ?? '').includes(key)
 }
 
 function flashSaved(text = '已保存') {
@@ -194,14 +262,18 @@ async function handleReset() {
   flashSaved()
 }
 
-function onClose() {
-  emit('close')
-}
+watch(
+  () => props.visible,
+  (v) => {
+    if (v) refreshTrash()
+  }
+)
 
 onMounted(() => {
   loadSettings()
   loadDbPath()
   refreshAttachStats()
+  refreshTrash()
 })
 
 onBeforeUnmount(() => {
@@ -230,229 +302,314 @@ onBeforeUnmount(() => {
           @click.stop
         >
           <div class="settings-panel-inner">
-            <div class="settings-header">
-              <span class="settings-title">设置</span>
-              <button type="button" class="settings-close-btn" @click="onClose">
-                <X :size="14" :stroke-width="2.5" />
-              </button>
-            </div>
-
             <div class="settings-body">
+              <div class="settings-tabs">
+                <button
+                  v-for="t in [
+                    { key: 'general', label: '通用' },
+                    { key: 'data', label: '数据' },
+                    { key: 'shortcuts', label: '快捷键' },
+                    { key: 'about', label: '关于' }
+                  ]"
+                  :key="t.key"
+                  class="settings-tab"
+                  :class="{ active: activeTab === t.key }"
+                  @click="activeTab = t.key as 'general' | 'data' | 'shortcuts' | 'about'"
+                >
+                  {{ t.label }}
+                </button>
+              </div>
+              <div v-if="activeTab === 'general'" class="settings-tabpane">
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <Monitor :size="15" :stroke-width="2.5" />
+                    <span>主题</span>
+                  </div>
+                  <div class="setting-control">
+                    <button
+                      v-for="t in [
+                        { key: 'dark', label: '深色' },
+                        { key: 'light', label: '浅色' },
+                        { key: 'system', label: '系统' }
+                      ]"
+                      :key="t.key"
+                      class="theme-btn"
+                      :class="{ active: settings.theme === t.key }"
+                      @click="save('theme', t.key)"
+                    >
+                      {{ t.label }}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <Palette :size="15" :stroke-width="2.5" />
+                    <span>强调色</span>
+                  </div>
+                  <div class="setting-control color-grid">
+                    <button
+                      v-for="a in accentOptions"
+                      :key="a.color"
+                      class="color-dot"
+                      :class="{ active: settings.accentColor === a.color }"
+                      :style="{ background: a.color }"
+                      @click="save('accentColor', a.color)"
+                    />
+                  </div>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <Type :size="15" :stroke-width="2.5" />
+                    <span>默认字号</span>
+                  </div>
+                  <div class="setting-control">
+                    <select
+                      class="native-select"
+                      :value="settings.defaultFontSize"
+                      @change="save('defaultFontSize', ($event.target as HTMLSelectElement).value)"
+                    >
+                      <option v-for="s in fontSizeOptions" :key="s" :value="s">{{ s }}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <Files :size="15" :stroke-width="2.5" />
+                    <span>页面数量上限</span>
+                  </div>
+                  <div class="setting-control">
+                    <select
+                      class="native-select"
+                      :value="settings.maxPages"
+                      @change="save('maxPages', ($event.target as HTMLSelectElement).value)"
+                    >
+                      <option v-for="n in [3, 5, 10, 15, 20, 30]" :key="n" :value="String(n)">
+                        {{ n }} 页
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <Power :size="15" :stroke-width="2.5" />
+                    <span>开机自启</span>
+                  </div>
+                  <div class="setting-control">
+                    <button
+                      class="toggle-btn"
+                      :class="{ active: settings.autoStart === 'true' }"
+                      @click="save('autoStart', settings.autoStart === 'true' ? 'false' : 'true')"
+                    >
+                      <span class="toggle-knob" />
+                    </button>
+                  </div>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <MousePointerClick :size="15" :stroke-width="2.5" />
+                    <span>唤醒方式</span>
+                  </div>
+                  <div class="setting-control">
+                    <button
+                      v-for="m in [
+                        { key: 'hover', label: '悬浮' },
+                        { key: 'click', label: '点击' }
+                      ]"
+                      :key="m.key"
+                      class="theme-btn"
+                      :class="{ active: settings.wakeMode === m.key }"
+                      @click="save('wakeMode', m.key)"
+                    >
+                      {{ m.label }}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="setting-divider" />
+
               <div class="setting-row">
                 <div class="setting-label">
-                  <Monitor :size="15" :stroke-width="2.5" />
-                  <span>主题</span>
+                  <Clock :size="15" :stroke-width="2.5" />
+                  <span>药丸显示</span>
                 </div>
                 <div class="setting-control">
                   <button
-                    v-for="t in [
-                      { key: 'dark', label: '深色' },
-                      { key: 'light', label: '浅色' },
-                      { key: 'system', label: '系统' }
+                    v-for="src in [
+                      { key: 'clock', label: '时钟' },
+                      { key: 'quote', label: '一言' },
+                      { key: 'custom', label: '自定义' }
                     ]"
-                    :key="t.key"
+                    :key="src.key"
                     class="theme-btn"
-                    :class="{ active: settings.theme === t.key }"
-                    @click="save('theme', t.key)"
+                    :class="{ active: pillSourceActive(src.key) }"
+                    @click="togglePillSource(src.key)"
                   >
-                    {{ t.label }}
+                    {{ src.label }}
                   </button>
                 </div>
               </div>
 
-              <div class="setting-row">
+              <div v-if="pillSourceActive('custom')" class="setting-row">
                 <div class="setting-label">
-                  <Palette :size="15" :stroke-width="2.5" />
-                  <span>强调色</span>
+                  <TextCursorInput :size="15" :stroke-width="2.5" />
+                  <span>自定义文字</span>
                 </div>
-                <div class="setting-control color-grid">
-                  <button
-                    v-for="a in accentOptions"
-                    :key="a.color"
-                    class="color-dot"
-                    :class="{ active: settings.accentColor === a.color }"
-                    :style="{ background: a.color }"
-                    @click="save('accentColor', a.color)"
+                <div class="setting-control">
+                  <input
+                    class="pill-custom-input"
+                    type="text"
+                    :value="settings.pillCustomText || ''"
+                    placeholder="显示在药丸上的文字…"
+                    maxlength="30"
+                    @change="
+                      save('pillCustomText', ($event.target as HTMLInputElement).value.trim())
+                    "
                   />
                 </div>
               </div>
+              <div v-if="activeTab === 'data'" class="settings-tabpane">
+                <div class="setting-row db-path-row">
+                  <div class="setting-label">
+                    <FolderOpen :size="15" :stroke-width="2.5" />
+                    <span>存储位置</span>
+                  </div>
+                  <div class="setting-control db-path-control">
+                    <span class="db-path-text" :title="dbPath">{{ dbPath }}</span>
+                    <button class="action-btn" :disabled="dbRelocating" @click="chooseDbDir">
+                      {{ dbRelocating ? '迁移中...' : '更改' }}
+                    </button>
+                  </div>
+                </div>
+                <div v-if="dbRelocateMsg" class="db-relocate-msg">{{ dbRelocateMsg }}</div>
 
-              <div class="setting-row">
-                <div class="setting-label">
-                  <Type :size="15" :stroke-width="2.5" />
-                  <span>默认字号</span>
-                </div>
-                <div class="setting-control">
-                  <select
-                    class="native-select"
-                    :value="settings.defaultFontSize"
-                    @change="save('defaultFontSize', ($event.target as HTMLSelectElement).value)"
-                  >
-                    <option v-for="s in fontSizeOptions" :key="s" :value="s">{{ s }}</option>
-                  </select>
-                </div>
-              </div>
+                <div class="setting-divider" />
 
-              <div class="setting-row">
-                <div class="setting-label">
-                  <Files :size="15" :stroke-width="2.5" />
-                  <span>页面数量上限</span>
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <Download :size="15" :stroke-width="2.5" />
+                    <span>导出数据</span>
+                  </div>
+                  <div class="setting-control">
+                    <button class="action-btn" @click="exportAsJson(flushSave)">JSON</button>
+                    <button class="action-btn" @click="exportAsMarkdown(flushSave)">
+                      Markdown
+                    </button>
+                  </div>
                 </div>
-                <div class="setting-control">
-                  <select
-                    class="native-select"
-                    :value="settings.maxPages"
-                    @change="save('maxPages', ($event.target as HTMLSelectElement).value)"
-                  >
-                    <option v-for="n in [3, 5, 10, 15, 20, 30]" :key="n" :value="String(n)">
-                      {{ n }} 页
-                    </option>
-                  </select>
-                </div>
-              </div>
 
-              <div class="setting-row">
-                <div class="setting-label">
-                  <Power :size="15" :stroke-width="2.5" />
-                  <span>开机自启</span>
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <Upload :size="15" :stroke-width="2.5" />
+                    <span>导入数据</span>
+                  </div>
+                  <button class="action-btn" @click="handleImport">导入</button>
                 </div>
-                <div class="setting-control">
-                  <button
-                    class="toggle-btn"
-                    :class="{ active: settings.autoStart === 'true' }"
-                    @click="save('autoStart', settings.autoStart === 'true' ? 'false' : 'true')"
-                  >
-                    <span class="toggle-knob" />
+
+                <div class="setting-divider" />
+
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <Eraser :size="15" :stroke-width="2.5" />
+                    <span>附件清理</span>
+                  </div>
+                  <div class="setting-control db-path-control">
+                    <span class="db-path-text">
+                      {{
+                        attachStats
+                          ? `${attachStats.files} 个文件 / ${formatBytes(attachStats.bytes)}`
+                          : ' '
+                      }}
+                    </span>
+                    <button
+                      class="action-btn"
+                      :disabled="cleaningAttachments"
+                      @click="cleanOrphanAttachments"
+                    >
+                      {{ cleaningAttachments ? '清理中...' : '清理未引用附件' }}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="setting-divider" />
+
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <Trash2 :size="15" :stroke-width="2.5" />
+                    <span>回收站</span>
+                  </div>
+                  <button class="action-btn" @click="toggleTrash">
+                    {{ trashOpen ? '收起' : `最近 24 小时 (${trashItems.length})` }}
                   </button>
                 </div>
-              </div>
-
-              <div class="setting-row">
-                <div class="setting-label">
-                  <MousePointerClick :size="15" :stroke-width="2.5" />
-                  <span>唤醒方式</span>
-                </div>
-                <div class="setting-control">
-                  <button
-                    v-for="m in [
-                      { key: 'hover', label: '悬浮' },
-                      { key: 'click', label: '点击' }
-                    ]"
-                    :key="m.key"
-                    class="theme-btn"
-                    :class="{ active: settings.wakeMode === m.key }"
-                    @click="save('wakeMode', m.key)"
-                  >
-                    {{ m.label }}
-                  </button>
+                <div v-if="trashOpen" class="trash-list">
+                  <div v-if="!trashItems.length" class="trash-empty">暂无可恢复的页面</div>
+                  <div v-for="item in trashItems" :key="item.id" class="trash-item">
+                    <div class="trash-item-text">
+                      <span class="trash-item-title">{{ trashTitle(item) }}</span>
+                      <span class="trash-item-meta"
+                        >{{ item.deleted_at }} · {{ trashExcerpt(item) }}</span
+                      >
+                    </div>
+                    <button
+                      class="action-btn"
+                      :disabled="restoringId === item.id"
+                      @click="restoreFromTrash(item.id)"
+                    >
+                      {{ restoringId === item.id ? '恢复中…' : '恢复' }}
+                    </button>
+                  </div>
                 </div>
               </div>
-
-              <div class="setting-divider" />
-
-              <div class="setting-row db-path-row">
-                <div class="setting-label">
-                  <FolderOpen :size="15" :stroke-width="2.5" />
-                  <span>存储位置</span>
-                </div>
-                <div class="setting-control db-path-control">
-                  <span class="db-path-text" :title="dbPath">{{ dbPath }}</span>
-                  <button class="action-btn" :disabled="dbRelocating" @click="chooseDbDir">
-                    {{ dbRelocating ? '迁移中...' : '更改' }}
-                  </button>
-                </div>
-              </div>
-              <div v-if="dbRelocateMsg" class="db-relocate-msg">{{ dbRelocateMsg }}</div>
-
-              <div class="setting-divider" />
-
-              <div class="setting-row">
-                <div class="setting-label">
-                  <Download :size="15" :stroke-width="2.5" />
-                  <span>导出数据</span>
-                </div>
-                <div class="setting-control">
-                  <button class="action-btn" @click="exportAsJson(flushSave)">JSON</button>
-                  <button class="action-btn" @click="exportAsMarkdown(flushSave)">Markdown</button>
-                </div>
-              </div>
-
-              <div class="setting-row">
-                <div class="setting-label">
-                  <Upload :size="15" :stroke-width="2.5" />
-                  <span>导入数据</span>
-                </div>
-                <button class="action-btn" @click="handleImport">导入</button>
-              </div>
-
-              <div class="setting-divider" />
-
-              <div class="setting-row">
-                <div class="setting-label">
-                  <Eraser :size="15" :stroke-width="2.5" />
-                  <span>附件清理</span>
-                </div>
-                <div class="setting-control db-path-control">
-                  <span class="db-path-text">
-                    {{
-                      attachStats
-                        ? `${attachStats.files} 个文件 / ${formatBytes(attachStats.bytes)}`
-                        : ' '
-                    }}
-                  </span>
+              <div v-if="activeTab === 'about'" class="settings-tabpane">
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <RefreshCw :size="15" :stroke-width="2.5" />
+                    <span>{{ updateReady ? `v${updateVersion} 已就绪` : '检查更新' }}</span>
+                  </div>
                   <button
                     class="action-btn"
-                    :disabled="cleaningAttachments"
-                    @click="cleanOrphanAttachments"
+                    :disabled="checkingUpdate"
+                    @click="updateReady ? applyUpdate() : checkForUpdate()"
                   >
-                    {{ cleaningAttachments ? '清理中...' : '清理未引用附件' }}
+                    {{ checkingUpdate ? '检查中…' : updateReady ? '重启更新' : '检查' }}
                   </button>
                 </div>
-              </div>
 
-              <div class="setting-divider" />
+                <div class="setting-divider" />
 
-              <div class="setting-row">
-                <div class="setting-label">
-                  <RefreshCw :size="15" :stroke-width="2.5" />
-                  <span>{{ updateReady ? `v${updateVersion} 已就绪` : '检查更新' }}</span>
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <RotateCcw :size="15" :stroke-width="2.5" />
+                    <span>恢复默认</span>
+                  </div>
+                  <button class="action-btn danger" @click="handleReset">重置</button>
                 </div>
-                <button
-                  class="action-btn"
-                  :disabled="checkingUpdate"
-                  @click="updateReady ? applyUpdate() : checkForUpdate()"
-                >
-                  {{ checkingUpdate ? '检查中…' : updateReady ? '重启更新' : '检查' }}
-                </button>
+
               </div>
 
-              <div class="setting-divider" />
-
-              <div class="setting-row">
-                <div class="setting-label">
-                  <RotateCcw :size="15" :stroke-width="2.5" />
-                  <span>恢复默认</span>
-                </div>
-                <button class="action-btn danger" @click="handleReset">重置</button>
-              </div>
-
-              <div class="setting-divider" />
-
-              <div class="shortcuts-section">
-                <div class="setting-label shortcuts-title"><span>快捷键</span></div>
-                <div class="shortcuts-list">
-                  <div class="shortcut-row"><kbd>Ctrl+N</kbd> <span>新建页面</span></div>
-                  <div class="shortcut-row"><kbd>Ctrl+D</kbd> <span>删除页面</span></div>
-                  <div class="shortcut-row"><kbd>Ctrl+F</kbd> <span>跨页搜索</span></div>
-                  <div class="shortcut-row"><kbd>Ctrl+S</kbd> <span>保存</span></div>
-                  <div class="shortcut-row"><kbd>Ctrl+Z</kbd> <span>撤销</span></div>
-                  <div class="shortcut-row"><kbd>Ctrl+Y</kbd> <span>重做</span></div>
-                  <div class="shortcut-row"><kbd>Ctrl+W</kbd> <span>最小化</span></div>
-                  <div class="shortcut-row"><kbd>Ctrl+Alt+Z</kbd> <span>打开窗口</span></div>
-                  <div class="shortcut-row"><kbd>Ctrl+Shift+M</kbd> <span>切换显示器</span></div>
-                  <div class="shortcut-row"><kbd>Ctrl+Tab</kbd> <span>下一页</span></div>
-                  <div class="shortcut-row"><kbd>Ctrl+Shift+Tab</kbd> <span>上一页</span></div>
-                  <div class="shortcut-row"><kbd>Ctrl+1~9</kbd> <span>跳转对应页</span></div>
+              <div v-if="activeTab === 'shortcuts'" class="settings-tabpane">
+                <div class="shortcuts-section">
+                  <div class="setting-label shortcuts-title"><span>快捷键</span></div>
+                  <div class="shortcuts-list">
+                    <div class="shortcut-row"><kbd>Ctrl+N</kbd> <span>新建页面</span></div>
+                    <div class="shortcut-row"><kbd>Ctrl+D</kbd> <span>删除页面</span></div>
+                    <div class="shortcut-row"><kbd>Ctrl+F</kbd> <span>跨页搜索</span></div>
+                    <div class="shortcut-row"><kbd>Ctrl+S</kbd> <span>保存</span></div>
+                    <div class="shortcut-row"><kbd>Ctrl+Z</kbd> <span>撤销</span></div>
+                    <div class="shortcut-row"><kbd>Ctrl+Y</kbd> <span>重做</span></div>
+                    <div class="shortcut-row"><kbd>Ctrl+W</kbd> <span>最小化</span></div>
+                    <div class="shortcut-row"><kbd>Ctrl+Alt+Z</kbd> <span>打开窗口</span></div>
+                    <div class="shortcut-row"><kbd>Ctrl+Shift+M</kbd> <span>切换显示器</span></div>
+                    <div class="shortcut-row"><kbd>Ctrl+Tab</kbd> <span>下一页</span></div>
+                    <div class="shortcut-row"><kbd>Ctrl+Shift+Tab</kbd> <span>上一页</span></div>
+                    <div class="shortcut-row"><kbd>Ctrl+1~9</kbd> <span>跳转对应页</span></div>
+                  </div>
                 </div>
               </div>
             </div>

@@ -27,6 +27,7 @@ export function useNotch(
     return 'rgba(251,139,5,1)'
   })
 
+
   const panelBgColor = ref('#000')
   const isLightTheme = ref(false)
 
@@ -38,13 +39,15 @@ export function useNotch(
   }
 
   const pillWidth = computed(() =>
-    isNotched.value ? (pillHovered.value ? '84px' : '72px') : 'calc(100% - 4px)'
+    isNotched.value ? (pillHovered.value ? '108px' : '96px') : 'calc(100% - 4px)'
   )
   const pillHeight = computed(() =>
-    isNotched.value ? (pillHovered.value ? '18px' : '14px') : '100vh'
+    isNotched.value ? (pillHovered.value ? '24px' : '20px') : '100vh'
   )
   const pillTop = computed(() => '0px')
-  const pillRadius = computed(() => (isNotched.value ? '0 0 12px 12px' : '0 0 20px 20px'))
+  // 顶部两角恒为直角(与展开态一致,任何过渡中都不出现顶部圆角),
+  // iOS 感由薄胶囊比例与底部半圆承担
+  const pillRadius = computed(() => (isNotched.value ? '0 0 14px 14px' : '0 0 20px 20px'))
 
   const panelAnimate = computed(() => ({
     x: '-50%',
@@ -83,9 +86,10 @@ export function useNotch(
       }, 380)
     } else {
       isAnimating.value = true
+      // 400ms > 展开弹簧主程,确保顶部圆角在动画完全落定后才出现
       animTimer = setTimeout(() => {
         isAnimating.value = false
-      }, 300)
+      }, 400)
     }
     updatePanelBg()
   })

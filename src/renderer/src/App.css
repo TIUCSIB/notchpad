@@ -13,6 +13,8 @@
   will-change: transform, width, height;
   overflow: visible;
   filter: blur(0px);
+  /* 底部为主的柔和投影,给贴边胶囊一点厚度;展开态由 .panel-motion 覆写减弱 */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35), 0 1px 3px rgba(0, 0, 0, 0.25);
   transition: filter 0.25s ease-out;
 }
 
@@ -21,7 +23,8 @@
   content: '';
   position: absolute;
   inset: -6px;
-  border-radius: 0 0 18px 18px;
+  /* 与胶囊同心:顶部直角,底部 = 胶囊底部圆角 14px + 外扩 6px */
+  border-radius: 0 0 20px 20px;
   background: rgba(255, 255, 255, 0.28);
   z-index: -1;
   opacity: 0;
@@ -30,16 +33,22 @@
 }
 
 .panel-motion.notched::after {
-  opacity: 1;
+  opacity: 0.55;
 }
 
+/* 悬浮时光晕略亮,提示可点击 */
 .panel-motion.notched.pill-hovered::after {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .panel-motion.notched .panel {
   opacity: 0;
   pointer-events: none;
+}
+
+/* 展开态是贴边全窗面板,只留极淡的底部投影 */
+.panel-motion:not(.notched) {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
 }
 
 .panel-motion.notched {
@@ -271,5 +280,33 @@
 
 .img-preview-enter-from,
 .img-preview-leave-to {
+  opacity: 0;
+}
+
+/* --- 药丸显示内容(时钟/一言/自定义文字) --- */
+.pill-content {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: calc(100% - 16px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10.5px;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+  z-index: 3;
+  user-select: none;
+}
+
+.pill-fade-enter-active,
+.pill-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.pill-fade-enter-from,
+.pill-fade-leave-to {
   opacity: 0;
 }
