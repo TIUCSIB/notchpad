@@ -465,3 +465,20 @@
 .pill-custom-input:focus {
   border-color: var(--accent, #4ade80);
 }
+
+/* --- 一言分类 / 小标签行 --- */
+.quote-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.quote-cats .theme-btn {
+  padding: 3px 8px;
+  font-size: 10.5px;
+}
+
+.quote-cat-hint {
+  font-size: 11px;
+  color: var(--text-secondary, #888);
+}

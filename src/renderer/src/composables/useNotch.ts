@@ -27,7 +27,6 @@ export function useNotch(
     return 'rgba(251,139,5,1)'
   })
 
-
   const panelBgColor = ref('#000')
   const isLightTheme = ref(false)
 

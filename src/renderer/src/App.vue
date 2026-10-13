@@ -10,6 +10,7 @@ import SearchPanel from './components/SearchPanel.vue'
 import { Motion } from 'motion-v'
 import { useNotch } from './composables/useNotch'
 import { usePillContent } from './composables/usePillContent'
+import { usePillFeeds } from './composables/usePillFeeds'
 import { useSettings, SETTINGS_DEFAULTS } from './composables/useSettings'
 import { useSave } from './composables/useSave'
 import { usePages } from './composables/usePages'
@@ -109,8 +110,9 @@ const {
   cleanup: cleanupNotch
 } = useNotch(pages, settingsVisible, linkPromptVisible)
 
-// 药丸显示内容(时钟/一言/自定义文字,按设置轮播)
-const { displayText: pillText } = usePillContent(appSettings)
+// 药丸显示内容(时钟/一言/天气/自定义文字,按设置轮播);一言与天气由 feeds 调度拉取
+const { quoteText: pillQuote, weatherText: pillWeather } = usePillFeeds(appSettings, isNotched)
+const { displayText: pillText } = usePillContent(appSettings, pillQuote, pillWeather)
 
 watch(
   isLightTheme,
@@ -323,10 +325,7 @@ onBeforeUnmount(() => {
     >
       <div class="panel">
         <Transition name="pill-fade">
-          <div
-            v-if="isNotched && pillText && !isAnimating && !pillHovered"
-            class="pill-content"
-          >
+          <div v-if="isNotched && pillText && !isAnimating && !pillHovered" class="pill-content">
             {{ pillText }}
           </div>
         </Transition>

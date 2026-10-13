@@ -8,10 +8,22 @@ export const SETTINGS_DEFAULTS: Record<string, string> = {
   autoStart: 'false',
   wakeMode: 'hover',
   maxPages: '10',
-  /** 药丸显示内容,逗号分隔的来源:clock / quote / custom;off 或空 = 不显示 */
+  /** 药丸显示内容,逗号分隔的来源:clock / quote / weather / custom;off 或空 = 不显示 */
   pillSources: 'off',
   /** 自定义文字(仅 pillSources 含 custom 时显示) */
-  pillCustomText: ''
+  pillCustomText: '',
+  /** 一言来源:online(hitokoto)/ local(内置语录);分类见 quoteCategories */
+  quoteSource: 'online',
+  /** 一言更新:5min / 30min / 3hour / day / collapse(每次收起)/ never(仅启用时) */
+  quoteInterval: '30min',
+  /** hitokoto 分类,逗号分隔(a 动画 b 漫画 c 游戏 d 文学 e 原创 i 诗词 k 哲学…);空 = 全部 */
+  quoteCategories: '',
+  /** 和风天气 API Key(开发者控制台创建) */
+  weatherApiKey: '',
+  /** 天气城市名(如:北京),由和风 GeoAPI 解析 */
+  weatherCity: '',
+  /** 天气更新:30min / hour / 3hour / day / never */
+  weatherInterval: 'hour'
 }
 
 export function useSettings() {

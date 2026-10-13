@@ -13,6 +13,7 @@ import {
   Eraser,
   Files,
   RefreshCw,
+  Info,
   Trash2,
   Clock,
   TextCursorInput
@@ -21,6 +22,7 @@ import { Motion, AnimatePresence } from 'motion-v'
 import { exportAsJson, exportAsMarkdown, importFromJson } from '../utils/dataConverter'
 import { SETTINGS_DEFAULTS } from '../composables/useSettings'
 import { check } from '@tauri-apps/plugin-updater'
+import { getVersion } from '@tauri-apps/api/app'
 import { relaunch } from '@tauri-apps/plugin-process'
 import type { DeletedPageSummary } from '../api/bridge'
 
@@ -62,7 +64,7 @@ const trashItems = ref<DeletedPageSummary[]>([])
 const restoringId = ref<number | null>(null)
 const trashOpen = ref(false)
 // 设置面板分区:通用 / 数据 / 关于
-const activeTab = ref<'general' | 'data' | 'shortcuts' | 'about'>('general')
+const activeTab = ref<'general' | 'data' | 'shortcuts' | 'easter' | 'about'>('general')
 
 /** 标题快照:与 usePages.getPageTitle 同规则(标题/正文前 8 字/空白页) */
 function trashTitle(item: DeletedPageSummary): string {
@@ -105,6 +107,7 @@ function toggleTrash() {
 }
 
 // Update check
+const currentVersion = ref('')
 const checkingUpdate = ref(false)
 const updateReady = ref(false)
 const updateVersion = ref('')
@@ -232,8 +235,21 @@ function togglePillSource(key: 'clock' | 'quote' | 'custom') {
   save('pillSources', cur.size ? Array.from(cur).join(',') : 'off')
 }
 
-function pillSourceActive(key: 'clock' | 'quote' | 'custom') {
+function pillSourceActive(key: 'clock' | 'quote' | 'weather' | 'custom') {
   return (settings.value.pillSources ?? '').includes(key)
+}
+
+/** hitokoto 分类多选(存逗号分隔的单字母) */
+function toggleQuoteCategory(key: string) {
+  const cur = new Set(
+    (settings.value.quoteCategories ?? '')
+      .split(',')
+      .map((x) => x.trim())
+      .filter(Boolean)
+  )
+  if (cur.has(key)) cur.delete(key)
+  else cur.add(key)
+  save('quoteCategories', Array.from(cur).join(','))
 }
 
 function flashSaved(text = '已保存') {
@@ -274,6 +290,9 @@ onMounted(() => {
   loadDbPath()
   refreshAttachStats()
   refreshTrash()
+  getVersion()
+    .then((v) => (currentVersion.value = v))
+    .catch(() => {})
 })
 
 onBeforeUnmount(() => {
@@ -309,6 +328,7 @@ onBeforeUnmount(() => {
                     { key: 'general', label: '通用' },
                     { key: 'data', label: '数据' },
                     { key: 'shortcuts', label: '快捷键' },
+                    { key: 'easter', label: '彩蛋' },
                     { key: 'about', label: '关于' }
                   ]"
                   :key="t.key"
@@ -431,48 +451,174 @@ onBeforeUnmount(() => {
                 </div>
               </div>
 
-              <div class="setting-divider" />
+              <div v-if="activeTab === 'easter'" class="settings-tabpane">
+                <div class="setting-divider" />
 
-              <div class="setting-row">
-                <div class="setting-label">
-                  <Clock :size="15" :stroke-width="2.5" />
-                  <span>药丸显示</span>
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <Clock :size="15" :stroke-width="2.5" />
+                    <span>药丸显示</span>
+                  </div>
+                  <div class="setting-control">
+                    <button
+                      v-for="src in [
+                        { key: 'clock', label: '时钟' },
+                        { key: 'quote', label: '一言' },
+                        { key: 'custom', label: '自定义' }
+                      ]"
+                      :key="src.key"
+                      class="theme-btn"
+                      :class="{ active: pillSourceActive(src.key) }"
+                      @click="togglePillSource(src.key)"
+                    >
+                      {{ src.label }}
+                    </button>
+                  </div>
                 </div>
-                <div class="setting-control">
-                  <button
-                    v-for="src in [
-                      { key: 'clock', label: '时钟' },
-                      { key: 'quote', label: '一言' },
-                      { key: 'custom', label: '自定义' }
-                    ]"
-                    :key="src.key"
-                    class="theme-btn"
-                    :class="{ active: pillSourceActive(src.key) }"
-                    @click="togglePillSource(src.key)"
-                  >
-                    {{ src.label }}
-                  </button>
+
+                <div v-if="pillSourceActive('custom')" class="setting-row">
+                  <div class="setting-label">
+                    <TextCursorInput :size="15" :stroke-width="2.5" />
+                    <span>自定义文字</span>
+                  </div>
+                  <div class="setting-control">
+                    <input
+                      class="pill-custom-input"
+                      type="text"
+                      :value="settings.pillCustomText || ''"
+                      placeholder="显示在药丸上的文字…"
+                      maxlength="30"
+                      @change="
+                        save('pillCustomText', ($event.target as HTMLInputElement).value.trim())
+                      "
+                    />
+                  </div>
                 </div>
+
+                <div v-if="pillSourceActive('quote')" class="setting-row">
+                  <div class="setting-label">
+                    <span class="quote-cat-hint">一言来源</span>
+                  </div>
+                  <div class="setting-control">
+                    <button
+                      v-for="qs in [
+                        { key: 'online', label: '在线' },
+                        { key: 'local', label: '本地' }
+                      ]"
+                      :key="qs.key"
+                      class="theme-btn"
+                      :class="{ active: (settings.quoteSource || 'online') === qs.key }"
+                      @click="save('quoteSource', qs.key)"
+                    >
+                      {{ qs.label }}
+                    </button>
+                  </div>
+                </div>
+
+                <template v-if="pillSourceActive('quote') && settings.quoteSource === 'online'">
+                  <div class="setting-row">
+                    <div class="setting-label">
+                      <RefreshCw :size="15" :stroke-width="2.5" />
+                      <span>一言更新</span>
+                    </div>
+                    <div class="setting-control">
+                      <select
+                        class="native-select"
+                        :value="settings.quoteInterval"
+                        @change="save('quoteInterval', ($event.target as HTMLSelectElement).value)"
+                      >
+                        <option value="5min">每 5 分钟</option>
+                        <option value="30min">每 30 分钟</option>
+                        <option value="3hour">每 3 小时</option>
+                        <option value="day">每天</option>
+                        <option value="collapse">每次收起</option>
+                        <option value="never">仅启用时</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="setting-row">
+                    <div class="setting-label">
+                      <span class="quote-cat-hint">分类</span>
+                    </div>
+                    <div class="setting-control quote-cats">
+                      <button
+                        v-for="c in [
+                          { key: 'a', label: '动画' },
+                          { key: 'b', label: '漫画' },
+                          { key: 'c', label: '游戏' },
+                          { key: 'd', label: '文学' },
+                          { key: 'e', label: '原创' },
+                          { key: 'i', label: '诗词' },
+                          { key: 'k', label: '哲学' }
+                        ]"
+                        :key="c.key"
+                        class="theme-btn"
+                        :class="{ active: (settings.quoteCategories || '').includes(c.key) }"
+                        @click="toggleQuoteCategory(c.key)"
+                      >
+                        {{ c.label }}
+                      </button>
+                    </div>
+                  </div>
+                </template>
+
+                <template v-if="pillSourceActive('weather')">
+                  <div class="setting-row">
+                    <div class="setting-label">
+                      <CloudSun :size="15" :stroke-width="2.5" />
+                      <span>和风 Key</span>
+                    </div>
+                    <div class="setting-control">
+                      <input
+                        class="pill-custom-input"
+                        type="text"
+                        :value="settings.weatherApiKey || ''"
+                        placeholder="和风天气开发者 Key…"
+                        @change="
+                          save('weatherApiKey', ($event.target as HTMLInputElement).value.trim())
+                        "
+                      />
+                    </div>
+                  </div>
+                  <div class="setting-row">
+                    <div class="setting-label">
+                      <span class="quote-cat-hint">城市</span>
+                    </div>
+                    <div class="setting-control">
+                      <input
+                        class="pill-custom-input"
+                        type="text"
+                        :value="settings.weatherCity || ''"
+                        placeholder="如:北京"
+                        @change="
+                          save('weatherCity', ($event.target as HTMLInputElement).value.trim())
+                        "
+                      />
+                    </div>
+                  </div>
+                  <div class="setting-row">
+                    <div class="setting-label">
+                      <span class="quote-cat-hint">天气更新</span>
+                    </div>
+                    <div class="setting-control">
+                      <select
+                        class="native-select"
+                        :value="settings.weatherInterval"
+                        @change="
+                          save('weatherInterval', ($event.target as HTMLSelectElement).value)
+                        "
+                      >
+                        <option value="30min">每 30 分钟</option>
+                        <option value="hour">每小时</option>
+                        <option value="3hour">每 3 小时</option>
+                        <option value="day">每天</option>
+                        <option value="never">仅启用时</option>
+                      </select>
+                    </div>
+                  </div>
+                </template>
               </div>
 
-              <div v-if="pillSourceActive('custom')" class="setting-row">
-                <div class="setting-label">
-                  <TextCursorInput :size="15" :stroke-width="2.5" />
-                  <span>自定义文字</span>
-                </div>
-                <div class="setting-control">
-                  <input
-                    class="pill-custom-input"
-                    type="text"
-                    :value="settings.pillCustomText || ''"
-                    placeholder="显示在药丸上的文字…"
-                    maxlength="30"
-                    @change="
-                      save('pillCustomText', ($event.target as HTMLInputElement).value.trim())
-                    "
-                  />
-                </div>
-              </div>
               <div v-if="activeTab === 'data'" class="settings-tabpane">
                 <div class="setting-row db-path-row">
                   <div class="setting-label">
@@ -569,6 +715,16 @@ onBeforeUnmount(() => {
               <div v-if="activeTab === 'about'" class="settings-tabpane">
                 <div class="setting-row">
                   <div class="setting-label">
+                    <Info :size="15" :stroke-width="2.5" />
+                    <span>当前版本</span>
+                  </div>
+                  <div class="setting-control">
+                    <span class="version-text">v{{ currentVersion }}</span>
+                  </div>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-label">
                     <RefreshCw :size="15" :stroke-width="2.5" />
                     <span>{{ updateReady ? `v${updateVersion} 已就绪` : '检查更新' }}</span>
                   </div>
@@ -590,7 +746,6 @@ onBeforeUnmount(() => {
                   </div>
                   <button class="action-btn danger" @click="handleReset">重置</button>
                 </div>
-
               </div>
 
               <div v-if="activeTab === 'shortcuts'" class="settings-tabpane">
