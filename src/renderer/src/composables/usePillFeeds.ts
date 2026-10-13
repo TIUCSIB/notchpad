@@ -102,23 +102,6 @@ export function usePillFeeds(
     }
   }
 
-  /** 和风天气图标代码 → 单字(药丸尺寸下 emoji 不清晰,单字更利落) */
-  function weatherChar(icon: string): string {
-    const code = parseInt(icon, 10)
-    if (isNaN(code)) return ''
-    if (code === 100 || code === 150) return '晴'
-    if (code === 101 || code === 102 || code === 151 || code === 152) return '云'
-    if (code === 103 || code === 104 || code === 153 || code === 154) return '阴'
-    if (code >= 300 && code < 400) {
-      if (code === 304) return '雷' // 阵雨伴冰雹
-      if (code >= 313 && code <= 315) return '雷' // 雷阵雨
-      return '雨' // 各类雨(含阵雨/强阵雨/小雨等)
-    }
-    if (code >= 400 && code < 500) return '雪'
-    if (code >= 500 && code < 515) return '雾'
-    return '阴'
-  }
-
   async function fetchWeather() {
     const key = (settingsRef.value.weatherApiKey ?? '').trim()
     const city = (settingsRef.value.weatherCity ?? '').trim()
@@ -131,8 +114,8 @@ export function usePillFeeds(
       )
       const j = await res.json()
       if (j?.now?.temp != null && j?.now?.text) {
-        const ch = weatherChar(String(j.now.icon ?? ''))
-        weatherText.value = `${ch} ${j.now.temp}° ${j.now.text}`
+        // now.text 本身就是完整天气名(阴/小雨/雷阵雨…),无需再前缀单字
+        weatherText.value = `${j.now.temp}° ${j.now.text}`
       }
     } catch {
       // 失败保持上一条或空
