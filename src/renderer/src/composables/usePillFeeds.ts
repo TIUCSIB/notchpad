@@ -61,7 +61,7 @@ export function usePillFeeds(
 ) {
   /** 当前一言:初始为本地每日一句,在线拉取成功后替换 */
   const quoteText = ref(dailyLocalQuote())
-  /** 当前天气文案(如 "23° 晴");无 key/失败/未配置时为 '' */
+  /** 当前天气文案(如 "🌧️23° 阵雨");无 key/失败/未配置时为 '' */
   const weatherText = ref('')
 
   const quoteTimer: Ref<ReturnType<typeof setInterval> | null> = ref(null)
@@ -102,6 +102,25 @@ export function usePillFeeds(
     }
   }
 
+  /** 和风天气图标代码 → emoji(覆盖常见代码段,未匹配回落到 ☁️) */
+  function weatherEmoji(icon: string): string {
+    const code = parseInt(icon, 10)
+    if (isNaN(code)) return ''
+    if (code === 100 || code === 150) return '☀️' // 晴
+    if (code === 101 || code === 102 || code === 151 || code === 152) return '🌤️' // 多云
+    if (code === 103 || code === 104 || code === 153 || code === 154) return '☁️' // 阴
+    if (code >= 300 && code < 400) {
+      if (code === 304) return '🌦️' // 阵雨伴冰雹
+      if (code >= 310 && code <= 312) return '🌧️' // 强阵雨
+      if (code >= 313 && code <= 315) return '🌩️' // 雷阵雨
+      if (code >= 399) return '🌧️'
+      return '🌦️' // 一般阵雨
+    }
+    if (code >= 400 && code < 500) return '🌨️' // 雪
+    if (code >= 500 && code < 515) return '🌫️' // 雾/霾
+    return '☁️'
+  }
+
   async function fetchWeather() {
     const key = (settingsRef.value.weatherApiKey ?? '').trim()
     const city = (settingsRef.value.weatherCity ?? '').trim()
@@ -114,7 +133,8 @@ export function usePillFeeds(
       )
       const j = await res.json()
       if (j?.now?.temp != null && j?.now?.text) {
-        weatherText.value = `${j.now.temp}° ${j.now.text}`
+        const emoji = weatherEmoji(String(j.now.icon ?? ''))
+        weatherText.value = `${emoji}${j.now.temp}° ${j.now.text}`
       }
     } catch {
       // 失败保持上一条或空
