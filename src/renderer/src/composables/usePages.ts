@@ -103,6 +103,8 @@ export function usePages(
     if (currentIndex.value < 0) return
     const page = currentPage()
     if (!page) return
+    // 先落库防抖窗口内的编辑,软删除快照才是最新内容
+    await flushSave()
     // 返回 false(删除失败)时本地列表不动
     const deleted = await window.api.deletePage(page.id)
     if (!deleted) return
@@ -128,7 +130,13 @@ export function usePages(
     if (!restored) return
     pages.value = await window.api.getPages()
     const idx = pages.value.findIndex((p: Page) => p.id === restored.id)
-    if (idx >= 0) selectPage(idx)
+    if (idx >= 0) {
+      // 清掉当前索引:恢复页常与自动选中的下一页同索引,
+      // 不重置的话 selectPage 的同索引守卫会跳过加载,
+      // 编辑器停留在下一页内容上,后续自动保存还会把它写进恢复页的行
+      currentIndex.value = -1
+      selectPage(idx)
+    }
   }
 
   function getPageTitle(page: Page): string {
