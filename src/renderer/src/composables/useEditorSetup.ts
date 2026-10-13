@@ -149,6 +149,24 @@ export function useEditorSetup(
     editorProps: {
       attributes: { class: 'editor-content' },
       handleDOMEvents: {
+        // 拖拽图片文件进编辑器直接插入(与粘贴同一条处理链)
+        drop: (_view, event) => {
+          const files = event.dataTransfer?.files
+          if (!files?.length) return false
+          const images = Array.from(files).filter((f) => f.type.startsWith('image/'))
+          if (!images.length) return false
+          event.preventDefault()
+          for (const file of images) {
+            processImage(file)
+              .then(async (dataUrl) => {
+                const res = await window.api.saveAttachment(dataUrl)
+                const src = res?.ok ? (res.url ?? dataUrl) : dataUrl
+                editor.value?.chain().focus().setImage({ src }).run()
+              })
+              .catch((err) => console.error('[Notchpad] Image drop failed:', err))
+          }
+          return true
+        },
         contextmenu: (_view, event) => {
           const anchor = (event.target as HTMLElement).closest('a')
           if (anchor) {

@@ -244,3 +244,32 @@
   opacity: 0;
   transform: translateX(-50%) translateY(6px);
 }
+
+/* --- 图片预览遮罩 --- */
+.img-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-bg, rgba(0, 0, 0, 0.75));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 90;
+  cursor: zoom-out;
+}
+
+.img-preview-img {
+  max-width: calc(100% - 40px);
+  max-height: calc(100% - 40px);
+  border-radius: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.img-preview-enter-active,
+.img-preview-leave-active {
+  transition: opacity 0.15s ease;
+}
+
+.img-preview-enter-from,
+.img-preview-leave-to {
+  opacity: 0;
+}

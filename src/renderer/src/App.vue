@@ -1,11 +1,12 @@
 ﻿<script setup lang="ts">
-import { ref, shallowRef, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, shallowRef, computed, watch, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import { EditorContent } from '@tiptap/vue-3'
 import type { Editor } from '@tiptap/vue-3'
 import TopToolbar from './components/TopToolbar.vue'
 import BottomBar from './components/BottomBar.vue'
 import LinkDialog from './components/LinkDialog.vue'
 import Settings from './components/Settings.vue'
+import SearchPanel from './components/SearchPanel.vue'
 import { Motion } from 'motion-v'
 import { useNotch } from './composables/useNotch'
 import { useSettings, SETTINGS_DEFAULTS } from './composables/useSettings'
@@ -18,6 +19,7 @@ import {
   colorOptions,
   highlightColors
 } from './composables/useEditorSetup'
+import { setImportLimitProvider } from './utils/dataConverter'
 
 const {
   appSettings,
@@ -28,9 +30,14 @@ const {
   loadSettings
 } = useSettings()
 
+// 导入备份的截断上限跟随设置里的页数上限
+setImportLimitProvider(() => parseInt(appSettings.value.maxPages || '10', 10))
+
 const linkPromptVisible = ref(false)
 const linkUrlInput = ref('')
 const settingsVisible = ref(false)
+const searchVisible = ref(false)
+const searchPanelEl = ref<InstanceType<typeof SearchPanel> | null>(null)
 // Editor 内部结构复杂,deep ref 会对它做 UnwrapRef 展开,必须用 shallowRef(Tiptap 官方推荐)
 const tempEditor = shallowRef<Editor | undefined>(undefined)
 // 各页面共用同一个滚动容器(.content-body),按页面 id 记忆/恢复滚动位置
@@ -61,7 +68,13 @@ const {
   reorderPages,
   togglePinPage,
   getIsSwitching
-} = usePages(tempEditor, scheduleSave, flushSave, () => contentBodyEl.value)
+} = usePages(
+  tempEditor,
+  scheduleSave,
+  flushSave,
+  () => contentBodyEl.value,
+  () => parseInt(appSettings.value.maxPages || '10', 10)
+)
 
 // 删除撤销 toast:出现后 5 秒自动消失
 const undoToastVisible = ref(false)
@@ -124,6 +137,15 @@ watch(editor, (v) => {
 })
 
 const charCount = computed(() => editor.value?.state.doc.textContent.length ?? 0)
+
+// 图片点击预览:点编辑器里的 img 弹出全屏遮罩
+const previewSrc = ref('')
+function handleEditorClick(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (target.tagName === 'IMG' && previewSrc.value !== target.getAttribute('src')) {
+    previewSrc.value = target.getAttribute('src') || ''
+  }
+}
 
 // 药丸的命中尺寸直接把 useNotch 的目标尺寸(72/84 × 14/18)上报主进程。
 // 不能用 ResizeObserver 实测 —— 面板收起动画的中间帧会被当成药丸尺寸上报,
@@ -191,6 +213,11 @@ function handleKeydown(e: KeyboardEvent) {
         e.preventDefault()
         editor.value?.chain().focus().redo().run()
       }
+      break
+    case 'f':
+      e.preventDefault()
+      searchVisible.value = true
+      nextTick(() => searchPanelEl.value?.open())
       break
     case 'd':
       e.preventDefault()
@@ -285,7 +312,7 @@ onBeforeUnmount(() => {
         <TopToolbar
           :pages="pages"
           :current-index="currentIndex"
-          :max-pages="10"
+          :max-pages="parseInt(appSettings.maxPages || '10', 10)"
           :is-notched="isNotched"
           @select="selectPage"
           @add="addPage"
@@ -299,7 +326,7 @@ onBeforeUnmount(() => {
 
         <div v-show="currentIndex >= 0" class="editor-area">
           <div class="content-card">
-            <div ref="contentBodyEl" class="content-body">
+            <div ref="contentBodyEl" class="content-body" @click="handleEditorClick">
               <EditorContent :editor="editor" />
             </div>
             <span class="char-count">{{ charCount }} 字</span>
@@ -352,6 +379,22 @@ onBeforeUnmount(() => {
     @confirm="confirmLink"
     @cancel="linkPromptVisible = false"
   />
+
+  <SearchPanel
+    v-if="searchVisible"
+    ref="searchPanelEl"
+    :pages="pages"
+    @goto="selectPage"
+    @close="searchVisible = false"
+  />
+
+  <Teleport to="body">
+    <Transition name="img-preview">
+      <div v-if="previewSrc" class="img-preview-overlay" @click="previewSrc = ''">
+        <img :src="previewSrc" class="img-preview-img" alt="预览" />
+      </div>
+    </Transition>
+  </Teleport>
 
   <Transition name="undo-toast">
     <div v-if="undoToastVisible && lastDeleted" class="undo-toast">

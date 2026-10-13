@@ -45,6 +45,8 @@ fn main() {
     ))
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_opener::init())
+    .plugin(tauri_plugin_updater::Builder::new().build())
+    .plugin(tauri_plugin_process::init())
     .plugin(
       tauri_plugin_global_shortcut::Builder::new()
         .with_handler(|app, _shortcut, event| {
@@ -108,6 +110,12 @@ fn main() {
         std::thread::sleep(std::time::Duration::from_secs(2));
         let state = handle.state::<db::App>();
         attachments::migrate_inline_images(&state);
+        // 启动顺带清一次孤儿附件(有 2 分钟新增豁免窗口保护)
+        let db_path = db::lock_db_path(&state).clone().unwrap_or_default();
+        let cleaned = attachments::clean_attachments_impl(&db_path);
+        if cleaned > 0 {
+          eprintln!("[Notchpad] 启动时清理了 {cleaned} 个未引用附件");
+        }
       });
       Ok(())
     })

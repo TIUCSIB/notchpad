@@ -11,11 +11,15 @@ import {
   RotateCcw,
   MousePointerClick,
   FolderOpen,
-  Eraser
+  Eraser,
+  Files,
+  RefreshCw
 } from 'lucide-vue-next'
 import { Motion, AnimatePresence } from 'motion-v'
 import { exportAsJson, exportAsMarkdown, importFromJson } from '../utils/dataConverter'
 import { SETTINGS_DEFAULTS } from '../composables/useSettings'
+import { check } from '@tauri-apps/plugin-updater'
+import { relaunch } from '@tauri-apps/plugin-process'
 
 const props = defineProps<{ visible: boolean; flushSave: () => Promise<void> }>()
 const emit = defineEmits<{
@@ -49,6 +53,41 @@ const dbRelocateMsg = ref('')
 // Attachment cleanup
 const cleaningAttachments = ref(false)
 const attachStats = ref<{ files: number; bytes: number } | null>(null)
+
+// Update check
+const checkingUpdate = ref(false)
+const updateReady = ref(false)
+const updateVersion = ref('')
+let updatePending = false
+
+/** 检查更新:有新版就下载,完成后提示重启应用 */
+async function checkForUpdate() {
+  if (checkingUpdate.value) return
+  checkingUpdate.value = true
+  try {
+    const update = await check()
+    if (!update) {
+      flashSaved('当前已是最新版本')
+      return
+    }
+    updateVersion.value = update.version
+    flashSaved(`发现新版本 v${update.version},正在下载…`)
+    await update.downloadAndInstall()
+    updatePending = true
+    updateReady.value = true
+    flashSaved(`v${update.version} 就绪,点“重启更新”生效`)
+  } catch (e) {
+    console.error('[Notchpad] 检查更新失败:', e)
+    flashSaved('检查更新失败,请检查网络')
+  } finally {
+    checkingUpdate.value = false
+  }
+}
+
+async function applyUpdate() {
+  if (!updatePending) return
+  await relaunch()
+}
 
 function formatFreed(bytes?: number): string {
   if (!bytes) return ''
@@ -256,6 +295,24 @@ onBeforeUnmount(() => {
 
               <div class="setting-row">
                 <div class="setting-label">
+                  <Files :size="15" :stroke-width="2.5" />
+                  <span>页面数量上限</span>
+                </div>
+                <div class="setting-control">
+                  <select
+                    class="native-select"
+                    :value="settings.maxPages"
+                    @change="save('maxPages', ($event.target as HTMLSelectElement).value)"
+                  >
+                    <option v-for="n in [3, 5, 10, 15, 20, 30]" :key="n" :value="String(n)">
+                      {{ n }} 页
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="setting-row">
+                <div class="setting-label">
                   <Power :size="15" :stroke-width="2.5" />
                   <span>开机自启</span>
                 </div>
@@ -357,6 +414,22 @@ onBeforeUnmount(() => {
 
               <div class="setting-row">
                 <div class="setting-label">
+                  <RefreshCw :size="15" :stroke-width="2.5" />
+                  <span>{{ updateReady ? `v${updateVersion} 已就绪` : '检查更新' }}</span>
+                </div>
+                <button
+                  class="action-btn"
+                  :disabled="checkingUpdate"
+                  @click="updateReady ? applyUpdate() : checkForUpdate()"
+                >
+                  {{ checkingUpdate ? '检查中…' : updateReady ? '重启更新' : '检查' }}
+                </button>
+              </div>
+
+              <div class="setting-divider" />
+
+              <div class="setting-row">
+                <div class="setting-label">
                   <RotateCcw :size="15" :stroke-width="2.5" />
                   <span>恢复默认</span>
                 </div>
@@ -370,6 +443,7 @@ onBeforeUnmount(() => {
                 <div class="shortcuts-list">
                   <div class="shortcut-row"><kbd>Ctrl+N</kbd> <span>新建页面</span></div>
                   <div class="shortcut-row"><kbd>Ctrl+D</kbd> <span>删除页面</span></div>
+                  <div class="shortcut-row"><kbd>Ctrl+F</kbd> <span>跨页搜索</span></div>
                   <div class="shortcut-row"><kbd>Ctrl+S</kbd> <span>保存</span></div>
                   <div class="shortcut-row"><kbd>Ctrl+Z</kbd> <span>撤销</span></div>
                   <div class="shortcut-row"><kbd>Ctrl+Y</kbd> <span>重做</span></div>

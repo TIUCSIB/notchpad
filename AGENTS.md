@@ -43,7 +43,9 @@ docs/             # Project documentation site
 
 ## Testing
 
-This project does not currently include a test suite. If tests are added in the future, place them alongside the source files they cover (e.g., `src/renderer/src/__tests__/`).
+- **Rust**: integration tests live in `src-tauri/tests/`, run with `cargo test` (requires the lib crate in `src/lib.rs` to expose modules)
+- **Frontend**: Vitest + jsdom, tests live in `src/renderer/src/__tests__/`, run with `pnpm test`
+- Place new tests alongside the feature they cover; pure logic (conversion, baselines, rules) is the priority for coverage
 
 ## Commits & Pull Requests
 

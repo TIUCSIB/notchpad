@@ -6,7 +6,8 @@ export const SETTINGS_DEFAULTS: Record<string, string> = {
   accentColor: '#4ade80',
   defaultFontSize: '14px',
   autoStart: 'false',
-  wakeMode: 'hover'
+  wakeMode: 'hover',
+  maxPages: '10'
 }
 
 export function useSettings() {

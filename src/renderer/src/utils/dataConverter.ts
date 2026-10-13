@@ -4,6 +4,12 @@
 
 import { MAX_PAGES } from '../composables/usePages'
 
+/** 导入截断上限,由调用方按当前设置传入 */
+let importLimitProvider: () => number = () => MAX_PAGES
+export function setImportLimitProvider(fn: () => number) {
+  importLimitProvider = fn
+}
+
 export function htmlToMarkdown(html: string): string {
   const tmp = document.createElement('div')
   tmp.innerHTML = html
@@ -71,6 +77,11 @@ export function htmlToMarkdown(html: string): string {
         if (parentTag === 'ol') {
           const idx = Array.from(el.parentElement!.children).indexOf(el) + 1
           return idx + '. ' + children.trim() + '\n'
+        }
+        // 任务列表:checkbox 状态转为 - [ ] / - [x]
+        const checkbox = el.querySelector<HTMLInputElement>('input[type=checkbox]')
+        if (checkbox) {
+          return `- [${checkbox.checked ? 'x' : ' '}] ` + children.replace(/^\s*/, '') + '\n'
         }
         return '- ' + children.trim() + '\n'
       }
@@ -206,7 +217,7 @@ export async function importFromJson(onDone: (imported: number, skipped: number)
       }
 
       const existing = await window.api.getPages()
-      const room = Math.max(0, MAX_PAGES - existing.length)
+      const room = Math.max(0, Math.min(30, importLimitProvider()) - existing.length)
       const list = parsed.slice(0, room)
       const skipped = Math.max(0, parsed.length - room)
 
