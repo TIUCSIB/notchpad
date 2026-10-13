@@ -313,7 +313,9 @@
 .pill-marquee {
   width: 100%;
   overflow: hidden;
-  line-height: 20px;
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 
 /* 短文字(≤12 字)不滚,直接居中 */
@@ -335,6 +337,7 @@
 
 .pill-marquee-track {
   display: inline-flex;
+  align-items: center;
   white-space: nowrap;
 }
 
@@ -350,7 +353,7 @@
 .pill-marquee-seg {
   font-size: 10.5px;
   font-weight: 700;
-  line-height: 20px;
+  line-height: 1;
   color: rgba(255, 255, 255, 0.92);
   padding-right: 24px;
 }

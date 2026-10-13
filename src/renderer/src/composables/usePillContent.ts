@@ -9,13 +9,16 @@ export type PillSource = 'off' | 'clock' | 'quote' | 'weather' | 'custom'
 
 const ROTATE_MS = 5000
 
-/** 月/日 时:分 单行紧凑(药丸宽度内 9px 字号可放下) */
+const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六']
+
+/** 月/日 星期单字 时:分(数字窄、中文单字,一行放得下) */
 function formatClock(d: Date): string {
   const mo = d.getMonth() + 1
   const day = d.getDate()
+  const week = WEEKDAYS[d.getDay()]
   const hh = String(d.getHours()).padStart(2, '0')
   const mm = String(d.getMinutes()).padStart(2, '0')
-  return `${mo}/${day} ${hh}:${mm}`
+  return `${mo}/${day} ${week} ${hh}:${mm}`
 }
 
 /**
