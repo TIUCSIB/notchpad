@@ -326,6 +326,16 @@
   font-weight: 700;
   line-height: 20px;
   color: rgba(255, 255, 255, 0.92);
+}
+
+/* 一言/自定义短句:禁止折行(折行即被裁) */
+.pill-static.nowrap {
+  white-space: nowrap;
+}
+
+/* 时钟:9 字符紧凑字号,pre-line 支持潜在多行 */
+.pill-static.compact {
+  font-size: 9.5px;
   white-space: pre-line;
 }
 

@@ -345,7 +345,9 @@ onBeforeUnmount(() => {
             <span class="pill-marquee-seg" aria-hidden="true">{{ pillText }}</span>
           </span>
         </div>
-        <span v-else class="pill-static compact">{{ pillText }}</span>
+        <span v-else class="pill-static" :class="pillSource === 'clock' ? 'compact' : 'nowrap'">{{
+          pillText
+        }}</span>
       </div>
       <div class="panel">
         <TopToolbar
