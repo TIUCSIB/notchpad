@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600" role="img" aria-labelledby="bannerTitle">
+  <title id="bannerTitle">Notchpad 横幅:收起为屏幕顶部药丸、悬浮展开的富文本便签应用</title>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0%" stop-color="#050505"/>
@@ -66,9 +67,9 @@
       </g>
       <!-- 条目 2:药丸轮播 -->
       <g transform="translate(82, 358)">
-        <rect x="0" y="0" width="44" height="26" rx="13" fill="#4ade80" fill-opacity="0.14" stroke="#4ade80" stroke-opacity="0.45" stroke-width="1"/>
-        <text x="22" y="18" fill="#4ade80" font-size="11" font-weight="600" text-anchor="middle">12° 晴</text>
-        <text x="56" y="19" fill="#d4d4d8">药丸轮播 · 时钟 / 一言 / 天气</text>
+        <rect x="0" y="0" width="52" height="26" rx="13" fill="#4ade80" fill-opacity="0.14" stroke="#4ade80" stroke-opacity="0.45" stroke-width="1"/>
+        <text x="26" y="18" fill="#4ade80" font-size="11" font-weight="600" text-anchor="middle">21°阴</text>
+        <text x="64" y="19" fill="#d4d4d8">药丸轮播 · 时钟 / 一言 / 天气</text>
       </g>
       <!-- 条目 3:编辑器 -->
       <g transform="translate(82, 400)">

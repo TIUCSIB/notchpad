@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="pillTitle">
+  <title id="pillTitle">药丸轮播图解:收起时在时钟、一言、天气和自定义文字之间轮播</title>
+  <defs>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+    <radialGradient id="glowBg" cx="0.5" cy="0.5" r="0.7">
+      <stop offset="0%" stop-color="#4ade80" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#4ade80" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feGaussianBlur stdDeviation="16"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="300" fill="#0a0a0b"/>
+  <rect width="1200" height="300" fill="url(#glowBg)"/>
+
+  <!-- ===== 展开窗口轮廓(顶部齐平、底部圆角) ===== -->
+  <g transform="translate(212, 58)">
+    <!-- 阴影 -->
+    <rect x="40" y="36" width="516" height="240" rx="20" fill="#000" opacity="0.5" filter="url(#softShadow)"/>
+    <!-- 窗口:顶部无圆角、底部 20px 圆角 -->
+    <path d="M0,0 h520 v220 q0,20 -20,20 h-480 q-20,0 -20,-20 z" fill="#0f1014" stroke="#2e2e30" stroke-width="1.5"/>
+    <!-- 顶部工具栏 -->
+    <rect x="0" y="0" width="520" height="42" fill="#151516"/>
+    <rect x="0" y="41" width="520" height="1" fill="#262628"/>
+    <rect x="16" y="11" width="180" height="20" rx="7" fill="#1c1c1e"/>
+    <circle cx="34" cy="21" r="4" fill="#555558"/>
+    <rect x="46" y="16.5" width="22" height="9" rx="4.5" fill="url(#accent)"/>
+    <circle cx="82" cy="21" r="4" fill="#555558"/>
+    <circle cx="96" cy="21" r="4" fill="#555558"/>
+    <circle cx="110" cy="21" r="4" fill="#555558"/>
+    <line x1="144" y1="21" x2="156" y2="21" stroke="#5a5a5e" stroke-width="2" stroke-linecap="round"/>
+    <line x1="150" y1="15" x2="150" y2="27" stroke="#5a5a5e" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="392" cy="21" r="7" stroke="#5a5a5e" stroke-width="1.6" fill="none"/>
+    <line x1="397" y1="26" x2="401" y2="30" stroke="#5a5a5e" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="422" cy="21" r="7" stroke="#5a5a5e" stroke-width="1.6" fill="none"/>
+    <circle cx="422" cy="21" r="2.6" stroke="#5a5a5e" stroke-width="1.4" fill="none"/>
+    <circle cx="452" cy="21" r="7" stroke="#5a5a5e" stroke-width="1.6" fill="none"/>
+    <circle cx="452" cy="21" r="2.6" stroke="#5a5a5e" stroke-width="1.4" fill="none"/>
+
+    <!-- 编辑器内容 -->
+    <rect x="24" y="62" width="140" height="12" rx="3" fill="#e5e5e5" opacity="0.75"/>
+    <rect x="24" y="90" width="250" height="8" rx="2" fill="#e5e5e5" opacity="0.34"/>
+    <rect x="24" y="108" width="220" height="8" rx="2" fill="#e5e5e5" opacity="0.24"/>
+    <rect x="24" y="132" width="12" height="12" rx="3" fill="url(#accent)" opacity="0.9"/>
+    <rect x="44" y="134" width="130" height="8" rx="2" fill="#e5e5e5" opacity="0.4"/>
+    <rect x="24" y="154" width="12" height="12" rx="3" fill="none" stroke="#5a5a5e" stroke-width="1.4"/>
+    <rect x="44" y="156" width="180" height="8" rx="2" fill="#e5e5e5" opacity="0.24"/>
+    <!-- 高亮 -->
+    <rect x="300" y="106" width="46" height="12" rx="3" fill="#4ade80" opacity="0.28"/>
+    <!-- 引用 -->
+    <rect x="24" y="180" width="3" height="24" rx="1.5" fill="url(#accent)" opacity="0.8"/>
+    <rect x="35" y="183" width="160" height="8" rx="2" fill="#e5e5e5" opacity="0.3"/>
+    <rect x="35" y="197" width="120" height="8" rx="2" fill="#e5e5e5" opacity="0.2"/>
+    <!-- 光标 -->
+    <rect x="282" y="88" width="2" height="14" rx="1" fill="#4ade80" opacity="0.95"/>
+
+    <!-- 底部栏 -->
+    <rect x="0" y="206" width="520" height="34" fill="#161618"/>    <rect x="0" y="206" width="520" height="1" fill="#262628"/>
+    <g fill="#232325">
+      <rect x="16" y="214" width="24" height="18" rx="5"/>
+      <rect x="46" y="214" width="24" height="18" rx="5"/>
+      <rect x="76" y="214" width="24" height="18" rx="5"/>
+      <rect x="106" y="214" width="24" height="18" rx="5"/>
+    </g>
+    <text x="28" y="227" font-family="Georgia, serif" font-size="11" font-weight="700" fill="#6a6a6e" text-anchor="middle">B</text>
+    <text x="58" y="227" font-family="Georgia, serif" font-size="11" font-style="italic" fill="#6a6a6e" text-anchor="middle">I</text>
+    <text x="88" y="227" font-family="Georgia, serif" font-size="11" fill="#6a6a6e" text-anchor="middle" text-decoration="line-through">S</text>
+    <rect x="112" y="218" width="10" height="10" rx="2" fill="none" stroke="#6a6a6e" stroke-width="1.3"/>
+    <!-- 保存状态 -->
+    <circle cx="452" cy="223" r="2.5" fill="#4ade80" opacity="0.9"/>
+    <rect x="460" y="220" width="36" height="6" rx="3" fill="#e5e5e5" opacity="0.3"/>
+  </g>
+
+  <!-- ===== 顶部屏幕边框线 + 收起态药丸 ===== -->
+  <line x1="192" y1="30" x2="752" y2="30" stroke="#262628" stroke-width="2"/>
+  <g transform="translate(402, 4)">
+    <path d="M0,0 h120 q0,18 -13,18 h-94 q-13,0 -13,-18 z" fill="#17181a" stroke="#3a3a3c" stroke-width="1"/>
+    <text x="60" y="13" font-family="system-ui, 'Segoe UI', sans-serif" font-size="11" font-weight="600" fill="#4ade80" text-anchor="middle">10/15 二 09:21</text>
+  </g>
+  <line x1="192" y1="4" x2="752" y2="4" stroke="#262628" stroke-width="2"/>
+
+  <!-- ===== 右侧轮播来源说明 ===== -->
+  <g font-family="system-ui, 'Segoe UI', sans-serif">
+    <!-- 标题 -->
+    <text x="820" y="74" font-size="20" font-weight="700" fill="#ffffff">收起时,药丸替你值班</text>
+    <text x="820" y="100" font-size="14" fill="#8a8a8e">四个信息源无缝轮播,展开后自动让位</text>
+
+    <!-- 轮播条目 -->
+    <g font-size="15">
+      <!-- 时钟 -->
+      <g transform="translate(820, 126)">
+        <rect x="0" y="0" width="112" height="30" rx="15" fill="#17181a" stroke="#3a3a3c" stroke-width="1"/>
+        <text x="56" y="20" font-size="12.5" font-weight="600" fill="#4ade80" text-anchor="middle">10/15 二 09:21</text>
+        <text x="126" y="20" fill="#c8c8cc">时钟</text>
+      </g>
+      <!-- 一言 -->
+      <g transform="translate(820, 166)">
+        <rect x="0" y="0" width="112" height="30" rx="15" fill="#17181a" stroke="#3a3a3c" stroke-width="1"/>
+        <text x="56" y="20" font-size="11.5" fill="#4ade80" text-anchor="middle">学而不思则罔</text>
+        <text x="126" y="20" fill="#c8c8cc">一言 · 在线 / 离线兜底</text>
+      </g>
+      <!-- 天气 -->
+      <g transform="translate(820, 206)">
+        <rect x="0" y="0" width="112" height="30" rx="15" fill="#17181a" stroke="#3a3a3c" stroke-width="1"/>
+        <text x="56" y="20" font-size="12.5" font-weight="600" fill="#4ade80" text-anchor="middle">21° 阴</text>
+        <text x="126" y="20" fill="#c8c8cc">天气 · 和风 API</text>
+      </g>
+      <!-- 自定义 -->
+      <g transform="translate(820, 246)">
+        <rect x="0" y="0" width="112" height="30" rx="15" fill="#17181a" stroke="#3a3a3c" stroke-width="1"/>
+        <text x="56" y="20" font-size="11.5" fill="#4ade80" text-anchor="middle">专注模式</text>
+        <text x="126" y="20" fill="#c8c8cc">自定义文字</text>
+      </g>
+    </g>
+  </g>
+</svg>
