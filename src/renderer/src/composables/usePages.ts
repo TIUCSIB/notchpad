@@ -51,7 +51,12 @@ export function usePages(
   async function loadPages() {
     pages.value = await window.api.getPages()
     if (pages.value.length > 0) {
-      selectPage(Math.min(currentIndex.value >= 0 ? currentIndex.value : 0, pages.value.length - 1))
+      // 清掉当前索引:页面列表重载(回收站恢复/导入)后数组可能整体错位,
+      // 旧索引在 selectPage 的同索引守卫下会跳过加载,编辑器停留在旧内容上,
+      // 后续自动保存还会把旧内容写进错位页的行(同 undoDelete 的问题)。
+      // 启动时 currentIndex 本就是 -1,此重置只影响 _reload 场景
+      currentIndex.value = -1
+      selectPage(0)
     }
   }
 

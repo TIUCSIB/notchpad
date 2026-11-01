@@ -18,29 +18,6 @@
   transition: filter 0.25s ease-out;
 }
 
-/* White outer halo behind the pill */
-.panel-motion::after {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  /* 与胶囊同心:顶部直角,底部 = 胶囊底部圆角 14px + 外扩 6px */
-  border-radius: 0 0 20px 20px;
-  background: rgba(255, 255, 255, 0.28);
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.panel-motion.notched::after {
-  opacity: 0.55;
-}
-
-/* 悬浮时光晕略亮,提示可点击 */
-.panel-motion.notched.pill-hovered::after {
-  background: rgba(255, 255, 255, 0.2);
-}
-
 .panel-motion.notched .panel {
   opacity: 0;
   pointer-events: none;
@@ -161,13 +138,18 @@
 }
 
 .save-indicator.saving,
-.save-indicator.saved {
+.save-indicator.saved,
+.save-indicator.failed {
   opacity: 1;
   transform: translateY(0);
 }
 
 .save-indicator.saved {
   color: var(--accent, #4ade80);
+}
+
+.save-indicator.failed {
+  color: var(--danger-text, #dc2626);
 }
 
 .save-dot {
@@ -180,6 +162,10 @@
 .save-dot.saving {
   background: var(--text-secondary, #888);
   animation: pulse 1s ease infinite;
+}
+
+.save-dot.failed {
+  background: var(--danger-text, #dc2626);
 }
 
 .save-dot.saved {

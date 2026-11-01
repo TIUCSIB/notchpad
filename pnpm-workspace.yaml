@@ -1,4 +1,2 @@
 allowBuilds:
-  better-sqlite3: set this to true or false
-  electron: set this to true or false
   esbuild: true

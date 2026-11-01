@@ -93,6 +93,20 @@ watch(lastDeleted, (v) => {
   }, 5000)
 })
 
+// 自定义数据库路径不可达已回落默认位置:启动时查一次,8 秒提示避免静默换库
+// 被误认为数据丢失(移动硬盘/网络盘场景)
+const dbFallbackVisible = ref(false)
+onMounted(async () => {
+  try {
+    if (await window.api.isDbFallback()) {
+      dbFallbackVisible.value = true
+      setTimeout(() => (dbFallbackVisible.value = false), 8000)
+    }
+  } catch (e) {
+    console.error('[Notchpad] isDbFallback failed:', e)
+  }
+})
+
 async function handleUndoDelete() {
   undoToastVisible.value = false
   await undoDelete()
@@ -399,6 +413,9 @@ onBeforeUnmount(() => {
             <div class="save-indicator" :class="{ saved: saveStatus === 'saved' }">
               <span class="save-dot saved" /> 已保存
             </div>
+            <div class="save-indicator" :class="{ failed: saveStatus === 'failed' }">
+              <span class="save-dot failed" /> 保存失败
+            </div>
           </div>
         </div>
         <div v-show="currentIndex < 0" class="editor-area empty">
@@ -441,6 +458,11 @@ onBeforeUnmount(() => {
     <div v-if="undoToastVisible && lastDeleted" class="undo-toast">
       <span class="undo-text">已删除「{{ lastDeleted.title }}」</span>
       <button class="undo-btn" @click="handleUndoDelete">撤销</button>
+    </div>
+  </Transition>
+  <Transition name="undo-toast">
+    <div v-if="dbFallbackVisible" class="undo-toast">
+      <span class="undo-text">⚠ 自定义数据库路径不可用,已临时使用默认位置;路径恢复后重启应用</span>
     </div>
   </Transition>
 </template>

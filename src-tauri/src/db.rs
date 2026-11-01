@@ -15,6 +15,8 @@ pub struct App {
   pub db: Mutex<Option<Connection>>,
   pub db_path: Mutex<Option<PathBuf>>,
   pub notch: crate::notch::Notch,
+  /// 自定义数据库路径不可达已回落到默认位置(启动时置位,前端查一次弹提示)
+  pub db_fallback: std::sync::atomic::AtomicBool,
 }
 
 #[derive(Serialize, Clone)]
@@ -55,12 +57,12 @@ fn config_path(app: &tauri::AppHandle) -> PathBuf {
   app_data_dir(app).join("db-config.json")
 }
 
-fn read_custom_db_path(app: &tauri::AppHandle) -> Option<PathBuf> {
+/// 只读配置里的自定义路径(不校验存在性;init 判断回落时用)
+fn read_custom_db_path_raw(app: &tauri::AppHandle) -> Option<PathBuf> {
   let text = fs::read_to_string(config_path(app)).ok()?;
   let value: serde_json::Value = serde_json::from_str(&text).ok()?;
   let path = value.get("dbPath")?.as_str()?;
-  let path = PathBuf::from(path);
-  path.exists().then_some(path)
+  Some(PathBuf::from(path))
 }
 
 fn write_custom_db_path(app: &tauri::AppHandle, path: &Path) {
@@ -126,7 +128,13 @@ fn fresh_after_backup(path: &Path) -> Connection {
 pub fn init(app: &tauri::AppHandle) -> App {
   let data_dir = app_data_dir(app);
   let _ = fs::create_dir_all(&data_dir);
-  let db_path = read_custom_db_path(app).unwrap_or_else(|| data_dir.join("memo.db"));
+  // 自定义路径不可达(移动硬盘/网络盘掉线)时回落默认位置——静默换库会让用户
+  // 误以为数据丢失,置 flag 由前端启动时提示一次
+  let custom = read_custom_db_path_raw(app);
+  let db_fallback = custom.as_ref().is_some_and(|p| !p.exists());
+  let db_path = custom
+    .filter(|p| p.exists())
+    .unwrap_or_else(|| data_dir.join("memo.db"));
   let conn = open_connection(&db_path);
   let _ = conn.execute("ALTER TABLE pages ADD COLUMN pinned INTEGER DEFAULT 0", []);
   migrate_attachment_urls(&conn);
@@ -141,6 +149,7 @@ pub fn init(app: &tauri::AppHandle) -> App {
     db: Mutex::new(Some(conn)),
     db_path: Mutex::new(Some(db_path)),
     notch: crate::notch::Notch::new(),
+    db_fallback: std::sync::atomic::AtomicBool::new(db_fallback),
   }
 }
 
@@ -452,6 +461,14 @@ pub fn get_db_path(state: State<'_, App>) -> String {
     .as_ref()
     .map(|p| p.to_string_lossy().into_owned())
     .unwrap_or_default()
+}
+
+/// 自定义数据库路径不可达已回落默认位置(前端启动时查一次,弹一次性提示)
+#[tauri::command(async)]
+pub fn is_db_fallback(state: State<'_, App>) -> bool {
+  state
+    .db_fallback
+    .load(std::sync::atomic::Ordering::Relaxed)
 }
 
 #[tauri::command(async)]

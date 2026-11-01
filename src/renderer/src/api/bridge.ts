@@ -54,6 +54,7 @@ const api = {
   setSetting: (key: string, value: string): Promise<void> => invoke('set_setting', { key, value }),
   resetSettings: (): Promise<void> => invoke('reset_settings'),
   getDbPath: (): Promise<string> => invoke('get_db_path'),
+  isDbFallback: (): Promise<boolean> => invoke('is_db_fallback'),
   chooseDbDir: (): Promise<string | null> => invoke('choose_db_dir'),
   relocateDb: (targetDir: string): Promise<{ ok: boolean; path?: string; error?: string }> =>
     invoke('relocate_db', { targetDir }),

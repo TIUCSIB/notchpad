@@ -1,0 +1,56 @@
+name: Release
+
+# 打 tag 触发:构建三平台安装包,上传到 GitHub Release 并生成 latest.json
+# (应用内 updater 读取 releases/latest/download/latest.json,手工发版漏传它会静默失效)
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: ''
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build and release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Notchpad ${{ github.ref_name }}'
+          releaseBody: '下载 Windows 安装包(NSIS);latest.json 供应用内自动更新使用。'
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}

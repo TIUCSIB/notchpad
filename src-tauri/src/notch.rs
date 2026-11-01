@@ -212,17 +212,30 @@ fn poll_once(app: &tauri::AppHandle) {
 
 /// 轮询线程:间隔随刘海状态变化,收起态优先响应
 pub fn spawn_polling(app: tauri::AppHandle) {
-  std::thread::spawn(move || loop {
-    let notched = app
-      .try_state::<crate::db::App>()
-      .map(|s| s.notch.is_notched())
-      .unwrap_or(true);
-    poll_once(&app);
-    std::thread::sleep(std::time::Duration::from_millis(if notched {
-      POLL_MS_COLLAPSED
-    } else {
-      POLL_MS_EXPANDED
-    }));
+  std::thread::spawn(move || {
+    // 每日备份补跑:常驻场景可能几周不重启,"启动时备份"会漏天。
+    // daily_backup 幂等(当日文件已存在直接返回),每 10 分钟检查一次日期戳
+    let mut last_backup_check = std::time::Instant::now();
+    loop {
+      let notched = app
+        .try_state::<crate::db::App>()
+        .map(|s| s.notch.is_notched())
+        .unwrap_or(true);
+      if last_backup_check.elapsed() >= std::time::Duration::from_secs(600) {
+        last_backup_check = std::time::Instant::now();
+        if let Some(state) = app.try_state::<crate::db::App>() {
+          if let Some(path) = state.db_path.lock().ok().and_then(|g| g.clone()) {
+            crate::db::daily_backup(&path);
+          }
+        }
+      }
+      poll_once(&app);
+      std::thread::sleep(std::time::Duration::from_millis(if notched {
+        POLL_MS_COLLAPSED
+      } else {
+        POLL_MS_EXPANDED
+      }));
+    }
   });
 }
 

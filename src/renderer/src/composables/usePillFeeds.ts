@@ -136,7 +136,19 @@ export function usePillFeeds(
     if (ms) slot.value = setInterval(fn, ms)
   }
 
+  /** 药丸来源开关未勾选时不联网拉取:一言/天气都有独立的 Key/配额,不该白烧 */
+  function quoteEnabled(): boolean {
+    const raw = settingsRef.value.pillSources ?? 'off'
+    return raw.split(',').map((s) => s.trim()).includes('quote')
+  }
+
+  function weatherEnabled(): boolean {
+    const raw = settingsRef.value.pillSources ?? 'off'
+    return raw.split(',').map((s) => s.trim()).includes('weather')
+  }
+
   function scheduleQuote() {
+    if (!quoteEnabled()) return
     if ((settingsRef.value.quoteSource ?? 'online') !== 'online') return
     const interval = settingsRef.value.quoteInterval ?? '30min'
     if (interval === 'collapse') {
@@ -148,34 +160,37 @@ export function usePillFeeds(
   }
 
   function scheduleWeather() {
+    if (!weatherEnabled()) return
     const interval = settingsRef.value.weatherInterval ?? 'hour'
     if (interval === 'never') return
     resetTimer(weatherTimer, interval, fetchWeather)
   }
 
-  // 启动/设置变化时调度;在线一言与天气启用时立即拉一次
+  // 启动/设置变化时调度;仅对应来源在 pillSources 里启用时才立即拉一次
   watch(
     () => [
+      settingsRef.value.pillSources,
       settingsRef.value.quoteSource,
       settingsRef.value.quoteInterval,
       settingsRef.value.quoteCategories
     ],
     () => {
       scheduleQuote()
-      if ((settingsRef.value.quoteSource ?? 'online') === 'online') fetchQuote()
+      if (quoteEnabled() && (settingsRef.value.quoteSource ?? 'online') === 'online') fetchQuote()
     },
     { immediate: true }
   )
 
   watch(
     () => [
+      settingsRef.value.pillSources,
       settingsRef.value.weatherApiKey,
       settingsRef.value.weatherCity,
       settingsRef.value.weatherInterval
     ],
     () => {
       scheduleWeather()
-      fetchWeather()
+      if (weatherEnabled()) fetchWeather()
     },
     { immediate: true }
   )
@@ -185,6 +200,7 @@ export function usePillFeeds(
     watch(isNotchedRef, (notched) => {
       if (
         notched &&
+        quoteEnabled() &&
         (settingsRef.value.quoteSource ?? 'online') === 'online' &&
         settingsRef.value.quoteInterval === 'collapse'
       ) {

@@ -208,7 +208,9 @@ pub fn migrate_inline_images(state: &crate::db::App) -> usize {
 /// 跳过最近 10 分钟写入的文件,避免误删"刚粘贴、正文还没落库"的图片。
 pub fn clean_attachments_impl(db_path: &Path) -> u32 {
   // 收集全部页面正文里引用的附件名(两种 URL 形式都覆盖:
-  // attachments/<name> 同时匹配 notchpad:// 与 http://notchpad.localhost)
+  // attachments/<name> 同时匹配 notchpad:// 与 http://notchpad.localhost)。
+  // 回收站页(deleted_pages)也在引用之列:软删除页面的图片若被当作孤儿
+  // 清理,恢复后全部碎图。老库可能缺该表,存在才 UNION
   let conn = match rusqlite::Connection::open_with_flags(
     db_path,
     rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
@@ -216,7 +218,20 @@ pub fn clean_attachments_impl(db_path: &Path) -> u32 {
     Ok(c) => c,
     Err(_) => return 0,
   };
-  let Ok(mut stmt) = conn.prepare("SELECT content FROM pages") else {
+  let has_trash = conn
+    .query_row(
+      "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='deleted_pages'",
+      [],
+      |r| r.get::<_, i64>(0),
+    )
+    .unwrap_or(0)
+    > 0;
+  let sql = if has_trash {
+    "SELECT content FROM pages UNION ALL SELECT content FROM deleted_pages"
+  } else {
+    "SELECT content FROM pages"
+  };
+  let Ok(mut stmt) = conn.prepare(sql) else {
     return 0;
   };
   let re = regex::Regex::new(r"(?i)attachments/([0-9a-f]{16}\.(?:png|jpe?g|webp|gif|bmp|bin))")

@@ -134,6 +134,7 @@ fn main() {
       db::set_setting,
       db::reset_settings,
       db::get_db_path,
+      db::is_db_fallback,
       db::choose_db_dir,
       db::relocate_db,
       attachments::save_attachment,

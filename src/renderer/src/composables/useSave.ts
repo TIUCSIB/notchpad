@@ -14,11 +14,16 @@ export function useSave(
   getPages: () => Page[],
   getCurrentIndex: () => number
 ) {
-  const saveStatus = ref<'idle' | 'saving' | 'saved'>('idle')
+  // failed = 落库失败(磁盘满/库损坏),红点提示用户内容尚未写进数据库
+  const saveStatus = ref<'idle' | 'saving' | 'saved' | 'failed'>('idle')
   let saveTimer: ReturnType<typeof setTimeout> | null = null
   let savedStatusTimer: ReturnType<typeof setTimeout> | null = null
+  // 保存代际计数:防抖保存与 flush 保存可能并发在途,后完成的旧内容会覆盖
+  // 新内容(丢最后一次编辑)。每次发起保存 +1,只接受代际最新的结果落基线
+  let saveGeneration = 0
 
   async function saveCurrentPage(silent = false) {
+    const generation = ++saveGeneration
     try {
       const idx = getCurrentIndex()
       const list = getPages()
@@ -34,10 +39,21 @@ export function useSave(
         return
       }
       const updated = await window.api.updatePage(page.id, html)
+      if (generation !== saveGeneration) {
+        // 已有更新的保存发起:本次是过期结果,不回写基线也不改状态
+        // (数据库里仍是最新一次写入的结果,只是返回顺序颠倒)
+        return
+      }
       if (updated) {
         // 直接改 ref 里的那个数组,页面列表会同步更新;
         // updated.content 即该页新的已保存基线
         list[idx] = updated
+      } else {
+        // 后端写库失败(磁盘满/库损坏):显示失败态,红点提示内容未落库;
+        // 下次编辑触发新的 scheduleSave 会自然重试
+        saveStatus.value = 'failed'
+        console.error('[Notchpad] updatePage 返回空,保存失败:', page.id)
+        return
       }
       if (!silent) {
         saveStatus.value = 'saved'
@@ -47,6 +63,9 @@ export function useSave(
         if (saveStatus.value === 'saved') saveStatus.value = 'idle'
       }, 2000)
     } catch (e) {
+      if (generation === saveGeneration) {
+        saveStatus.value = 'failed'
+      }
       console.error('[Notchpad] saveCurrentPage error:', e)
     }
   }
