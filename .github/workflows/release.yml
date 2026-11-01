@@ -1,6 +1,6 @@
 name: Release
 
-# 打 tag 触发:构建三平台安装包,上传到 GitHub Release 并生成 latest.json
+# 打 tag 触发:构建 Windows 安装包,上传到 GitHub Release 并生成 latest.json
 # (应用内 updater 读取 releases/latest/download/latest.json,手工发版漏传它会静默失效)
 on:
   push:
@@ -11,26 +11,21 @@ jobs:
   release:
     permissions:
       contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: windows-latest
-            args: ''
-    runs-on: ${{ matrix.platform }}
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
+      # pnpm 必须先于 setup-node 的 cache: pnpm 安装(后者要找 pnpm 可执行文件)
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -53,4 +48,3 @@ jobs:
           releaseBody: '下载 Windows 安装包(NSIS);latest.json 供应用内自动更新使用。'
           releaseDraft: false
           prerelease: false
-          args: ${{ matrix.args }}
