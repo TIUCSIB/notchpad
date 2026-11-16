@@ -276,6 +276,9 @@
 
 .native-select {
   min-width: 80px;
+  /* 原生 select 会按最长选项名撑宽(字体名尤其长),限宽后省略显示;
+     展开的下拉列表里仍是完整名字 */
+  max-width: 168px;
   height: 30px;
   padding: 0 24px 0 10px;
   background: var(--bg-toolbar, #151516);
@@ -287,6 +290,9 @@
   outline: none;
   appearance: none;
   -webkit-appearance: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 8px center;

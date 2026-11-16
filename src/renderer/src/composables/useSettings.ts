@@ -1,5 +1,6 @@
 import { ref, computed, watch } from 'vue'
 import { getTheme, themeVars } from '../themes'
+import { fontFamilyStack } from '../utils/fonts'
 import {
   clampInt,
   hexToRgba,
@@ -17,6 +18,8 @@ export const SETTINGS_DEFAULTS: Record<string, string> = {
   themeId: 'default',
   accentColor: '#4ade80',
   defaultFontSize: '14px',
+  /** 全局默认字体名,空 = 跟随系统 */
+  defaultFontFamily: '',
   autoStart: 'false',
   wakeMode: 'hover',
   maxPages: '10',
@@ -112,6 +115,11 @@ export function useSettings() {
     }
     vars['--editor-font-size'] =
       appSettings.value.defaultFontSize || SETTINGS_DEFAULTS.defaultFontSize
+
+    // 全局默认字体:设了具体字体时连标题一起换;留空则回落到主题定义(ink 仍是宋体标题)
+    const family = appSettings.value.defaultFontFamily || ''
+    vars['--editor-font-family'] = fontFamilyStack(family)
+    if (family) vars['--editor-heading-font'] = fontFamilyStack(family)
     return vars
   })
 

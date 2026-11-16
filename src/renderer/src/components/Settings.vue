@@ -32,6 +32,7 @@ import { check } from '@tauri-apps/plugin-updater'
 import { getVersion } from '@tauri-apps/api/app'
 import { relaunch } from '@tauri-apps/plugin-process'
 import type { DeletedPageSummary } from '../api/bridge'
+import { FALLBACK_FONT_OPTIONS } from '../utils/fonts'
 
 const props = defineProps<{ visible: boolean; flushSave: () => Promise<void> }>()
 const emit = defineEmits<{
@@ -56,6 +57,17 @@ const accentOptions = Array.from(
 ).map((color) => ({ color }))
 
 const fontSizeOptions = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px']
+
+// 系统字体列表:由后端枚举,失败时回落预设
+const fontList = ref<string[]>([...FALLBACK_FONT_OPTIONS])
+async function loadFonts() {
+  try {
+    const list = await window.api.listFonts()
+    if (Array.isArray(list) && list.length) fontList.value = list
+  } catch (e) {
+    console.error('[Notchpad] listFonts failed:', e)
+  }
+}
 
 // Database path
 const dbPath = ref('')
@@ -418,6 +430,7 @@ watch(
 
 onMounted(() => {
   loadSettings()
+  loadFonts()
   loadDbPath()
   refreshAttachStats()
   refreshTrash()
@@ -729,6 +742,25 @@ onBeforeUnmount(() => {
                       @change="save('defaultFontSize', ($event.target as HTMLSelectElement).value)"
                     >
                       <option v-for="s in fontSizeOptions" :key="s" :value="s">{{ s }}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <Type :size="15" :stroke-width="2.5" />
+                    <span>默认字体</span>
+                  </div>
+                  <div class="setting-control">
+                    <select
+                      class="native-select"
+                      :value="settings.defaultFontFamily || ''"
+                      @change="
+                        save('defaultFontFamily', ($event.target as HTMLSelectElement).value)
+                      "
+                    >
+                      <option value="">跟随系统</option>
+                      <option v-for="f in fontList" :key="f" :value="f">{{ f }}</option>
                     </select>
                   </div>
                 </div>

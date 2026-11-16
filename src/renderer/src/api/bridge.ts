@@ -51,6 +51,7 @@ const api = {
     notchUnlisten = null
   },
   getSettings: (): Promise<Record<string, string>> => invoke('get_settings'),
+  listFonts: (): Promise<string[]> => invoke('list_fonts'),
   setSetting: (key: string, value: string): Promise<void> => invoke('set_setting', { key, value }),
   resetSettings: (): Promise<void> => invoke('reset_settings'),
   getDbPath: (): Promise<string> => invoke('get_db_path'),

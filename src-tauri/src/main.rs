@@ -2,6 +2,7 @@
 
 mod attachments;
 mod db;
+mod fonts;
 mod notch;
 
 use tauri::menu::{Menu, MenuItem};
@@ -137,6 +138,7 @@ fn main() {
       db::is_db_fallback,
       db::choose_db_dir,
       db::relocate_db,
+      fonts::list_fonts,
       attachments::save_attachment,
       attachments::read_attachment,
       attachments::clean_attachments,
