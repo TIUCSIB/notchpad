@@ -80,6 +80,17 @@ fn main() {
           notch::position_top_center(&window, monitor);
         }
       }
+      // 唤醒方式是后端轮询按状态机执行的,必须从设置表读回:
+      // 否则重启后永远回落到默认 hover,前端显示"点击"但一悬浮就展开
+      let saved_wake = {
+        let guard = state.db.lock().unwrap();
+        guard
+          .as_ref()
+          .and_then(|conn| db::get_setting(conn, "wakeMode"))
+      };
+      if let Some(mode) = saved_wake {
+        state.notch.set_wake_mode(&mode);
+      }
       app.manage(state);
 
       setup_tray(app.handle())?;
