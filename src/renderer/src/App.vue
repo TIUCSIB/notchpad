@@ -8,6 +8,7 @@ import LinkDialog from './components/LinkDialog.vue'
 import Settings from './components/Settings.vue'
 import SearchPanel from './components/SearchPanel.vue'
 import SlashMenu from './components/SlashMenu.vue'
+import SelectionMenu from './components/SelectionMenu.vue'
 import { Motion } from 'motion-v'
 import { useNotch } from './composables/useNotch'
 import { usePillContent } from './composables/usePillContent'
@@ -15,13 +16,7 @@ import { usePillFeeds } from './composables/usePillFeeds'
 import { useSettings, SETTINGS_DEFAULTS } from './composables/useSettings'
 import { useSave } from './composables/useSave'
 import { usePages } from './composables/usePages'
-import {
-  useEditorSetup,
-  fontOptions,
-  fontSizeOptions,
-  colorOptions,
-  highlightColors
-} from './composables/useEditorSetup'
+import { useEditorSetup, colorOptions, highlightColors } from './composables/useEditorSetup'
 import { setImportLimitProvider } from './utils/dataConverter'
 import { extractPageTitle, unnamedTitle } from './utils/pageTitle'
 import { closeSlashMenu } from './extensions/slashMenu'
@@ -169,15 +164,10 @@ watch(isNotched, (notched) => {
 const {
   editor,
   formatBtns,
-  setFontSize,
-  clearFontSize,
-  setFontFamily,
   setTextColor,
   setHighlight,
   clearTextColor,
   clearHighlightColor,
-  currentFontSize,
-  currentFontFamily,
   currentTextColor,
   currentHighlightColor,
   confirmLink
@@ -444,27 +434,7 @@ onBeforeUnmount(() => {
               <EditorContent :editor="editor" />
             </div>
             <span class="char-count">{{ charCount }} 字</span>
-            <BottomBar
-              :format-btns="formatBtns"
-              :font-size-options="fontSizeOptions"
-              :font-options="fontOptions"
-              :color-options="colorOptions"
-              :highlight-colors="highlightColors"
-              :current-font-size="currentFontSize"
-              :current-font-family="currentFontFamily"
-              :current-text-color="currentTextColor"
-              :current-highlight-color="currentHighlightColor"
-              :is-notched="isNotched"
-              @set-font-size="setFontSize"
-              @clear-font-size="clearFontSize"
-              @set-font-family="setFontFamily"
-              @set-text-color="setTextColor"
-              @clear-text-color="clearTextColor"
-              @clear-highlight-color="clearHighlightColor"
-              @set-highlight="setHighlight"
-              @open-link="linkPromptVisible = true"
-              @open-settings="settingsVisible = true"
-            />
+            <BottomBar :format-btns="formatBtns" @open-settings="settingsVisible = true" />
           </div>
           <div class="save-status">
             <div class="save-indicator" :class="{ saving: saveStatus === 'saving' }">
@@ -492,6 +462,18 @@ onBeforeUnmount(() => {
     @update-settings="handleSettingsUpdate"
   />
   <SlashMenu />
+  <SelectionMenu
+    :editor="editor"
+    :is-notched="isNotched"
+    :color-options="colorOptions"
+    :highlight-colors="highlightColors"
+    :current-text-color="currentTextColor"
+    :current-highlight-color="currentHighlightColor"
+    @set-text-color="setTextColor"
+    @clear-text-color="clearTextColor"
+    @clear-highlight-color="clearHighlightColor"
+    @set-highlight="setHighlight"
+  />
   <LinkDialog
     :visible="linkPromptVisible"
     :initial-url="linkUrlInput"

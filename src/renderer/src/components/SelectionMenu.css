@@ -1,0 +1,167 @@
+/* 选中正文时浮出的字体菜单:固定定位,由组件计算 left/top */
+.selection-menu {
+  position: fixed;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  transform: translateX(-50%);
+  background: var(--bg-bar, #1a1a1a);
+  border: 1px solid var(--border-strong, #3a3a3a);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+.sel-menu-enter-active,
+.sel-menu-leave-active {
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
+}
+
+.sel-menu-enter-from,
+.sel-menu-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(4px);
+}
+
+.fmt-btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: var(--text-secondary, #888);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.fmt-btn:hover {
+  background: var(--bg-toolbar, #2a2a2a);
+  color: var(--text-primary, #e5e5e5);
+}
+
+.font-control-wrap {
+  position: relative;
+}
+
+.popup-anchor {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  margin-bottom: 6px;
+  z-index: 100;
+}
+
+.popup-centerer {
+  transform: translateX(-50%);
+}
+
+/* 靠窗口边缘时改弹出层对齐方向,避免宽色板被裁掉 */
+.popup-anchor.left {
+  left: 0;
+}
+
+.popup-anchor.left .popup-centerer {
+  transform: none;
+}
+
+.popup-anchor.right {
+  left: auto;
+  right: 0;
+}
+
+.popup-anchor.right .popup-centerer {
+  transform: none;
+}
+
+.color-indicator {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  border-bottom: 3px solid;
+  padding-bottom: 1px;
+}
+
+.highlight-label {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  background: currentColor;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.font-popup {
+  background: var(--bg-toolbar, #2a2a2a);
+  border: 1px solid var(--border-strong, #3a3a3a);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  max-width: calc(100vw - 40px);
+  gap: 2px;
+}
+
+.color-popup {
+  /* 横向一排色块,不再用竖向双列网格 */
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  width: max-content;
+  max-width: calc(100vw - 40px);
+  overflow-x: auto;
+}
+
+.color-popup .color-swatch {
+  width: 22px;
+  height: 22px;
+}
+
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    transform 0.1s,
+    border-color 0.1s;
+  padding: 0;
+}
+
+.color-swatch:hover {
+  transform: scale(1.15);
+}
+
+.color-swatch.active {
+  border-color: var(--accent, #4ade80);
+}
+
+.clear-swatch {
+  position: relative;
+  background: var(--bg-bar, #1a1a1a);
+  overflow: hidden;
+}
+
+.clear-swatch::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  right: 2px;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--danger-text, #f87171);
+  transform: rotate(-45deg);
+  border-radius: 1px;
+}
