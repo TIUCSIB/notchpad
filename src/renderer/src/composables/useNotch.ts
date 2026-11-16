@@ -7,7 +7,8 @@ const collapseSpring = { type: 'spring' as const, stiffness: 200, damping: 30, m
 export function useNotch(
   pages: { value: Page[] },
   settingsVisible: { value: boolean },
-  linkPromptVisible?: { value: boolean }
+  linkPromptVisible?: { value: boolean },
+  getBgMain?: () => string
 ) {
   const isNotched = ref(true)
   const appReady = ref(false)
@@ -31,9 +32,10 @@ export function useNotch(
   const isLightTheme = ref(false)
 
   function updatePanelBg() {
-    const light = isLightTheme.value
-    if (!isNotched.value) panelBgColor.value = light ? '#faf6f0' : '#000'
-    else if (isAnimating.value) panelBgColor.value = light ? '#faf6f0' : '#000'
+    // 展开/动画中使用主题包的背景色;收起时仍用页数状态色
+    const expandedBg = getBgMain?.() || (isLightTheme.value ? '#faf6f0' : '#000')
+    if (!isNotched.value) panelBgColor.value = expandedBg
+    else if (isAnimating.value) panelBgColor.value = expandedBg
     else panelBgColor.value = notchColor.value
   }
 

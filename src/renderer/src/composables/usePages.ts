@@ -2,6 +2,7 @@ import { ref, shallowRef, type Ref } from 'vue'
 import type { Editor } from '@tiptap/vue-3'
 import { history } from '@tiptap/pm/history'
 import type { Page } from '../../types'
+import { pageDisplayTitle } from '../utils/pageTitle'
 
 /** 页数上限默认值;实际值由设置 maxPages 驱动(3~30),导入备份也按它截断 */
 export const MAX_PAGES = 10
@@ -29,7 +30,6 @@ function resetEditorHistory(editor: Editor): void {
 
 export function usePages(
   editor: Ref<Editor | undefined>,
-  scheduleSave: () => void,
   flushSave: () => void | Promise<void>,
   getScrollEl: () => HTMLElement | null,
   getMaxPages: () => number = () => MAX_PAGES
@@ -113,7 +113,7 @@ export function usePages(
     // 返回 false(删除失败)时本地列表不动
     const deleted = await window.api.deletePage(page.id)
     if (!deleted) return
-    lastDeleted.value = { id: page.id, title: getPageTitle(page) }
+    lastDeleted.value = { id: page.id, title: pageDisplayTitle(page, currentIndex.value) }
     scrollPositions.delete(page.id)
     pages.value.splice(currentIndex.value, 1)
     if (pages.value.length > 0) {
@@ -142,18 +142,6 @@ export function usePages(
       currentIndex.value = -1
       selectPage(idx)
     }
-  }
-
-  function getPageTitle(page: Page): string {
-    if (page.title) return page.title
-    const text = (page.content || '').replace(/<[^>]+>/g, '').trim()
-    return text ? `「${text.slice(0, 8)}」` : '空白页'
-  }
-
-  async function clearCurrentPage() {
-    if (!editor.value) return
-    editor.value.commands.setContent('')
-    scheduleSave()
   }
 
   async function reorderPages(fromIndex: number, toIndex: number) {
@@ -201,7 +189,6 @@ export function usePages(
     addPage,
     deletePage,
     undoDelete,
-    clearCurrentPage,
     reorderPages,
     togglePinPage,
     getIsSwitching

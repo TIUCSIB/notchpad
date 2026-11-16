@@ -2,6 +2,7 @@
 import { ref, computed, nextTick, onMounted } from 'vue'
 import { Search, X, CornerDownLeft } from 'lucide-vue-next'
 import type { Page } from '../../types'
+import { pageDisplayTitle } from '../utils/pageTitle'
 
 const props = defineProps<{ pages: Page[] }>()
 const emit = defineEmits<{ (e: 'close'): void; (e: 'goto', index: number): void }>()
@@ -26,18 +27,19 @@ const results = computed(() => {
   const out: { index: number; title: string; excerpt: string }[] = []
   props.pages.forEach((page, index) => {
     const text = plainText(page.content || '')
-    const haystack = ((page.title ? page.title + ' ' : '') + text).toLowerCase()
+    const title = pageDisplayTitle(page, index)
+    const haystack = (title + ' ' + text).toLowerCase()
     const pos = haystack.indexOf(kw)
     if (pos < 0) return
     // 摘录:命中位置前后各留 30 字符
     const start = Math.max(0, pos - 30)
-    const raw = text.length ? text : page.title || ''
+    const raw = text.length ? text : title
     const rel = raw.toLowerCase().indexOf(kw)
     const excerpt =
       rel >= 0
         ? (start > 0 ? '…' : '') + raw.slice(Math.max(0, rel - 30), rel + kw.length + 30) + '…'
         : raw.slice(0, 60)
-    out.push({ index, title: page.title || `第 ${index + 1} 页`, excerpt })
+    out.push({ index, title, excerpt })
   })
   return out
 })

@@ -1,5 +1,5 @@
 ﻿<script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import {
   Monitor,
   Palette,
@@ -16,11 +16,18 @@ import {
   Info,
   Trash2,
   Clock,
-  TextCursorInput
+  TextCursorInput,
+  Image as ImageIcon,
+  Droplets,
+  Waves,
+  Contrast,
+  Focus
 } from 'lucide-vue-next'
 import { Motion, AnimatePresence } from 'motion-v'
 import { exportAsJson, exportAsMarkdown, importFromJson } from '../utils/dataConverter'
 import { SETTINGS_DEFAULTS } from '../composables/useSettings'
+import { extractPageTitle } from '../utils/pageTitle'
+import { THEME_PRESETS, type ThemeMode, type ThemePreset } from '../themes'
 import { check } from '@tauri-apps/plugin-updater'
 import { getVersion } from '@tauri-apps/api/app'
 import { relaunch } from '@tauri-apps/plugin-process'
@@ -38,15 +45,15 @@ const showSaved = ref(false)
 const savedText = ref('已保存')
 let savedTimer: ReturnType<typeof setTimeout> | null = null
 
-const accentOptions = [
-  { color: '#4ade80' },
-  { color: '#60a5fa' },
-  { color: '#f87171' },
-  { color: '#fbbf24' },
-  { color: '#c084fc' },
-  { color: '#fb923c' },
-  { color: '#e5e5e5' }
-]
+const BASE_ACCENTS = ['#4ade80', '#60a5fa', '#f87171', '#fbbf24', '#c084fc', '#fb923c', '#e5e5e5']
+
+/** 强调色 = 基础色板 + 各风格包的推荐色,方便选中风格后仍能一眼看到当前色 */
+const accentOptions = Array.from(
+  new Set([
+    ...BASE_ACCENTS,
+    ...THEME_PRESETS.flatMap((t) => [t.defaultAccent.light, t.defaultAccent.dark])
+  ])
+).map((color) => ({ color }))
 
 const fontSizeOptions = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px']
 
@@ -59,15 +66,62 @@ const dbRelocateMsg = ref('')
 const cleaningAttachments = ref(false)
 const attachStats = ref<{ files: number; bytes: number } | null>(null)
 
+// 面板壁纸:上传后压缩、算平均亮度,再复用附件接口落盘
+const wallpaperInput = ref<HTMLInputElement | null>(null)
+const uploadingWallpaper = ref(false)
+const WALLPAPER_MAX_EDGE = 2560
+
 // 回收站:24 小时内删除的页面,可一键恢复
 const trashItems = ref<DeletedPageSummary[]>([])
 const restoringId = ref<number | null>(null)
 const trashOpen = ref(false)
-// 设置面板分区:通用 / 数据 / 关于
-const activeTab = ref<'general' | 'data' | 'shortcuts' | 'easter' | 'about'>('general')
+// 设置面板分区:外观 / 通用 / 数据 / 快捷键 / 彩蛋 / 关于
+type SettingsTab = 'appearance' | 'general' | 'data' | 'shortcuts' | 'easter' | 'about'
+const tabs: { key: SettingsTab; label: string }[] = [
+  { key: 'appearance', label: '外观' },
+  { key: 'general', label: '通用' },
+  { key: 'data', label: '数据' },
+  { key: 'shortcuts', label: '快捷键' },
+  { key: 'easter', label: '彩蛋' },
+  { key: 'about', label: '关于' }
+]
+const activeTab = ref<SettingsTab>('general')
 
-/** 标题快照:与 usePages.getPageTitle 同规则(标题/正文前 8 字/空白页) */
+// 风格卡预览跟随当前模式;系统模式取 OS 当前明暗
+const osMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+const previewMode = computed<ThemeMode>(() => {
+  if (settings.value.theme === 'light') return 'light'
+  if (settings.value.theme === 'dark') return 'dark'
+  return osMediaQuery.matches ? 'dark' : 'light'
+})
+
+function previewPalette(theme: ThemePreset) {
+  return previewMode.value === 'dark' ? theme.dark : theme.light
+}
+
+function themeAccent(theme: ThemePreset) {
+  return theme.defaultAccent[previewMode.value]
+}
+
+/** 选风格包时把推荐强调色一起带上,之后仍可单独换色 */
+async function chooseTheme(theme: ThemePreset) {
+  const accent = themeAccent(theme)
+  settings.value.themeId = theme.id
+  settings.value.accentColor = accent
+  emit('updateSettings', { ...settings.value })
+  try {
+    await window.api.setSetting('themeId', theme.id)
+    await window.api.setSetting('accentColor', accent)
+  } catch (e) {
+    console.error('[Notchpad] setSetting theme failed:', e)
+  }
+  flashSaved()
+}
+
+/** 标题快照:优先正文一级标题,其次导入时留下的旧标题快照,最后退回正文前 8 字 */
 function trashTitle(item: DeletedPageSummary): string {
+  const heading = extractPageTitle(item.content)
+  if (heading) return heading
   if (item.title) return item.title
   const text = (item.content || '')
     .replace(/<img[^>]*>/gi, ' ')
@@ -214,16 +268,106 @@ async function chooseDbDir() {
   }, 3000)
 }
 
-async function save(key: string, value: string) {
-  settings.value[key] = value
+/** 一次写多组设置:壁纸上传要同时落 URL 与亮度,避免多轮 emit */
+async function saveMany(pairs: Record<string, string>) {
+  Object.assign(settings.value, pairs)
   // 先同步到外层再落库:即使写库失败,界面状态也已更新(重试由用户发起)
   emit('updateSettings', { ...settings.value })
   try {
-    await window.api.setSetting(key, value)
+    for (const [key, value] of Object.entries(pairs)) await window.api.setSetting(key, value)
   } catch (e) {
-    console.error('[Notchpad] setSetting failed:', key, e)
+    console.error('[Notchpad] setSetting failed:', e)
   }
   flashSaved()
+}
+
+async function save(key: string, value: string) {
+  await saveMany({ [key]: value })
+}
+
+/** 滑块拖动时只更新内存/预览,松手(@change)才落库,避免每帧写盘 */
+function previewSetting(key: string, value: string) {
+  settings.value[key] = value
+  emit('updateSettings', { ...settings.value })
+}
+
+/**
+ * 图片 -> 压缩后的 JPEG dataURL + 8x8 采样得到的明暗。
+ * 最长边压到 2560,避免整图壁纸撑爆附件目录。
+ */
+async function prepareWallpaper(file: File): Promise<{ dataUrl: string; tone: string }> {
+  const raw = await new Promise<string>((resolve, reject) => {
+    const fr = new FileReader()
+    fr.onload = () => resolve(String(fr.result))
+    fr.onerror = () => reject(fr.error ?? new Error('读取图片失败'))
+    fr.readAsDataURL(file)
+  })
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const el = new Image()
+    el.onload = () => resolve(el)
+    el.onerror = () => reject(new Error('图片解码失败'))
+    el.src = raw
+  })
+
+  const scale = Math.min(1, WALLPAPER_MAX_EDGE / Math.max(img.naturalWidth, img.naturalHeight))
+  const w = Math.max(1, Math.round(img.naturalWidth * scale))
+  const h = Math.max(1, Math.round(img.naturalHeight * scale))
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('画布不可用')
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(img, 0, 0, w, h)
+
+  // 8x8 缩略图算感知亮度,阈值 128 定明暗,给文字色 auto 用
+  const sample = document.createElement('canvas')
+  sample.width = 8
+  sample.height = 8
+  const sctx = sample.getContext('2d')
+  if (!sctx) throw new Error('画布不可用')
+  sctx.drawImage(img, 0, 0, 8, 8)
+  const pixels = sctx.getImageData(0, 0, 8, 8).data
+  let sum = 0
+  for (let i = 0; i < pixels.length; i += 4) {
+    sum += 0.299 * pixels[i] + 0.587 * pixels[i + 1] + 0.114 * pixels[i + 2]
+  }
+  return { dataUrl: canvas.toDataURL('image/jpeg', 0.85), tone: sum / 64 >= 128 ? 'light' : 'dark' }
+}
+
+async function handleWallpaperFile(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  // 立刻清空,保证连续选同一个文件也能触发 change
+  input.value = ''
+  if (!file) return
+  if (!file.type.startsWith('image/')) {
+    flashSaved('请选择图片文件')
+    return
+  }
+  uploadingWallpaper.value = true
+  try {
+    const { dataUrl, tone } = await prepareWallpaper(file)
+    const res = await window.api.saveAttachment(dataUrl)
+    if (!res.ok || !res.url) throw new Error(res.error || '保存失败')
+    // 换新壁纸时文字色跟随新图重新 auto;旧附件留待启动清理变孤儿
+    await saveMany({
+      wallpaperUrl: res.url,
+      wallpaperTone: tone,
+      wallpaperText: 'auto'
+    })
+    flashSaved(tone === 'dark' ? '壁纸已应用 · 暗色' : '壁纸已应用 · 亮色')
+  } catch (err) {
+    console.error('[Notchpad] 壁纸上传失败:', err)
+    flashSaved('壁纸上传失败:' + (err instanceof Error ? err.message : '未知错误'))
+  } finally {
+    uploadingWallpaper.value = false
+  }
+}
+
+async function removeWallpaper() {
+  await saveMany({ wallpaperUrl: '' })
+  flashSaved('已移除壁纸')
 }
 
 /** 药丸显示来源开关(多选,存逗号分隔;全关 = off) */
@@ -311,26 +455,20 @@ onBeforeUnmount(() => {
             <div class="settings-body">
               <div class="settings-tabs">
                 <button
-                  v-for="t in [
-                    { key: 'general', label: '通用' },
-                    { key: 'data', label: '数据' },
-                    { key: 'shortcuts', label: '快捷键' },
-                    { key: 'easter', label: '彩蛋' },
-                    { key: 'about', label: '关于' }
-                  ]"
+                  v-for="t in tabs"
                   :key="t.key"
                   class="settings-tab"
                   :class="{ active: activeTab === t.key }"
-                  @click="activeTab = t.key as 'general' | 'data' | 'shortcuts' | 'about'"
+                  @click="activeTab = t.key"
                 >
                   {{ t.label }}
                 </button>
               </div>
-              <div v-if="activeTab === 'general'" class="settings-tabpane">
+              <div v-if="activeTab === 'appearance'" class="settings-tabpane">
                 <div class="setting-row">
                   <div class="setting-label">
                     <Monitor :size="15" :stroke-width="2.5" />
-                    <span>主题</span>
+                    <span>模式</span>
                   </div>
                   <div class="setting-control">
                     <button
@@ -349,12 +487,59 @@ onBeforeUnmount(() => {
                   </div>
                 </div>
 
+                <div class="theme-section">
+                  <div class="theme-section-head">
+                    <div class="setting-label">
+                      <Palette :size="15" :stroke-width="2.5" />
+                      <span>风格</span>
+                    </div>
+                    <span class="theme-hint">切换时套用推荐强调色</span>
+                  </div>
+                  <div class="theme-grid">
+                    <button
+                      v-for="t in THEME_PRESETS"
+                      :key="t.id"
+                      class="theme-card"
+                      :class="{ active: settings.themeId === t.id }"
+                      @click="chooseTheme(t)"
+                    >
+                      <span class="theme-preview" :style="{ background: previewPalette(t).bgMain }">
+                        <span
+                          class="theme-preview-card"
+                          :style="{
+                            background: previewPalette(t).bgCard,
+                            borderColor: previewPalette(t).border
+                          }"
+                        >
+                          <span
+                            class="theme-preview-title"
+                            :style="{
+                              background: previewPalette(t).textPrimary,
+                              fontFamily: t.headingFont
+                            }"
+                          />
+                          <span
+                            class="theme-preview-line"
+                            :style="{ background: previewPalette(t).textSecondary }"
+                          />
+                        </span>
+                        <span
+                          class="theme-preview-accent"
+                          :style="{ background: themeAccent(t) }"
+                        />
+                      </span>
+                      <span class="theme-card-name">{{ t.name }}</span>
+                      <span class="theme-card-desc">{{ t.description }}</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div class="setting-row">
                   <div class="setting-label">
                     <Palette :size="15" :stroke-width="2.5" />
                     <span>强调色</span>
                   </div>
-                  <div class="setting-control color-grid">
+                  <div class="setting-control color-grid accent-grid">
                     <button
                       v-for="a in accentOptions"
                       :key="a.color"
@@ -366,6 +551,172 @@ onBeforeUnmount(() => {
                   </div>
                 </div>
 
+                <div class="setting-divider" />
+
+                <div class="setting-row">
+                  <div class="setting-label">
+                    <ImageIcon :size="15" :stroke-width="2.5" />
+                    <span>面板壁纸</span>
+                  </div>
+                  <div class="setting-control">
+                    <input
+                      ref="wallpaperInput"
+                      type="file"
+                      accept="image/*"
+                      class="wallpaper-file-input"
+                      @change="handleWallpaperFile"
+                    />
+                    <button
+                      class="action-btn"
+                      :disabled="uploadingWallpaper"
+                      @click="wallpaperInput?.click()"
+                    >
+                      {{ uploadingWallpaper ? '处理中…' : settings.wallpaperUrl ? '更换' : '上传' }}
+                    </button>
+                    <button
+                      v-if="settings.wallpaperUrl"
+                      class="action-btn"
+                      @click="removeWallpaper"
+                    >
+                      移除
+                    </button>
+                  </div>
+                </div>
+
+                <div v-if="settings.wallpaperUrl" class="wallpaper-preview">
+                  <img :src="settings.wallpaperUrl" alt="壁纸预览" />
+                  <span class="wallpaper-preview-tip">
+                    已应用 · 自动识别为{{ settings.wallpaperTone === 'dark' ? '暗' : '亮' }}色壁纸
+                  </span>
+                </div>
+
+                <template v-if="settings.wallpaperUrl">
+                  <div class="setting-row">
+                    <div class="setting-label">
+                      <Contrast :size="15" :stroke-width="2.5" />
+                      <span>内容区透明度</span>
+                    </div>
+                    <div class="setting-control">
+                      <input
+                        type="range"
+                        class="setting-range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        :value="settings.wallpaperOpacity || '78'"
+                        @input="
+                          previewSetting(
+                            'wallpaperOpacity',
+                            ($event.target as HTMLInputElement).value
+                          )
+                        "
+                        @change="
+                          save('wallpaperOpacity', ($event.target as HTMLInputElement).value)
+                        "
+                      />
+                      <span class="range-value">{{ settings.wallpaperOpacity || '78' }}%</span>
+                    </div>
+                  </div>
+
+                  <div class="setting-row">
+                    <div class="setting-label">
+                      <Focus :size="15" :stroke-width="2.5" />
+                      <span>内容区毛玻璃</span>
+                    </div>
+                    <div class="setting-control">
+                      <input
+                        type="range"
+                        class="setting-range"
+                        min="0"
+                        max="20"
+                        step="1"
+                        :value="settings.wallpaperCardBlur ?? '6'"
+                        @input="
+                          previewSetting(
+                            'wallpaperCardBlur',
+                            ($event.target as HTMLInputElement).value
+                          )
+                        "
+                        @change="
+                          save('wallpaperCardBlur', ($event.target as HTMLInputElement).value)
+                        "
+                      />
+                      <span class="range-value">{{ settings.wallpaperCardBlur ?? '6' }}px</span>
+                    </div>
+                  </div>
+
+                  <div class="setting-row">
+                    <div class="setting-label">
+                      <Droplets :size="15" :stroke-width="2.5" />
+                      <span>遮罩浓度</span>
+                    </div>
+                    <div class="setting-control">
+                      <input
+                        type="range"
+                        class="setting-range"
+                        min="0"
+                        max="80"
+                        step="5"
+                        :value="settings.wallpaperScrim || '25'"
+                        @input="
+                          previewSetting(
+                            'wallpaperScrim',
+                            ($event.target as HTMLInputElement).value
+                          )
+                        "
+                        @change="save('wallpaperScrim', ($event.target as HTMLInputElement).value)"
+                      />
+                      <span class="range-value">{{ settings.wallpaperScrim || '25' }}%</span>
+                    </div>
+                  </div>
+
+                  <div class="setting-row">
+                    <div class="setting-label">
+                      <Waves :size="15" :stroke-width="2.5" />
+                      <span>壁纸模糊</span>
+                    </div>
+                    <div class="setting-control">
+                      <input
+                        type="range"
+                        class="setting-range"
+                        min="0"
+                        max="12"
+                        step="1"
+                        :value="settings.wallpaperBlur || '0'"
+                        @input="
+                          previewSetting('wallpaperBlur', ($event.target as HTMLInputElement).value)
+                        "
+                        @change="save('wallpaperBlur', ($event.target as HTMLInputElement).value)"
+                      />
+                      <span class="range-value">{{ settings.wallpaperBlur || '0' }}px</span>
+                    </div>
+                  </div>
+
+                  <div class="setting-row">
+                    <div class="setting-label">
+                      <Type :size="15" :stroke-width="2.5" />
+                      <span>文字色</span>
+                    </div>
+                    <div class="setting-control">
+                      <button
+                        v-for="wt in [
+                          { key: 'auto', label: '自动' },
+                          { key: 'light', label: '浅' },
+                          { key: 'dark', label: '深' }
+                        ]"
+                        :key="wt.key"
+                        class="theme-btn"
+                        :class="{ active: (settings.wallpaperText || 'auto') === wt.key }"
+                        @click="save('wallpaperText', wt.key)"
+                      >
+                        {{ wt.label }}
+                      </button>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <div v-if="activeTab === 'general'" class="settings-tabpane">
                 <div class="setting-row">
                   <div class="setting-label">
                     <Type :size="15" :stroke-width="2.5" />

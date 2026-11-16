@@ -24,20 +24,51 @@ body,
 }
 
 /* --- Headings --- */
+/* 标题单独收窄行高:正文的 1.8 会让 22px 标题出现近 40px 的行盒,上下显得很松 */
+.editor-content > :first-child {
+  margin-top: 0;
+}
+.editor-content h1,
+.editor-content h2,
+.editor-content h3 {
+  /* 水墨等风格包可以换成宋体标题,其余主题回落到正文继承 */
+  font-family: var(--editor-heading-font, inherit);
+  color: var(--editor-heading-color, inherit);
+}
 .editor-content h1 {
   font-size: 22px;
   font-weight: 700;
-  margin: 16px 0 10px;
+  line-height: 1.3;
+  margin: 12px 0 6px;
 }
 .editor-content h2 {
   font-size: 18px;
   font-weight: 700;
-  margin: 14px 0 6px;
+  line-height: 1.35;
+  margin: 10px 0 4px;
 }
 .editor-content h3 {
   font-size: 15px;
   font-weight: 600;
-  margin: 10px 0 4px;
+  line-height: 1.4;
+  margin: 8px 0 4px;
+}
+
+/* 水墨:标题下方一条很短的朱砂线,绝对定位不占行高 */
+.app-root[data-theme='ink'] .editor-content h1 {
+  position: relative;
+}
+.app-root[data-theme='ink'] .editor-content h1::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 30px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent, #9e3d32);
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 /* --- Lists --- */
@@ -64,12 +95,13 @@ body,
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #bbb;
+  background: var(--text-secondary, #bbb);
+  opacity: 0.65;
 }
 /* Nested: hollow dot */
 .editor-content ul > li > ul > li::before {
   background: transparent;
-  border: 1.5px solid #aaa;
+  border: 1.5px solid var(--text-secondary, #aaa);
   width: 4px;
   height: 4px;
 }
@@ -90,7 +122,7 @@ body,
   transform: translateY(-50%);
   font-size: 12px;
   font-weight: 600;
-  color: #aaa;
+  color: var(--text-secondary, #aaa);
   min-width: 16px;
   text-align: right;
 }
@@ -126,7 +158,7 @@ body,
   -webkit-appearance: none;
   width: 16px;
   height: 16px;
-  border: 2px solid #555;
+  border: 2px solid var(--border-strong, #555);
   border-radius: 5px;
   background: transparent;
   cursor: pointer;
@@ -167,7 +199,7 @@ body,
   background: var(--bg-toolbar, #2a2a2a);
   padding: 2px 6px;
   border-radius: 4px;
-  color: #f59e0b;
+  color: var(--editor-code-color, #f59e0b);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -177,7 +209,7 @@ body,
   color: var(--text-primary, #ccc);
   padding: 14px 16px;
   border-radius: 8px;
-  border-top: 2px solid #333;
+  border-top: 2px solid var(--border-strong, #333);
   overflow-x: auto;
   margin: 10px 0;
 }
@@ -205,7 +237,7 @@ body,
 .editor-content hr {
   border: none;
   height: 1px;
-  background: linear-gradient(to right, transparent, #444, transparent);
+  background: linear-gradient(to right, transparent, var(--border-strong, #444), transparent);
   margin: 16px 0;
 }
 

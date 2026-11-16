@@ -7,6 +7,7 @@ import BottomBar from './components/BottomBar.vue'
 import LinkDialog from './components/LinkDialog.vue'
 import Settings from './components/Settings.vue'
 import SearchPanel from './components/SearchPanel.vue'
+import SlashMenu from './components/SlashMenu.vue'
 import { Motion } from 'motion-v'
 import { useNotch } from './composables/useNotch'
 import { usePillContent } from './composables/usePillContent'
@@ -22,11 +23,14 @@ import {
   highlightColors
 } from './composables/useEditorSetup'
 import { setImportLimitProvider } from './utils/dataConverter'
+import { extractPageTitle, unnamedTitle } from './utils/pageTitle'
+import { closeSlashMenu } from './extensions/slashMenu'
 
 const {
   appSettings,
   isLightTheme,
   appStyle,
+  wallpaper,
   initSettingsListeners,
   cleanupSettings,
   loadSettings
@@ -66,13 +70,11 @@ const {
   addPage,
   deletePage,
   undoDelete,
-  clearCurrentPage,
   reorderPages,
   togglePinPage,
   getIsSwitching
 } = usePages(
   tempEditor,
-  scheduleSave,
   flushSave,
   () => contentBodyEl.value,
   () => parseInt(appSettings.value.maxPages || '10', 10)
@@ -121,8 +123,9 @@ const {
   isLightTheme: notchIsLight,
   appReady,
   warmUpFirstExpand,
+  updatePanelBg,
   cleanup: cleanupNotch
-} = useNotch(pages, settingsVisible, linkPromptVisible)
+} = useNotch(pages, settingsVisible, linkPromptVisible, () => appStyle.value['--bg-main'])
 
 // 药丸显示内容(时钟/一言/天气/自定义文字,按设置轮播);一言与天气由 feeds 调度拉取
 const { quoteText: pillQuote, weatherText: pillWeather } = usePillFeeds(appSettings, isNotched)
@@ -140,15 +143,24 @@ watch(
   { immediate: true }
 )
 
+// 切换风格包时同步展开态面板的背景色(motion-v 用内联色画面板)
+watch(
+  () => appStyle.value['--bg-main'],
+  () => updatePanelBg()
+)
+
 // 弹层(设置/搜索/链接)打开期间暂停"离开窗口即收起":
 // 原生下拉/菜单可能延伸出窗口边界,光标移到选项上会被误判为离开
 watch([settingsVisible, searchVisible, linkPromptVisible], ([s, f, l]) => {
   window.api.setCollapsePause(Boolean(s || f || l))
 })
 
-// 收起刘海(窗口缩成药丸)时立即藏掉撤销 toast,避免它孤零零浮在 5 秒倒计时里
+// 收起刘海(窗口缩成药丸)时立即藏掉撤销 toast,避免它孤零零浮在 5 秒倒计时里;
+// 斜杠菜单挂在 body 上,不随面板隐藏,也要一并收起
 watch(isNotched, (notched) => {
-  if (notched && undoToastVisible.value) {
+  if (!notched) return
+  closeSlashMenu()
+  if (undoToastVisible.value) {
     if (undoToastTimer) clearTimeout(undoToastTimer)
     undoToastVisible.value = false
   }
@@ -171,9 +183,57 @@ const {
   confirmLink
 } = useEditorSetup(scheduleSave, getIsSwitching, linkPromptVisible, linkUrlInput)
 tempEditor.value = editor.value
-watch(editor, (v) => {
+
+// 当前页标题实时取自编辑器:一级标题刚敲下去就反映到标签上,不用等 600ms 落库
+const liveTitle = ref<{ pageId: number | null; title: string }>({ pageId: null, title: '' })
+
+function syncLiveTitle() {
+  const page = pages.value[currentIndex.value]
+  const ed = editor.value
+  if (!page || !ed) return
+  // 直接遍历文档树取 h1,避免每次输入都 getHTML() 序列化整篇内容
+  let title = ''
+  ed.state.doc.descendants((node) => {
+    if (title) return false
+    if (node.type.name === 'heading' && node.attrs.level === 1) {
+      title = node.textContent.replace(/\s+/g, ' ').trim()
+    }
+    return true
+  })
+  liveTitle.value = { pageId: page.id, title }
+}
+
+watch(editor, (v, old) => {
+  old?.off('update', syncLiveTitle)
   tempEditor.value = v
+  if (v) {
+    v.on('update', syncLiveTitle)
+    nextTick(syncLiveTitle)
+  }
 })
+
+// 切页时 setContent 未必触发 update(两页内容恰好相同),索引变化后再补一次
+watch(currentIndex, () => nextTick(syncLiveTitle))
+
+// 未变化的页面按内容缓存标题,避免每次输入都把十篇笔记重新解析一遍
+const titleCache = new Map<string, string>()
+function cachedTitle(html: string): string {
+  const cached = titleCache.get(html)
+  if (cached !== undefined) return cached
+  const title = extractPageTitle(html)
+  if (titleCache.size >= 200) titleCache.clear()
+  titleCache.set(html, title)
+  return title
+}
+
+const pageTitles = computed(() =>
+  pages.value.map((page, i) => {
+    if (i === currentIndex.value && liveTitle.value.pageId === page.id) {
+      return liveTitle.value.title || unnamedTitle(i)
+    }
+    return cachedTitle(page.content || '') || unnamedTitle(i)
+  })
+)
 
 const charCount = computed(() => editor.value?.state.doc.textContent.length ?? 0)
 
@@ -212,14 +272,6 @@ function handleSettingsUpdate(s: Record<string, string>) {
     Object.entries(SETTINGS_DEFAULTS).map(([k, d]) => [k, rest[k] ?? d])
   )
   if (_reload) loadPages()
-}
-
-async function handleUpdateTitle(id: number, title: string) {
-  const updated = await window.api.updatePageTitle(id, title)
-  if (updated) {
-    const idx = pages.value.findIndex((p) => p.id === id)
-    if (idx >= 0) pages.value[idx] = updated
-  }
 }
 
 function handleKeydown(e: KeyboardEvent) {
@@ -326,7 +378,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="app-root" :style="appStyle">
+  <div class="app-root" :style="appStyle" :data-theme="appSettings.themeId || 'default'">
     <Motion
       :initial="{ opacity: 0, scale: 0.3 }"
       :class="[
@@ -363,20 +415,27 @@ onBeforeUnmount(() => {
           pillText
         }}</span>
       </div>
-      <div class="panel">
+      <div class="panel" :class="{ 'has-wallpaper': wallpaper.enabled }">
+        <!-- 壁纸层:负偏移给 blur 留余量,裁切由 .panel 的 overflow/clip-path 承担;
+             收起态 .panel opacity 0,壁纸自然隐藏,药丸保持纯色 -->
+        <template v-if="wallpaper.enabled">
+          <div
+            class="wallpaper-layer"
+            :style="{ backgroundImage: `url('${wallpaper.url}')`, filter: wallpaper.blur }"
+          />
+          <div class="wallpaper-scrim" :style="{ background: wallpaper.scrim }" />
+        </template>
         <TopToolbar
           :pages="pages"
+          :titles="pageTitles"
           :current-index="currentIndex"
           :max-pages="parseInt(appSettings.maxPages || '10', 10)"
           :is-notched="isNotched"
           @select="selectPage"
           @add="addPage"
           @delete="deletePage"
-          @clear="clearCurrentPage"
-          @settings="settingsVisible = true"
           @reorder="reorderPages"
           @toggle-pin="togglePinPage"
-          @update-title="handleUpdateTitle"
         />
 
         <div v-show="currentIndex >= 0" class="editor-area">
@@ -404,6 +463,7 @@ onBeforeUnmount(() => {
               @clear-highlight-color="clearHighlightColor"
               @set-highlight="setHighlight"
               @open-link="linkPromptVisible = true"
+              @open-settings="settingsVisible = true"
             />
           </div>
           <div class="save-status">
@@ -431,6 +491,7 @@ onBeforeUnmount(() => {
     @close="settingsVisible = false"
     @update-settings="handleSettingsUpdate"
   />
+  <SlashMenu />
   <LinkDialog
     :visible="linkPromptVisible"
     :initial-url="linkUrlInput"

@@ -10,6 +10,8 @@
   left: 50%;
   z-index: 2;
   background: var(--bg-main, #000);
+  /* 水墨风格包的纸纹;其他主题为 none */
+  background-image: var(--paper-grain, none);
   will-change: transform, width, height;
   overflow: visible;
   filter: blur(0px);
@@ -78,11 +80,51 @@
   transition: opacity 0.2s ease;
 }
 
+/* 壁纸模式让面板铺满整个运动层:默认 .panel 高度少 6px、宽度比
+   展开态运动层少 4px,那圈缝隙会露出 panel-motion 的主题底色(白边) */
+.panel.has-wallpaper {
+  height: 100%;
+  width: calc(100% + 4px);
+  left: -2px;
+}
+
+/* --- 壁纸:铺满面板,主题色遮罩压一层,内容浮在上层 --- */
+.wallpaper-layer {
+  position: absolute;
+  /* 负偏移让 blur 后的边缘落在裁切区外,不会露出清晰硬边 */
+  inset: -20px;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 0;
+  transform: translateZ(0);
+}
+
+.wallpaper-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.panel > .toolbar,
+.panel > .editor-area {
+  position: relative;
+  z-index: 1;
+}
+
+/* 内容卡毛玻璃:模糊度由设置控制,拖到 0 即完全透视壁纸 */
+.panel.has-wallpaper .content-card {
+  backdrop-filter: blur(var(--wallpaper-card-blur, 6px));
+  -webkit-backdrop-filter: blur(var(--wallpaper-card-blur, 6px));
+}
+
 .editor-area {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 6px 16px 4px 16px;
+  padding: 6px 12px 10px 12px;
   overflow: hidden;
   min-height: 0;
 }
@@ -100,6 +142,8 @@
 .content-card {
   flex: 1;
   background: var(--bg-card, #0f1014);
+  /* 水墨风格包的纸纹;其他主题为 none */
+  background-image: var(--paper-grain, none);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -118,9 +162,11 @@
 }
 
 .save-status {
-  height: 12px;
+  /* 保存状态浮在内容卡底部、工具栏上方,不再单独占一行,收紧窗口底部留白 */
+  height: 0;
   position: relative;
   flex-shrink: 0;
+  z-index: 1;
 }
 
 .save-indicator {
@@ -131,10 +177,12 @@
   color: var(--text-secondary, #888);
   opacity: 0;
   transform: translateY(4px);
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
   position: absolute;
-  right: 4px;
-  top: 0;
+  right: 54px;
+  bottom: 36px;
 }
 
 .save-indicator.saving,
@@ -231,7 +279,9 @@
 
 .undo-toast-enter-active,
 .undo-toast-leave-active {
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease;
 }
 
 .undo-toast-enter-from,

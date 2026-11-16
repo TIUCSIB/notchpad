@@ -1,8 +1,20 @@
 import { ref, computed, watch } from 'vue'
+import { getTheme, themeVars } from '../themes'
+import {
+  clampInt,
+  hexToRgba,
+  resolveWallpaperText,
+  wallpaperSurfaceVars,
+  wallpaperVars,
+  type WallpaperText,
+  type WallpaperTone
+} from '../utils/wallpaper'
 
 /** 设置项的默认值。导出给设置面板复用,避免两处硬编码不一致。 */
 export const SETTINGS_DEFAULTS: Record<string, string> = {
   theme: 'dark',
+  /** 风格包:default / eye / warm / ink */
+  themeId: 'default',
   accentColor: '#4ade80',
   defaultFontSize: '14px',
   autoStart: 'false',
@@ -25,7 +37,21 @@ export const SETTINGS_DEFAULTS: Record<string, string> = {
   /** 天气城市名(如:北京),由和风 GeoAPI 解析 */
   weatherCity: '',
   /** 天气更新:30min / hour / 3hour / day / never */
-  weatherInterval: 'hour'
+  weatherInterval: 'hour',
+  /** 面板壁纸:附件 URL(由后端按平台拼好),空 = 不用壁纸 */
+  wallpaperUrl: '',
+  /** 壁纸整体明暗:light / dark,上传时用 8x8 采样算出 */
+  wallpaperTone: 'light',
+  /** 内容区(卡片/栏位)不透明度 0-100(%) */
+  wallpaperOpacity: '78',
+  /** 内容卡毛玻璃模糊 0-20(px),0 = 完全透视壁纸 */
+  wallpaperCardBlur: '6',
+  /** 主题色遮罩浓度 0-80(%) */
+  wallpaperScrim: '25',
+  /** 壁纸模糊像素 0-12 */
+  wallpaperBlur: '0',
+  /** 壁纸上的文字色:auto 跟随明暗 / light / dark */
+  wallpaperText: 'auto'
 }
 
 export function useSettings() {
@@ -45,28 +71,49 @@ export function useSettings() {
     return t === 'light'
   })
 
-  const appStyle = computed(() => ({
-    '--accent': accentColor.value,
-    '--accent-dim': accentColor.value + '20',
-    '--bg-main': isLightTheme.value ? '#faf6f0' : '#000',
-    '--bg-card': isLightTheme.value ? '#f5f0e8' : '#0f1014',
-    '--bg-bar': isLightTheme.value ? '#ede8df' : '#1a1a1a',
-    '--bg-toolbar': isLightTheme.value ? '#e5dfd4' : '#151516',
-    '--text-primary': isLightTheme.value ? '#3d3629' : '#e5e5e5',
-    '--text-secondary': isLightTheme.value ? '#666' : '#888',
-    '--border': isLightTheme.value ? '#ddd' : '#2a2a2c',
-    '--border-strong': isLightTheme.value ? '#ccc' : '#3a3a3c',
-    '--hover-bg': isLightTheme.value ? '#d9d3c6' : '#3a3a3a',
-    '--hover-bg-strong': isLightTheme.value ? '#ccc5b8' : '#4a4a4a',
-    '--input-bg': isLightTheme.value ? '#fff' : '#1e1e1e',
-    '--overlay-bg': isLightTheme.value ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.4)',
-    '--label-color': isLightTheme.value ? '#888' : '#aaa',
-    '--active-bg': isLightTheme.value ? '#d1cbbf' : '#3a3a3c',
-    '--divider': isLightTheme.value ? '#ddd' : '#2a2a2c',
-    '--danger-text': '#dc2626',
-    '--danger-hover': isLightTheme.value ? '#fecaca' : '#3a1a1a',
-    '--editor-font-size': appSettings.value.defaultFontSize || SETTINGS_DEFAULTS.defaultFontSize
-  }))
+  /** 壁纸渲染视图:URL / 遮罩色 / 模糊滤镜 / 文字明暗,供 App.vue 铺层 */
+  const wallpaper = computed(() => {
+    const s = appSettings.value
+    const theme = getTheme(s.themeId)
+    const palette = theme[isLightTheme.value ? 'light' : 'dark']
+    const scrim = clampInt(s.wallpaperScrim, 25, 0, 80)
+    const blur = clampInt(s.wallpaperBlur, 0, 0, 12)
+    const tone: WallpaperTone = s.wallpaperTone === 'dark' ? 'dark' : 'light'
+    return {
+      enabled: Boolean(s.wallpaperUrl),
+      url: s.wallpaperUrl || '',
+      // 遮罩取主题底色,浓度按设置换算成 alpha;壁纸开启时底色仍能统一风格
+      scrim: hexToRgba(palette.bgMain, scrim / 100),
+      blur: blur > 0 ? `blur(${blur}px)` : 'none',
+      text: resolveWallpaperText(tone, (s.wallpaperText || 'auto') as WallpaperText),
+      cardBlur: clampInt(s.wallpaperCardBlur, 6, 0, 20)
+    }
+  })
+
+  const appStyle = computed(() => {
+    const theme = getTheme(appSettings.value.themeId)
+    const mode = isLightTheme.value ? 'light' : 'dark'
+    const vars = themeVars(theme, mode, accentColor.value)
+    const wp = wallpaper.value
+    if (wp.enabled) {
+      // 卡片/栏位半透明露壁纸,文字/边框按明暗切;--bg-main 保持不透明,
+      // 面板运动层(药丸态)仍用它做纯色背景
+      Object.assign(
+        vars,
+        wallpaperSurfaceVars(
+          theme[mode].bgCard,
+          theme[mode].bgBar,
+          theme[mode].bgToolbar,
+          clampInt(appSettings.value.wallpaperOpacity, 78, 0, 100)
+        ),
+        wallpaperVars(wp.text),
+        { '--wallpaper-card-blur': `${wp.cardBlur}px` }
+      )
+    }
+    vars['--editor-font-size'] =
+      appSettings.value.defaultFontSize || SETTINGS_DEFAULTS.defaultFontSize
+    return vars
+  })
 
   function applyRootVars(vars: Record<string, string>) {
     for (const [k, v] of Object.entries(vars)) {
@@ -96,6 +143,7 @@ export function useSettings() {
     accentColor,
     isLightTheme,
     appStyle,
+    wallpaper,
     initSettingsListeners,
     cleanupSettings,
     loadSettings

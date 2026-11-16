@@ -19,9 +19,16 @@ import {
   Quote,
   List,
   ListOrdered,
-  ListChecks
+  ListChecks,
+  Type,
+  Heading1,
+  Heading2,
+  Heading3
 } from 'lucide-vue-next'
 import { FontSize } from '../extensions/fontSize'
+import { SlashMenu } from '../extensions/slashMenu'
+import type { SlashItem } from '../extensions/slashMenu'
+import type { ChainedCommands, Editor } from '@tiptap/core'
 import type { FormatBtn } from '../../types'
 
 const IMAGE_MAX_WIDTH = 1920
@@ -131,11 +138,99 @@ export function useEditorSetup(
   linkPromptVisible: { value: boolean },
   linkUrlInput: { value: string }
 ) {
+  // 斜杠菜单项:command 先删掉 "/查询词" 再应用块类型;列表类命令要先落段落
+  // 列表只有 toggle 命令,已经在目标类型时不能再次 toggle(会取消列表),
+  // 所以统一走 applySlashBlock 做幂等判断
+  const applySlashBlock = (
+    ed: Editor,
+    range: { from: number; to: number },
+    activeName: string,
+    apply: (chain: ChainedCommands) => void
+  ) => {
+    const chain = ed.chain().focus().deleteRange(range)
+    if (!ed.isActive(activeName)) apply(chain)
+    chain.run()
+  }
+
+  const slashItems: SlashItem[] = [
+    {
+      title: '正文',
+      description: '普通文本段落',
+      keywords: ['text', 'paragraph', 'zhengwen', 'p'],
+      icon: Type,
+      command: ({ editor: ed, range }) => ed.chain().focus().deleteRange(range).setParagraph().run()
+    },
+    {
+      title: '标题 1',
+      description: '大标题',
+      keywords: ['h1', 'heading', 'biaoti'],
+      icon: Heading1,
+      command: ({ editor: ed, range }) =>
+        ed.chain().focus().deleteRange(range).setHeading({ level: 1 }).run()
+    },
+    {
+      title: '标题 2',
+      description: '中标题',
+      keywords: ['h2', 'heading', 'biaoti'],
+      icon: Heading2,
+      command: ({ editor: ed, range }) =>
+        ed.chain().focus().deleteRange(range).setHeading({ level: 2 }).run()
+    },
+    {
+      title: '标题 3',
+      description: '小标题',
+      keywords: ['h3', 'heading', 'biaoti'],
+      icon: Heading3,
+      command: ({ editor: ed, range }) =>
+        ed.chain().focus().deleteRange(range).setHeading({ level: 3 }).run()
+    },
+    {
+      title: '无序列表',
+      description: '圆点列表',
+      keywords: ['ul', 'bullet', 'list', 'liebiao'],
+      icon: List,
+      command: ({ editor: ed, range }) =>
+        applySlashBlock(ed, range, 'bulletList', (c) => c.setParagraph().toggleBulletList())
+    },
+    {
+      title: '有序列表',
+      description: '编号列表',
+      keywords: ['ol', 'ordered', 'numbered', 'liebiao'],
+      icon: ListOrdered,
+      command: ({ editor: ed, range }) =>
+        applySlashBlock(ed, range, 'orderedList', (c) => c.setParagraph().toggleOrderedList())
+    },
+    {
+      title: '任务列表',
+      description: '待办勾选框',
+      keywords: ['todo', 'task', 'check', 'renwu'],
+      icon: ListChecks,
+      command: ({ editor: ed, range }) =>
+        applySlashBlock(ed, range, 'taskList', (c) => c.setParagraph().toggleTaskList())
+    },
+    {
+      title: '引用',
+      description: '引用块',
+      keywords: ['quote', 'blockquote', 'yinyong'],
+      icon: Quote,
+      command: ({ editor: ed, range }) =>
+        applySlashBlock(ed, range, 'blockquote', (c) => c.setParagraph().setBlockquote())
+    },
+    {
+      title: '分割线',
+      description: '水平分隔',
+      keywords: ['hr', 'divider', 'line', 'fengexian'],
+      icon: Minus,
+      command: ({ editor: ed, range }) =>
+        ed.chain().focus().deleteRange(range).setHorizontalRule().run()
+    }
+  ]
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ link: false }),
       LinkExtension.configure({ openOnClick: false }),
-      Placeholder.configure({ placeholder: '写点什么吧...' }),
+      Placeholder.configure({ placeholder: '写点什么吧... (输入 / 快速插入)' }),
       TaskList,
       TaskItem.configure({ nested: true }),
       Image,
@@ -143,7 +238,8 @@ export function useEditorSetup(
       Color,
       Highlight.configure({ multicolor: true }),
       FontFamily,
-      FontSize
+      FontSize,
+      SlashMenu.configure({ items: slashItems })
     ],
     content: '',
     editorProps: {

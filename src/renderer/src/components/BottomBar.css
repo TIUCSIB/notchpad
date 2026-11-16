@@ -1,5 +1,4 @@
-﻿
-.bottom-bar {
+﻿.bottom-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -48,7 +47,15 @@
   align-items: center;
   gap: 2px;
   margin-left: auto;
-  margin-right: 4px;
+}
+
+/* 字体控件与设置之间的分组线 */
+.bar-divider {
+  width: 1px;
+  height: 14px;
+  flex-shrink: 0;
+  margin: 0 5px 0 6px;
+  background: var(--border, #2a2a2c);
 }
 
 .font-control-wrap {

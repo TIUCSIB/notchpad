@@ -1,26 +1,165 @@
-
 .toolbar {
   display: flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 40px;
-  padding: 4px 16px;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 4px 12px;
   flex-shrink: 0;
-  overflow: visible;
+  min-width: 0;
 }
 
-.toolbar-spacer {
-  flex: 1;
-}
-
-.toolbar-group {
+/* 标签多到放不下时横向滚动;滚动条隐藏,靠滚轮/选中页自动滚入视野 */
+.page-tabs {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 2px 0;
+  scrollbar-width: none;
+}
+
+.page-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.page-tabs.no-drop {
+  cursor: not-allowed;
+}
+
+/* 拖拽排序的让位过渡:只在拖拽期间启用,松手那一帧与 reorder 同步移除,
+   避免移除 transform 时再滑一次 */
+.page-tabs.dragging .page-tab {
+  transition:
+    transform 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+/* 右侧渐隐:还有标签藏在滚动区外(滚到末尾后去掉) */
+.page-tabs.overflowing {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 22px), transparent);
+}
+
+.page-tab {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  max-width: 150px;
+  height: 26px;
+  padding: 0 10px;
+  /* 所有标签都留 1px 透明描边,选中时只换颜色,避免宽度跳动 */
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  border-radius: 999px;
+  /* 未选中:只有文字,不显示胶囊底 */
+  background: transparent;
+  color: var(--text-secondary, #888);
+  font-size: 11.5px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+  transition:
+    max-width 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    padding-right 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+/* hover 与选中态一样是胶囊形,只是用中性浅底 */
+.page-tab:hover {
+  color: var(--text-primary, #e5e5e5);
   background: var(--bg-toolbar, #151516);
-  border-radius: 8px;
-  overflow: visible;
-  padding: 1px 6px;
+}
+
+/* 选中:胶囊底跟随主题强调色 */
+.page-tab.active {
+  max-width: 190px;
+  padding-right: 6px;
+  border-radius: 999px;
+  border-color: var(--accent-border, rgba(74, 222, 128, 0.4));
+  background: var(--accent-dim, rgba(74, 222, 128, 0.12));
+  color: var(--accent, #4ade80);
+  font-weight: 600;
+}
+
+.page-tab-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.page-tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  /* 常驻 DOM,用宽度/透明度展开,切换标签时标签宽度不会硬跳 */
+  width: 0;
+  height: 15px;
+  padding: 0;
+  /* gap 是 4px,负 margin 抵消隐藏态占位;展开时回到 0 */
+  margin-left: -4px;
+  border: none;
+  /* 与其他图标一致的 6px 圆角方块 + 浅底 + jelly */
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary, #888);
+  opacity: 0;
+  transform: scale(0.6);
+  overflow: hidden;
+  pointer-events: none;
+  cursor: pointer;
+  transition:
+    width 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    margin-left 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.14s ease,
+    transform 0.2s cubic-bezier(0.34, 1.4, 0.64, 1),
+    background 0.12s,
+    color 0.12s;
+}
+
+.page-tab-close.show {
+  width: 15px;
+  margin-left: 0;
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.page-tab-close:hover {
+  /* 与加号一致的浅色 hover,不用红色 */
+  background: var(--hover-bg, #3a3a3a);
+  color: var(--text-primary, #e5e5e5);
+}
+
+.page-tab:active {
+  transform: scale(0.97);
+}
+
+.page-tab.drag-source {
+  /* 原位标签让位后由跟随指针的影子代替,避免两个标签重叠 */
+  opacity: 0;
+}
+
+.page-tab.drag-target {
+  box-shadow: inset 0 0 0 1.5px var(--accent, #4ade80);
+}
+
+.pin-star {
+  flex-shrink: 0;
+  pointer-events: none;
+  color: #fbbf24;
+  fill: #fbbf24;
 }
 
 .tool-btn {
@@ -39,17 +178,9 @@
   border-radius: 6px;
   color: var(--text-secondary, #888);
   cursor: pointer;
-}
-
-.toolbar-group .tool-btn:hover:not(:disabled),
-.tool-btn.standalone:hover {
-  background: var(--hover-bg, #3a3a3a);
-  color: var(--text-primary, #e5e5e5);
-}
-
-.toolbar-group .tool-btn.danger:hover {
-  background: var(--danger-bg, rgba(220, 38, 38, 0.1));
-  color: var(--danger-text, #dc2626);
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .tool-btn:disabled {
@@ -57,148 +188,51 @@
   cursor: not-allowed;
 }
 
-.page-dots {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 0 2px;
-  overflow: visible;
+.add-btn:not(.is-disabled):hover {
+  background: var(--hover-bg, #3a3a3a);
+  color: var(--text-primary, #e5e5e5);
 }
 
-.page-dots.no-drop {
+.add-btn.is-disabled {
+  opacity: 0.35;
   cursor: not-allowed;
 }
 
-.page-dot-wrap {
-  width: 20px;
-  height: 8px;
-  border-radius: 4px;
+.add-btn.is-disabled:hover {
   background: transparent;
-  cursor: pointer;
-  border: none;
-  padding: 0;
-  position: relative;
-  touch-action: none;
-  user-select: none;
-  transition:
-    transform 0.2s ease,
-    opacity 0.2s ease;
-  overflow: visible;
-}
-
-/* Tooltip via CSS ::after */
-.page-dot-wrap::after {
-  content: attr(data-title);
-  position: absolute;
-  left: 50%;
-  bottom: calc(100% + 8px);
-  transform: translateX(-50%);
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: var(--bg-card, #1a1a1c);
-  border: 1px solid var(--border, #2a2a2c);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-  color: var(--text-primary, #e5e5e5);
-  font-size: 11px;
-  line-height: 1.3;
-  white-space: nowrap;
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  pointer-events: none;
-  opacity: 0;
-  z-index: 100;
-  transition: opacity 0.15s ease;
-}
-
-.page-dot-wrap:hover::after {
-  opacity: 1;
-}
-
-.page-dot-wrap:active {
-  transform: scale(0.85);
-}
-
-.page-dot-wrap.drag-source {
-  opacity: 0.35;
-}
-
-.page-dot-wrap.drag-target .page-dot {
-  box-shadow:
-    0 0 0 2px var(--accent, #4ade80),
-    0 0 8px rgba(74, 222, 128, 0.3);
-}
-
-.page-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #aaa;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  transition:
-    width 0.2s ease,
-    border-radius 0.2s ease,
-    background 0.2s,
-    box-shadow 0.2s;
-}
-
-.page-dot-wrap.active .page-dot {
-  width: 20px;
-  height: 8px;
-  border-radius: 4px;
-  background: var(--accent, #4ade80);
-  box-shadow: 0 0 8px rgba(74, 222, 128, 0.3);
-}
-
-.pin-star {
-  position: absolute;
-  top: -6px;
-  right: -2px;
-  z-index: 2;
-  pointer-events: none;
-  color: #fbbf24;
-  fill: #fbbf24;
-}
-
-/* Inline title editor */
-.title-edit-input {
-  position: fixed;
-  top: 46px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 160px;
-  height: 26px;
-  padding: 0 8px;
-  border: 1px solid var(--accent, #4ade80);
-  border-radius: 6px;
-  background: var(--bg-card, #1a1a1c);
-  color: var(--text-primary, #e5e5e5);
-  font-size: 12px;
-  text-align: center;
-  outline: none;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-  z-index: 200;
-}
-
-.title-edit-input::placeholder {
   color: var(--text-secondary, #888);
 }
 
+/* 拖拽时跟随指针的标签影子 */
 .drag-ghost {
   position: fixed;
   z-index: 99999;
-  width: 20px;
-  height: 8px;
-  border-radius: 4px;
-  background: var(--accent, #4ade80);
-  opacity: 0.85;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  transform: translate(-50%, -50%) scale(1.5);
+  display: flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--hover-bg, #3a3a3a);
+  color: var(--text-primary, #e5e5e5);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0.9;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32);
+  transform: translate(-50%, -50%) scale(1.06) rotate(-1.5deg);
+  animation: drag-ghost-in 0.16s cubic-bezier(0.22, 1, 0.36, 1);
   pointer-events: none;
-  transition: none;
+}
+
+@keyframes drag-ghost-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.82) rotate(-1.5deg);
+  }
+  to {
+    opacity: 0.9;
+    transform: translate(-50%, -50%) scale(1.06) rotate(-1.5deg);
+  }
 }
 
 .pin-menu-overlay {
@@ -219,7 +253,7 @@
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   cursor: pointer;
-  transform: translate(-50%, -100%);
+  transform: translate(-50%, 0);
   transition: background 0.12s;
 }
 

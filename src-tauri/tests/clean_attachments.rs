@@ -70,3 +70,36 @@ fn keeps_images_referenced_by_trashed_pages() {
   );
   assert!(!dir.join("6666666666666666.jpg").exists(), "真孤儿应被删除");
 }
+
+#[test]
+fn keeps_wallpaper_attachment_referenced_from_settings() {
+  // 面板壁纸附件只在 settings.wallpaperUrl 中引用,不能当孤儿清掉
+  let tmp = std::env::temp_dir().join("notch-clean-test-wallpaper");
+  let _ = fs::remove_dir_all(&tmp);
+  fs::create_dir_all(tmp.join("attachments")).unwrap();
+  let db_path = tmp.join("memo.db");
+  let conn = rusqlite::Connection::open(&db_path).unwrap();
+  conn
+    .execute_batch(
+      "CREATE TABLE pages (id INTEGER PRIMARY KEY, content TEXT NOT NULL DEFAULT '');
+       CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+       INSERT INTO settings (key, value) VALUES ('wallpaperUrl', 'http://notchpad.localhost/attachments/7777777777777777.jpg');",
+    )
+    .unwrap();
+  let dir = tmp.join("attachments");
+  fs::write(dir.join("7777777777777777.jpg"), b"wallpaper").unwrap();
+  fs::write(dir.join("8888888888888888.jpg"), b"orphan").unwrap();
+
+  let old = filetime::FileTime::from_system_time(
+    std::time::SystemTime::now() - std::time::Duration::from_secs(180),
+  );
+  filetime::set_file_mtime(dir.join("8888888888888888.jpg"), old).unwrap();
+
+  let deleted = clean_attachments_impl(&db_path);
+  assert_eq!(deleted, 1, "只应删除 8888 真孤儿");
+  assert!(
+    dir.join("7777777777777777.jpg").exists(),
+    "壁纸附件必须保留"
+  );
+  assert!(!dir.join("8888888888888888.jpg").exists(), "真孤儿应被删除");
+}

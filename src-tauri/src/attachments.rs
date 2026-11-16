@@ -245,6 +245,18 @@ pub fn clean_attachments_impl(db_path: &Path) -> u32 {
     }
   }
   drop(stmt);
+  // 面板壁纸附件只在 settings.wallpaperUrl 里被引用,不出现在任何页面正文;
+  // 不读这一项的话,壁纸会在下次启动清理时被当孤儿删掉。
+  // 老库/测试库可能没有 settings 表,查询失败即视为无壁纸引用。
+  if let Ok(url) = conn.query_row(
+    "SELECT value FROM settings WHERE key = 'wallpaperUrl'",
+    [],
+    |r| r.get::<_, String>(0),
+  ) {
+    for cap in re.captures_iter(&url) {
+      referenced.insert(cap[1].to_lowercase());
+    }
+  }
   drop(conn);
 
   let dir = attachments_dir(db_path);

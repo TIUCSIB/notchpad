@@ -1,6 +1,7 @@
 ﻿<script setup lang="ts">
 import { watch } from 'vue'
 import type { LucideIcon } from 'lucide-vue-next'
+import { Settings } from 'lucide-vue-next'
 import { Motion, AnimatePresence } from 'motion-v'
 import { useFontPopups } from '../composables/useFontPopups'
 
@@ -33,6 +34,7 @@ const emit = defineEmits<{
   (e: 'setHighlight', color: string): void
   (e: 'clearHighlightColor'): void
   (e: 'openLink'): void
+  (e: 'openSettings'): void
 }>()
 
 const { fontSizePopup, fontFamilyPopup, colorPopup, highlightPopup, closeAll } = useFontPopups()
@@ -220,6 +222,10 @@ function toggleHighlightPopup() {
         </div>
       </div>
     </div>
+    <span class="bar-divider" aria-hidden="true"></span>
+    <button v-jelly class="fmt-btn" title="设置" @click.stop="emit('openSettings')">
+      <Settings :size="15" :stroke-width="2.2" />
+    </button>
   </div>
 </template>
 
